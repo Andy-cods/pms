@@ -1,2 +1,3 @@
 // Infrastructure - Persistence (Prisma repositories, etc.)
-// Export all persistence implementations from this barrel file
+export * from './prisma.service.js';
+export * from './prisma.module.js';

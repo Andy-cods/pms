@@ -1,0 +1,112 @@
+BACKEND FILES TO CREATE (15 items)
+
+Foundation:
+- backend/src/infrastructure/persistence/prisma.service.ts
+- backend/src/infrastructure/strategies/jwt.strategy.ts
+
+DTOs:
+- backend/src/application/dto/auth/login.dto.ts
+- backend/src/application/dto/auth/register.dto.ts
+- backend/src/application/dto/auth/refresh-token.dto.ts
+- backend/src/application/dto/auth/auth-response.dto.ts
+
+Utilities & Exceptions:
+- backend/src/shared/exceptions/auth.exceptions.ts
+- backend/src/shared/utils/password.util.ts
+
+Auth Logic:
+- backend/src/modules/auth/services/auth.service.ts
+- backend/src/modules/auth/controllers/auth.controller.ts
+
+Security:
+- backend/src/presentation/guards/jwt-auth.guard.ts
+- backend/src/presentation/guards/role.guard.ts
+- backend/src/presentation/decorators/current-user.decorator.ts
+- backend/src/presentation/decorators/roles.decorator.ts
+
+Users:
+- backend/src/modules/users/services/user.service.ts
+
+BACKEND FILES TO MODIFY (3 items)
+- backend/src/modules/auth/auth.module.ts
+- backend/src/app.module.ts
+- backend/src/shared/constants/index.ts
+
+FRONTEND FILES TO CREATE (8 items)
+
+Hooks:
+- frontend/src/hooks/auth/useLogin.ts
+- frontend/src/hooks/auth/useRegister.ts
+- frontend/src/hooks/auth/useRefresh.ts
+
+Components & Providers:
+- frontend/src/components/auth/ProtectedRoute.tsx
+- frontend/src/providers/AuthProvider.tsx
+
+Pages:
+- frontend/src/app/(auth)/layout.tsx
+- frontend/src/app/(auth)/login/page.tsx
+
+Types:
+- frontend/src/types/auth.ts
+
+FRONTEND FILES TO MODIFY (4 items)
+- frontend/src/types/index.ts
+- frontend/src/lib/api/index.ts
+- frontend/src/app/layout.tsx
+- frontend/package.json
+
+CURRENT CODE LOCATIONS
+
+Backend Core:
+- Main entry: backend/src/main.ts (42 lines)
+- App module: backend/src/app.module.ts (29 lines)
+- Prisma schema: backend/prisma/schema.prisma (600 lines)
+- Config: backend/.env.development
+
+Frontend Core:
+- Auth store: frontend/src/stores/auth/index.ts (62 lines)
+- API client: frontend/src/lib/api/index.ts (43 lines)
+- Types: frontend/src/types/index.ts (56 lines)
+- Utils: frontend/src/lib/utils/index.ts (27 lines)
+- Layout: frontend/src/app/layout.tsx (35 lines)
+- Config: frontend/.env.development
+
+DATABASE MODELS
+
+User (Prisma):
+- Loc: backend/prisma/schema.prisma lines 99-130
+- Fields: id, email (unique), password, name, avatar, role, isActive, lastLoginAt
+- 10+ relations to other models
+
+Session (Prisma):
+- Loc: backend/prisma/schema.prisma lines 132-144
+- Fields: id, userId, token (unique), expiresAt, userAgent, ipAddress
+
+UserRole Enum:
+- Loc: backend/prisma/schema.prisma lines 16-27
+- 9 roles: SUPER_ADMIN, ADMIN, TECHNICAL, NVKD, PM, PLANNER, ACCOUNT, CONTENT, DESIGN, MEDIA
+
+DEPENDENCIES STATUS
+
+Backend - All installed:
+- @nestjs/jwt@^11.0.2
+- @nestjs/passport@^11.0.5
+- passport@^0.7.0
+- passport-jwt@^4.0.1
+- bcrypt@^6.0.0
+
+Frontend - Need to add:
+- jwt-decode (NOT INSTALLED)
+
+ENV VARIABLES - Ready
+
+Backend:
+- JWT_SECRET (configured)
+- JWT_EXPIRES_IN: 1h
+- JWT_REFRESH_EXPIRES_IN: 7d
+- DATABASE_URL (configured)
+
+Frontend:
+- NEXT_PUBLIC_API_URL: http://localhost:3001/api
+
