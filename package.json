@@ -1,0 +1,19 @@
+{
+  "name": "pms-quan-li-du-an",
+  "version": "1.0.0",
+  "description": "Project Management System - Hệ thống quản lý dự án",
+  "main": "index.js",
+  "scripts": {
+    "dev": "echo 'Development server'",
+    "build": "echo 'Build project'",
+    "test": "echo 'Run tests'",
+    "lint": "echo 'Lint code'"
+  },
+  "keywords": [
+    "project-management",
+    "pms",
+    "task-management"
+  ],
+  "author": "",
+  "license": "MIT"
+}

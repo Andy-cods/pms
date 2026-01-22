@@ -1,0 +1,118 @@
+# BC Agency PMS - Docker Compose Configuration
+# Development environment setup
+
+services:
+  # ============================================
+  # DATABASE - PostgreSQL 16
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: bc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bc_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bc_password}
+      POSTGRES_DB: ${POSTGRES_DB:-bc_pms}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"  # External 5433 to avoid conflict
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bc_user} -d ${POSTGRES_DB:-bc_pms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - bc-agency-net
+
+  # ============================================
+  # CACHE - Redis 7
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: bc-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6380}:6379"  # External 6380 to avoid conflict
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - bc-agency-net
+
+  # ============================================
+  # FILE STORAGE - MinIO (S3-compatible)
+  # ============================================
+  minio:
+    image: minio/minio:latest
+    container_name: bc-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 10s
+    networks:
+      - bc-agency-net
+
+  # ============================================
+  # REVERSE PROXY - Nginx
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: bc-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - bc-agency-net
+
+# ============================================
+# VOLUMES - Persistent Data
+# ============================================
+volumes:
+  postgres_data:
+    name: bc-pms-postgres-data
+  redis_data:
+    name: bc-pms-redis-data
+  minio_data:
+    name: bc-pms-minio-data
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  bc-agency-net:
+    name: bc-agency-network
+    driver: bridge

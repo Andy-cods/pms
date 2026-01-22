@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(plan:hard)",
+      "Skill(plan:hard:*)",
+      "Skill(cook)",
+      "Skill(cook:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker compose:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(git add:*)",
+      "Read(//c/Users/Admin/Pms-quan-li-du-an/**)",
+      "Bash(awk:*)"
+    ]
+  }
+}

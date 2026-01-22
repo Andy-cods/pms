@@ -1,0 +1,46 @@
+# BC Agency PMS - Docker Compose Override (Development)
+# This file is automatically loaded with docker-compose.yml
+# Contains development-specific settings
+
+services:
+  # ============================================
+  # PostgreSQL - Development settings
+  # ============================================
+  postgres:
+    environment:
+      POSTGRES_USER: bc_user
+      POSTGRES_PASSWORD: bc_password
+      POSTGRES_DB: bc_pms
+    # Expose for local tools (pgAdmin, DBeaver) - Use 5433 to avoid conflict
+    ports:
+      - "5433:5432"
+
+  # ============================================
+  # Redis - Development settings
+  # ============================================
+  redis:
+    # Expose for local Redis clients - Use 6380 to avoid conflict
+    ports:
+      - "6380:6379"
+
+  # ============================================
+  # MinIO - Development settings
+  # ============================================
+  minio:
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    # Expose API and Console
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # ============================================
+  # Nginx - Development (HTTP only)
+  # ============================================
+  nginx:
+    ports:
+      - "80:80"
+    # No SSL in development
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
