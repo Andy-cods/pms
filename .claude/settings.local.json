@@ -14,7 +14,17 @@
       "Bash(docker exec:*)",
       "Bash(git add:*)",
       "Read(//c/Users/Admin/Pms-quan-li-du-an/**)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10 npm run start:dev:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(printf:*)",
+      "Bash(npx prisma init:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma db seed:*)"
     ]
   }
 }
