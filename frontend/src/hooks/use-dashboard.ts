@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { dashboardApi, type DashboardStats, type RecentActivity } from '@/lib/api/dashboard';
+import {
+  dashboardApi,
+  type DashboardStats,
+  type RecentActivity,
+  type MyTasksResponse,
+} from '@/lib/api/dashboard';
 
 export interface ProjectDistribution {
   status: string;
@@ -11,22 +16,6 @@ export interface TaskTrend {
   date: string;
   completed: number;
   created: number;
-}
-
-export interface MyTaskItem {
-  id: string;
-  title: string;
-  projectCode: string;
-  projectName: string;
-  status: string;
-  priority: string;
-  deadline: string | null;
-}
-
-export interface MyTasksResponse {
-  overdue: number;
-  dueToday: number;
-  tasks: MyTaskItem[];
 }
 
 export function useDashboardStats() {
@@ -66,13 +55,6 @@ export function useRecentActivities(limit: number = 10) {
 export function useDashboardMyTasks() {
   return useQuery<MyTasksResponse>({
     queryKey: ['dashboard', 'my-tasks'],
-    queryFn: async () => {
-      // Stub implementation - returns empty response
-      return {
-        overdue: 0,
-        dueToday: 0,
-        tasks: [],
-      };
-    },
+    queryFn: () => dashboardApi.getMyTasks(),
   });
 }

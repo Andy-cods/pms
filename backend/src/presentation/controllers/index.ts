@@ -4,3 +4,4 @@
 export * from './settings.controller.js';
 export * from './admin-client.controller.js';
 export * from './client-project.controller.js';
+export * from './dashboard.controller.js';

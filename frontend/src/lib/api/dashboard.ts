@@ -49,6 +49,22 @@ export interface RecentActivity {
   };
 }
 
+export interface MyTaskItem {
+  id: string;
+  title: string;
+  projectCode: string;
+  projectName: string;
+  status: string;
+  priority: string;
+  deadline: string | null;
+}
+
+export interface MyTasksResponse {
+  overdue: number;
+  dueToday: number;
+  tasks: MyTaskItem[];
+}
+
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
     const response = await api.get('/dashboard/stats');
@@ -59,6 +75,11 @@ export const dashboardApi = {
     const response = await api.get('/dashboard/activity', {
       params: { limit },
     });
+    return response.data;
+  },
+
+  getMyTasks: async (): Promise<MyTasksResponse> => {
+    const response = await api.get('/dashboard/my-tasks');
     return response.data;
   },
 };
