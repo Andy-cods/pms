@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { ClientModule } from './modules/client/client.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { ProjectModule } from './modules/project/project.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
     ClientModule,
     AdminModule,
     DashboardModule,
+    ProjectModule,
   ],
   controllers: [AppController],
   providers: [AppService],
