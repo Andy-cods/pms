@@ -2,7 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
-import { Bell, Menu, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
+import { Menu, Moon, Sun, LogOut, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { UserRoleLabels } from '@/types';
+import { NotificationBell } from '@/components/notification';
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -49,45 +50,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
       {/* Right side - Actions */}
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <Badge
-                variant="destructive"
-                className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs"
-              >
-                3
-              </Badge>
-              <span className="sr-only">Notifications</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="max-h-80 overflow-y-auto">
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <p className="text-sm font-medium">Task mới được giao</p>
-                <p className="text-xs text-muted-foreground">Thiết kế banner cho QC01</p>
-                <p className="text-xs text-muted-foreground">5 phút trước</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <p className="text-sm font-medium">Approval chờ duyệt</p>
-                <p className="text-xs text-muted-foreground">Content Plan tháng 2</p>
-                <p className="text-xs text-muted-foreground">1 giờ trước</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <p className="text-sm font-medium">Deadline sắp đến</p>
-                <p className="text-xs text-muted-foreground">Task XYZ còn 2 ngày</p>
-                <p className="text-xs text-muted-foreground">2 giờ trước</p>
-              </DropdownMenuItem>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-primary" onClick={() => router.push('/dashboard/notifications')}>
-              Xem tất cả thông báo
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationBell />
 
         {/* Theme Toggle */}
         <Button
