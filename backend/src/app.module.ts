@@ -15,6 +15,7 @@ import { FileModule } from './modules/file/file.module.js';
 import { MinioModule } from './infrastructure/external-services/minio/minio.module.js';
 import { ApprovalModule } from './modules/approval/approval.module.js';
 import { CalendarModule } from './modules/calendar/calendar.module.js';
+import { ReportModule } from './modules/report/report.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CalendarModule } from './modules/calendar/calendar.module.js';
     FileModule,
     ApprovalModule,
     CalendarModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

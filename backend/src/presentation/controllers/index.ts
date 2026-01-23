@@ -12,3 +12,4 @@ export * from './approval.controller.js';
 export * from './event.controller.js';
 export * from './notification.controller.js';
 export * from './comment.controller.js';
+export * from './report.controller.js';

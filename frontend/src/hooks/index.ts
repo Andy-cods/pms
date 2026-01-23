@@ -9,3 +9,4 @@ export * from './use-approvals';
 export * from './use-events';
 export * from './use-notifications';
 export * from './use-comments';
+export * from './use-reports';
