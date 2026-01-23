@@ -117,6 +117,7 @@ model User {
   approvalApproved  Approval[]      @relation("ApprovalApprover")
   filesUploaded     File[]
   eventsCreated     Event[]
+  eventAttendees    EventAttendee[]
   notifications     Notification[]
   auditLogs         AuditLog[]
   comments          Comment[]
@@ -504,8 +505,10 @@ model EventAttendee {
   status  String  @default("pending")
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id])
 
   @@index([eventId])
+  @@index([userId])
   @@map("event_attendees")
 }
 

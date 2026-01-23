@@ -7,6 +7,7 @@ import { Sidebar } from './sidebar';
 import { Navbar } from './navbar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -98,6 +99,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Toast notifications */}
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

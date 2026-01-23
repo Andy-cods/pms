@@ -21,9 +21,9 @@ Web-based Project Management System for BC Agency Vietnam, replacing 3+ Excel fi
 
 | Phase | Duration | Focus | Status |
 |-------|----------|-------|--------|
-| [Phase 1](./phase-01-foundation.md) | Week 1-3 | Infrastructure, Auth, UI Foundation | [ ] Pending |
-| [Phase 2](./phase-02-core-features.md) | Week 4-6 | Project, Task, File, Dashboard | [ ] Pending |
-| [Phase 3](./phase-03-workflow-calendar.md) | Week 7-9 | Approval, Calendar, Notifications | [ ] Pending |
+| [Phase 1](./phase-01-foundation.md) | Week 1-3 | Infrastructure, Auth, UI Foundation | [x] Complete |
+| [Phase 2](./phase-02-core-features.md) | Week 4-6 | Project, Task, File, Dashboard | [x] Complete |
+| [Phase 3](./phase-03-workflow-calendar.md) | Week 7-9 | Approval, Calendar, Notifications | [ ] In Progress |
 | [Phase 4](./phase-04-client-portal-polish.md) | Week 10-12 | Client Portal, Reports, Deploy | [ ] Pending |
 
 ---

@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { ProjectStatus, TaskStatus, TaskPriority } from '@/types';
+import { ProjectStatus, ProjectStage, ProjectStageLabels, TaskStatus, TaskPriority } from '@/types';
 
 const statusBadgeVariants = cva(
   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
@@ -97,6 +97,29 @@ export function TaskPriorityBadge({ priority, className }: { priority: TaskPrior
   return (
     <StatusBadge variant={config.variant} className={className}>
       {config.label}
+    </StatusBadge>
+  );
+}
+
+// Project Stage Badge
+const projectStageVariantMap: Record<ProjectStage, VariantProps<typeof statusBadgeVariants>['variant']> = {
+  [ProjectStage.INTAKE]: 'todo',
+  [ProjectStage.DISCOVERY]: 'in_progress',
+  [ProjectStage.PLANNING]: 'in_progress',
+  [ProjectStage.UNDER_REVIEW]: 'review',
+  [ProjectStage.PROPOSAL_PITCH]: 'review',
+  [ProjectStage.ONGOING]: 'primary',
+  [ProjectStage.OPTIMIZATION]: 'high',
+  [ProjectStage.COMPLETED]: 'done',
+  [ProjectStage.CLOSED]: 'cancelled',
+};
+
+export function ProjectStageBadge({ stage, className }: { stage: ProjectStage; className?: string }) {
+  const variant = projectStageVariantMap[stage];
+  const label = ProjectStageLabels[stage];
+  return (
+    <StatusBadge variant={variant} className={className}>
+      {label}
     </StatusBadge>
   );
 }
