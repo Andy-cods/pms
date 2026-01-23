@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { AppModule } from '../../src/app.module.js';
+import { AppModule } from '../../src/app.module';
 
 /**
  * Creates a test application instance with all modules configured

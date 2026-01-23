@@ -1,0 +1,65 @@
+# BC Agency PMS - Frontend Docker Ignore
+
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.next
+out
+build
+coverage
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker
+
+# Tests
+tests
+*.spec.ts
+*.spec.tsx
+*.test.ts
+*.test.tsx
+playwright-report
+test-results
+playwright.config.*
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Storybook (if used)
+.storybook
+storybook-static

@@ -1,6 +1,3 @@
-// BC Agency PMS - Prisma Schema
-// Based on Brainstorm Report specifications
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,16 +6,417 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================
-// ENUMS
-// ============================================
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  password          String
+  name              String
+  avatar            String?
+  role              UserRole
+  isActive          Boolean        @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  notificationPrefs Json?
+  approvalApproved  Approval[]     @relation("ApprovalApprover")
+  approvalSubmitted Approval[]     @relation("ApprovalSubmitter")
+  auditLogs         AuditLog[]
+  comments          Comment[]
+  eventsCreated     Event[]
+  filesUploaded     File[]
+  notifications     Notification[]
+  projectTeams      ProjectTeam[]
+  tasksAssigned     TaskAssignee[]
+  tasksCreated      Task[]         @relation("TaskCreator")
+  tasksReviewing    Task[]         @relation("TaskReviewer")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  ipAddress String?
+
+  @@index([token])
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Client {
+  id           String    @id @default(cuid())
+  companyName  String
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  accessCode   String    @unique
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  projects     Project[]
+
+  @@index([accessCode])
+  @@map("clients")
+}
+
+model Project {
+  id               String         @id @default(cuid())
+  code             String         @unique
+  name             String
+  description      String?
+  productType      String?
+  status           ProjectStatus  @default(STABLE)
+  stage            ProjectStage   @default(INTAKE)
+  stageProgress    Int            @default(0)
+  startDate        DateTime?
+  endDate          DateTime?
+  timelineProgress Int            @default(0)
+  clientId         String?
+  driveLink        String?
+  planLink         String?
+  trackingLink     String?
+  metadata         Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  archivedAt       DateTime?
+  approvals        Approval[]
+  comments         Comment[]
+  events           Event[]
+  files            File[]
+  budget           ProjectBudget?
+  kpis             ProjectKPI[]
+  logs             ProjectLog[]
+  team             ProjectTeam[]
+  client           Client?        @relation(fields: [clientId], references: [id])
+  tasks            Task[]
+
+  @@index([code])
+  @@index([status])
+  @@index([stage])
+  @@index([clientId])
+  @@map("projects")
+}
+
+model ProjectTeam {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      UserRole
+  isPrimary Boolean  @default(false)
+  joinedAt  DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId, role])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_teams")
+}
+
+model ProjectBudget {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  totalBudget   Decimal  @db.Decimal(15, 2)
+  monthlyBudget Decimal? @db.Decimal(15, 2)
+  spentAmount   Decimal  @default(0) @db.Decimal(15, 2)
+  fixedAdFee    Decimal? @db.Decimal(15, 2)
+  adServiceFee  Decimal? @db.Decimal(15, 2)
+  contentFee    Decimal? @db.Decimal(15, 2)
+  designFee     Decimal? @db.Decimal(15, 2)
+  mediaFee      Decimal? @db.Decimal(15, 2)
+  otherFee      Decimal? @db.Decimal(15, 2)
+  budgetPacing  Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_budgets")
+}
+
+model ProjectKPI {
+  id          String   @id @default(cuid())
+  projectId   String
+  kpiType     String
+  targetValue Float?
+  actualValue Float?
+  unit        String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([kpiType])
+  @@map("project_kpis")
+}
+
+model ProjectLog {
+  id         String   @id @default(cuid())
+  projectId  String
+  logDate    DateTime
+  rootCause  String?
+  action     String?
+  nextAction String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([logDate])
+  @@map("project_logs")
+}
+
+model Task {
+  id             String           @id @default(cuid())
+  projectId      String
+  parentId       String?
+  title          String
+  description    String?
+  status         TaskStatus       @default(TODO)
+  priority       TaskPriority     @default(MEDIUM)
+  estimatedHours Float?
+  actualHours    Float?
+  deadline       DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  reviewerId     String?
+  createdById    String
+  orderIndex     Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  comments       Comment[]
+  files          File[]
+  assignees      TaskAssignee[]
+  dependents     TaskDependency[] @relation("DependsOnTask")
+  dependencies   TaskDependency[] @relation("DependentTask")
+  createdBy      User             @relation("TaskCreator", fields: [createdById], references: [id])
+  parent         Task?            @relation("TaskHierarchy", fields: [parentId], references: [id])
+  subtasks       Task[]           @relation("TaskHierarchy")
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewer       User?            @relation("TaskReviewer", fields: [reviewerId], references: [id])
+
+  @@index([projectId])
+  @@index([parentId])
+  @@index([status])
+  @@index([deadline])
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  id         String   @id @default(cuid())
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+model TaskDependency {
+  id              String @id @default(cuid())
+  taskId          String
+  dependsOnTaskId String
+  dependsOnTask   Task   @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+  task            Task   @relation("DependentTask", fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+model Approval {
+  id              String            @id @default(cuid())
+  projectId       String
+  type            ApprovalType
+  status          ApprovalStatus    @default(PENDING)
+  title           String
+  description     String?
+  submittedById   String
+  approvedById    String?
+  comment         String?
+  deadline        DateTime?
+  escalatedAt     DateTime?
+  escalationLevel Int               @default(0)
+  submittedAt     DateTime          @default(now())
+  respondedAt     DateTime?
+  history         ApprovalHistory[]
+  approvedBy      User?             @relation("ApprovalApprover", fields: [approvedById], references: [id])
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  submittedBy     User              @relation("ApprovalSubmitter", fields: [submittedById], references: [id])
+  files           File[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+  @@map("approvals")
+}
+
+model ApprovalHistory {
+  id          String         @id @default(cuid())
+  approvalId  String
+  fromStatus  ApprovalStatus
+  toStatus    ApprovalStatus
+  comment     String?
+  changedById String
+  changedAt   DateTime       @default(now())
+  approval    Approval       @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+
+  @@index([approvalId])
+  @@map("approval_histories")
+}
+
+model File {
+  id           String       @id @default(cuid())
+  projectId    String?
+  taskId       String?
+  approvalId   String?
+  name         String
+  originalName String
+  path         String
+  size         Int
+  mimeType     String
+  category     FileCategory @default(OTHER)
+  version      Int          @default(1)
+  previousId   String?
+  tags         String[]
+  uploadedById String
+  uploadedAt   DateTime     @default(now())
+  approval     Approval?    @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  previous     File?        @relation("FileVersions", fields: [previousId], references: [id])
+  nextVersions File[]       @relation("FileVersions")
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task         Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([projectId])
+  @@index([taskId])
+  @@index([category])
+  @@map("files")
+}
+
+model Event {
+  id             String          @id @default(cuid())
+  title          String
+  description    String?
+  type           EventType
+  startTime      DateTime
+  endTime        DateTime?
+  isAllDay       Boolean         @default(false)
+  recurrence     String?
+  location       String?
+  meetingLink    String?
+  projectId      String?
+  taskId         String?
+  createdById    String
+  reminderBefore Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  attendees      EventAttendee[]
+  createdBy      User            @relation(fields: [createdById], references: [id])
+  project        Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([startTime])
+  @@index([type])
+  @@map("events")
+}
+
+model EventAttendee {
+  id      String  @id @default(cuid())
+  eventId String
+  userId  String?
+  email   String?
+  name    String?
+  status  String  @default("pending")
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("event_attendees")
+}
+
+model Notification {
+  id           String    @id @default(cuid())
+  userId       String
+  type         String
+  title        String
+  content      String
+  link         String?
+  isRead       Boolean   @default(false)
+  readAt       DateTime?
+  telegramSent Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  projectId String?
+  taskId    String?
+  content   String
+  parentId  String?
+  authorId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  author    User      @relation(fields: [authorId], references: [id])
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([taskId])
+  @@map("comments")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
 
 enum UserRole {
   SUPER_ADMIN
   ADMIN
   TECHNICAL
-  NVKD        // Sales
-  PM          // Project Manager
+  NVKD
+  PM
   PLANNER
   ACCOUNT
   CONTENT
@@ -27,21 +425,21 @@ enum UserRole {
 }
 
 enum ProjectStatus {
-  STABLE      // Green - On track
-  WARNING     // Yellow - At risk
-  CRITICAL    // Red - Delayed/Critical
+  STABLE
+  WARNING
+  CRITICAL
 }
 
 enum ProjectStage {
-  INTAKE              // Tiep nhan brief
-  DISCOVERY           // Discovery & Audit
-  PLANNING            // Lap ke hoach
-  UNDER_REVIEW        // Cho duyet
-  PROPOSAL_PITCH      // Proposal/Pitch
-  ONGOING             // Dang trien khai
-  OPTIMIZATION        // Toi uu
-  COMPLETED           // Hoan thanh
-  CLOSED              // Dong
+  INTAKE
+  DISCOVERY
+  PLANNING
+  UNDER_REVIEW
+  PROPOSAL_PITCH
+  ONGOING
+  OPTIMIZATION
+  COMPLETED
+  CLOSED
 }
 
 enum TaskStatus {
@@ -90,514 +488,4 @@ enum FileCategory {
   RAW_DATA
   CONTRACT
   OTHER
-}
-
-// ============================================
-// USER & AUTH
-// ============================================
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String
-  avatar        String?
-  role          UserRole
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  projectTeams      ProjectTeam[]
-  tasksAssigned     TaskAssignee[]
-  tasksReviewing    Task[]          @relation("TaskReviewer")
-  tasksCreated      Task[]          @relation("TaskCreator")
-  approvalSubmitted Approval[]      @relation("ApprovalSubmitter")
-  approvalApproved  Approval[]      @relation("ApprovalApprover")
-  filesUploaded     File[]
-  eventsCreated     Event[]
-  eventAttendees    EventAttendee[]
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-  comments          Comment[]
-
-  // Notification preferences
-  notificationPrefs Json?
-
-  @@index([email])
-  @@index([role])
-  @@map("users")
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  userAgent String?
-  ipAddress String?
-
-  @@index([token])
-  @@index([userId])
-  @@map("sessions")
-}
-
-// ============================================
-// CLIENT
-// ============================================
-
-model Client {
-  id           String    @id @default(cuid())
-  companyName  String
-  contactName  String?
-  contactEmail String?
-  contactPhone String?
-  accessCode   String    @unique
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  // Relations
-  projects Project[]
-
-  @@index([accessCode])
-  @@map("clients")
-}
-
-// ============================================
-// PROJECT
-// ============================================
-
-model Project {
-  id               String        @id @default(cuid())
-  code             String        @unique  // e.g., QC09
-  name             String
-  description      String?
-  productType      String?       // Loai san pham
-
-  // Status & Stage
-  status           ProjectStatus @default(STABLE)
-  stage            ProjectStage  @default(INTAKE)
-  stageProgress    Int           @default(0)  // 0-100%
-
-  // Timeline
-  startDate        DateTime?
-  endDate          DateTime?
-  timelineProgress Int           @default(0)
-
-  // Client
-  clientId         String?
-  client           Client?       @relation(fields: [clientId], references: [id])
-
-  // Links
-  driveLink        String?
-  planLink         String?
-  trackingLink     String?
-
-  // Metadata
-  metadata         Json?
-
-  // Timestamps
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  archivedAt       DateTime?
-
-  // Relations
-  team      ProjectTeam[]
-  budget    ProjectBudget?
-  kpis      ProjectKPI[]
-  logs      ProjectLog[]
-  tasks     Task[]
-  files     File[]
-  approvals Approval[]
-  events    Event[]
-  comments  Comment[]
-
-  @@index([code])
-  @@index([status])
-  @@index([stage])
-  @@index([clientId])
-  @@map("projects")
-}
-
-model ProjectTeam {
-  id        String   @id @default(cuid())
-  projectId String
-  userId    String
-  role      UserRole
-  isPrimary Boolean  @default(false)
-  joinedAt  DateTime @default(now())
-
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@unique([projectId, userId, role])
-  @@index([projectId])
-  @@index([userId])
-  @@map("project_teams")
-}
-
-model ProjectBudget {
-  id            String  @id @default(cuid())
-  projectId     String  @unique
-
-  // Budget breakdown
-  totalBudget   Decimal @db.Decimal(15, 2)
-  monthlyBudget Decimal? @db.Decimal(15, 2)
-  spentAmount   Decimal @default(0) @db.Decimal(15, 2)
-
-  // Fee categories
-  fixedAdFee    Decimal? @db.Decimal(15, 2)
-  adServiceFee  Decimal? @db.Decimal(15, 2)
-  contentFee    Decimal? @db.Decimal(15, 2)
-  designFee     Decimal? @db.Decimal(15, 2)
-  mediaFee      Decimal? @db.Decimal(15, 2)
-  otherFee      Decimal? @db.Decimal(15, 2)
-
-  // Calculated
-  budgetPacing  Float?
-
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("project_budgets")
-}
-
-model ProjectKPI {
-  id          String  @id @default(cuid())
-  projectId   String
-  kpiType     String  // CPL, CPA, CPQL, ROAS, ROI, CTR, etc.
-  targetValue Float?
-  actualValue Float?
-  unit        String?
-  metadata    Json?
-
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([projectId])
-  @@index([kpiType])
-  @@map("project_kpis")
-}
-
-model ProjectLog {
-  id         String   @id @default(cuid())
-  projectId  String
-  logDate    DateTime
-  rootCause  String?
-  action     String?
-  nextAction String?
-  notes      String?
-
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@index([projectId])
-  @@index([logDate])
-  @@map("project_logs")
-}
-
-// ============================================
-// TASK
-// ============================================
-
-model Task {
-  id             String       @id @default(cuid())
-  projectId      String
-  parentId       String?      // For subtasks
-
-  // Task info
-  title          String
-  description    String?
-  status         TaskStatus   @default(TODO)
-  priority       TaskPriority @default(MEDIUM)
-
-  // Time
-  estimatedHours Float?
-  actualHours    Float?
-  deadline       DateTime?
-  startedAt      DateTime?
-  completedAt    DateTime?
-
-  // Assignment
-  reviewerId     String?
-  createdById    String
-
-  // Order for Kanban
-  orderIndex     Int          @default(0)
-
-  // Timestamps
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  // Relations
-  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  parent       Task?            @relation("TaskHierarchy", fields: [parentId], references: [id])
-  subtasks     Task[]           @relation("TaskHierarchy")
-  reviewer     User?            @relation("TaskReviewer", fields: [reviewerId], references: [id])
-  createdBy    User             @relation("TaskCreator", fields: [createdById], references: [id])
-  assignees    TaskAssignee[]
-  files        File[]
-  comments     Comment[]
-  dependencies TaskDependency[] @relation("DependentTask")
-  dependents   TaskDependency[] @relation("DependsOnTask")
-
-  @@index([projectId])
-  @@index([parentId])
-  @@index([status])
-  @@index([deadline])
-  @@map("tasks")
-}
-
-model TaskAssignee {
-  id         String   @id @default(cuid())
-  taskId     String
-  userId     String
-  assignedAt DateTime @default(now())
-
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([taskId, userId])
-  @@index([taskId])
-  @@index([userId])
-  @@map("task_assignees")
-}
-
-model TaskDependency {
-  id              String @id @default(cuid())
-  taskId          String
-  dependsOnTaskId String
-
-  task          Task @relation("DependentTask", fields: [taskId], references: [id], onDelete: Cascade)
-  dependsOnTask Task @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, dependsOnTaskId])
-  @@map("task_dependencies")
-}
-
-// ============================================
-// APPROVAL
-// ============================================
-
-model Approval {
-  id              String         @id @default(cuid())
-  projectId       String
-  type            ApprovalType
-  status          ApprovalStatus @default(PENDING)
-  title           String
-  description     String?
-  submittedById   String
-  approvedById    String?
-  comment         String?
-  deadline        DateTime?
-  escalatedAt     DateTime?
-  escalationLevel Int            @default(0)
-  submittedAt     DateTime       @default(now())
-  respondedAt     DateTime?
-
-  // Relations
-  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  submittedBy User              @relation("ApprovalSubmitter", fields: [submittedById], references: [id])
-  approvedBy  User?             @relation("ApprovalApprover", fields: [approvedById], references: [id])
-  files       File[]
-  history     ApprovalHistory[]
-
-  @@index([projectId])
-  @@index([status])
-  @@index([type])
-  @@map("approvals")
-}
-
-model ApprovalHistory {
-  id          String         @id @default(cuid())
-  approvalId  String
-  fromStatus  ApprovalStatus
-  toStatus    ApprovalStatus
-  comment     String?
-  changedById String
-  changedAt   DateTime       @default(now())
-
-  approval Approval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
-
-  @@index([approvalId])
-  @@map("approval_histories")
-}
-
-// ============================================
-// FILE
-// ============================================
-
-model File {
-  id           String       @id @default(cuid())
-  projectId    String?
-  taskId       String?
-  approvalId   String?
-  name         String
-  originalName String
-  path         String       // MinIO path
-  size         Int          // bytes
-  mimeType     String
-  category     FileCategory @default(OTHER)
-  version      Int          @default(1)
-  previousId   String?
-  tags         String[]
-  uploadedById String
-  uploadedAt   DateTime     @default(now())
-
-  // Relations
-  project      Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  task         Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  approval     Approval? @relation(fields: [approvalId], references: [id], onDelete: Cascade)
-  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
-  previous     File?     @relation("FileVersions", fields: [previousId], references: [id])
-  nextVersions File[]    @relation("FileVersions")
-
-  @@index([projectId])
-  @@index([taskId])
-  @@index([category])
-  @@map("files")
-}
-
-// ============================================
-// CALENDAR & EVENTS
-// ============================================
-
-model Event {
-  id             String    @id @default(cuid())
-  title          String
-  description    String?
-  type           EventType
-  startTime      DateTime
-  endTime        DateTime?
-  isAllDay       Boolean   @default(false)
-  recurrence     String?   // RRULE format
-  location       String?
-  meetingLink    String?
-  projectId      String?
-  taskId         String?
-  createdById    String
-  reminderBefore Int?      // minutes
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  project   Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy User            @relation(fields: [createdById], references: [id])
-  attendees EventAttendee[]
-
-  @@index([projectId])
-  @@index([startTime])
-  @@index([type])
-  @@map("events")
-}
-
-model EventAttendee {
-  id      String  @id @default(cuid())
-  eventId String
-  userId  String?
-  email   String?
-  name    String?
-  status  String  @default("pending")
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User? @relation(fields: [userId], references: [id])
-
-  @@index([eventId])
-  @@index([userId])
-  @@map("event_attendees")
-}
-
-// ============================================
-// NOTIFICATION
-// ============================================
-
-model Notification {
-  id           String    @id @default(cuid())
-  userId       String
-  type         String
-  title        String
-  content      String
-  link         String?
-  isRead       Boolean   @default(false)
-  readAt       DateTime?
-  telegramSent Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-  @@map("notifications")
-}
-
-// ============================================
-// COMMENT
-// ============================================
-
-model Comment {
-  id        String   @id @default(cuid())
-  projectId String?
-  taskId    String?
-  content   String
-  parentId  String?
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  project Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  task    Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author  User      @relation(fields: [authorId], references: [id])
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("CommentReplies")
-
-  @@index([projectId])
-  @@index([taskId])
-  @@map("comments")
-}
-
-// ============================================
-// AUDIT LOG
-// ============================================
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String?
-  action     String
-  entityType String
-  entityId   String?
-  oldValue   Json?
-  newValue   Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([entityType])
-  @@index([action])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-// ============================================
-// SYSTEM SETTINGS
-// ============================================
-
-model SystemSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     Json
-  updatedAt DateTime @updatedAt
-
-  @@map("system_settings")
 }

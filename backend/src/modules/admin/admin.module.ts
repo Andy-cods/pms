@@ -4,8 +4,10 @@ import { AdminClientController } from '../../presentation/controllers/admin-clie
 import { AdminUserController } from '../../presentation/controllers/admin-user.controller';
 import { AuditLogController } from '../../presentation/controllers/audit-log.controller';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [
     SettingsController,
     AdminClientController,

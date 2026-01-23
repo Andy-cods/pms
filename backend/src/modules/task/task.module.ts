@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../../infrastructure/persistence/prisma.module.js';
-import { TaskController } from '../../presentation/controllers/task.controller.js';
+import { PrismaModule } from '../../infrastructure/persistence/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { TaskController } from '../../presentation/controllers/task.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [TaskController],
   providers: [],
   exports: [],

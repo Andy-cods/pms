@@ -1,13 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TaskStatus, TaskPriority } from '@prisma/client';
-import { createTestApp, closeTestApp } from '../setup/test-app.js';
+import { createTestApp, closeTestApp } from '../setup/test-app';
 import {
   cleanDatabase,
   seedTestData,
   getPrismaClient,
   disconnectDatabase,
-} from '../setup/test-db.js';
+} from '../setup/test-db';
 import {
   login,
   authenticatedRequest,

@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, closeTestApp } from '../setup/test-app.js';
-import { cleanDatabase, seedTestData, disconnectDatabase } from '../setup/test-db.js';
+import { createTestApp, closeTestApp } from '../setup/test-app';
+import { cleanDatabase, seedTestData, disconnectDatabase } from '../setup/test-db';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;

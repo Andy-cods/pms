@@ -21,7 +21,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "migrate:excel": "ts-node scripts/migration/excel-migration.ts",
+    "migrate:excel:dry-run": "ts-node scripts/migration/excel-migration.ts --dry-run",
+    "migrate:excel:validate": "ts-node scripts/migration/excel-migration.ts --report-only"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

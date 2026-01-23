@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Too Many Requests - BC Agency PMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 500px;
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #e0e0e0;
+        }
+        p {
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
+        }
+        .logo {
+            margin-bottom: 2rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f093fb;
+        }
+        .timer {
+            font-size: 2rem;
+            color: #f5576c;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">BC Agency PMS</div>
+        <div class="error-code">429</div>
+        <h1>Qua nhieu yeu cau</h1>
+        <p>Ban da gui qua nhieu yeu cau trong thoi gian ngan. Vui long doi mot lat roi thu lai.</p>
+        <div class="timer" id="countdown">60</div>
+        <a href="/" class="btn">Quay ve Trang chu</a>
+    </div>
+    <script>
+        let seconds = 60;
+        const countdown = document.getElementById('countdown');
+        const timer = setInterval(() => {
+            seconds--;
+            countdown.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                location.reload();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

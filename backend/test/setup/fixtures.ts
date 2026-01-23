@@ -124,8 +124,9 @@ export async function createTestClient(
     data: {
       companyName: data?.companyName || `Test Company ${Math.random()}`,
       contactName: 'Test Contact',
-      email: data?.email || `client${Math.random()}@test.com`,
-      phone: '0123456789',
+      contactEmail: data?.email || `client${Math.random()}@test.com`,
+      contactPhone: '0123456789',
+      accessCode: `TEST${Math.floor(Math.random() * 10000)}`,
       isActive: true,
     },
   });

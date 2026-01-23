@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../../infrastructure/persistence/prisma.module.js';
-import { DashboardController } from '../../presentation/controllers/dashboard.controller.js';
+import { PrismaModule } from '../../infrastructure/persistence/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { DashboardController } from '../../presentation/controllers/dashboard.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [DashboardController],
   providers: [],
   exports: [],

@@ -1,27 +1,48 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import { hash } from 'bcrypt';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-const prisma = new PrismaClient();
+// Load test environment variables before creating PrismaClient
+dotenv.config({ path: path.join(__dirname, '../../.env.test') });
+
+// Lazy Prisma client creation
+let prisma: PrismaClient | null = null;
+
+function getPrisma(): PrismaClient {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
+}
 
 /**
  * Cleans all data from the test database
  * Deletes in correct order to respect foreign key constraints
  */
 export async function cleanDatabase(): Promise<void> {
+  const db = getPrisma();
   // Delete in reverse order of dependencies
-  await prisma.approvalHistory.deleteMany();
-  await prisma.approval.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.taskAssignee.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.projectTeam.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.client.deleteMany();
-  await prisma.auditLog.deleteMany();
-  await prisma.settings.deleteMany();
-  await prisma.user.deleteMany();
+  await db.approvalHistory.deleteMany();
+  await db.approval.deleteMany();
+  await db.comment.deleteMany();
+  await db.notification.deleteMany();
+  await db.eventAttendee.deleteMany();
+  await db.event.deleteMany();
+  await db.taskDependency.deleteMany();
+  await db.taskAssignee.deleteMany();
+  await db.task.deleteMany();
+  await db.projectKPI.deleteMany();
+  await db.projectLog.deleteMany();
+  await db.projectBudget.deleteMany();
+  await db.projectTeam.deleteMany();
+  await db.project.deleteMany();
+  await db.client.deleteMany();
+  await db.file.deleteMany();
+  await db.auditLog.deleteMany();
+  await db.systemSetting.deleteMany();
+  await db.session.deleteMany();
+  await db.user.deleteMany();
 }
 
 /**
@@ -37,10 +58,11 @@ export async function seedTestData(): Promise<{
   client: any;
   testClient: any;
 }> {
+  const db = getPrisma();
   const hashedPassword = await hash('Test@123', 10);
 
   // Create test users
-  const superAdmin = await prisma.user.create({
+  const superAdmin = await db.user.create({
     data: {
       email: 'superadmin@test.com',
       name: 'Super Admin Test',
@@ -50,7 +72,7 @@ export async function seedTestData(): Promise<{
     },
   });
 
-  const admin = await prisma.user.create({
+  const admin = await db.user.create({
     data: {
       email: 'admin@test.com',
       name: 'Admin Test',
@@ -60,7 +82,7 @@ export async function seedTestData(): Promise<{
     },
   });
 
-  const pm = await prisma.user.create({
+  const pm = await db.user.create({
     data: {
       email: 'pm@test.com',
       name: 'PM Test',
@@ -70,7 +92,7 @@ export async function seedTestData(): Promise<{
     },
   });
 
-  const nvkd = await prisma.user.create({
+  const nvkd = await db.user.create({
     data: {
       email: 'nvkd@test.com',
       name: 'NVKD Test',
@@ -80,7 +102,7 @@ export async function seedTestData(): Promise<{
     },
   });
 
-  const designer = await prisma.user.create({
+  const designer = await db.user.create({
     data: {
       email: 'designer@test.com',
       name: 'Designer Test',
@@ -91,18 +113,19 @@ export async function seedTestData(): Promise<{
   });
 
   // Create test client company
-  const testClient = await prisma.client.create({
+  const testClient = await db.client.create({
     data: {
       companyName: 'Test Client Co.',
       contactName: 'Client Contact',
-      email: 'client@testcompany.com',
-      phone: '0123456789',
+      contactEmail: 'client@testcompany.com',
+      contactPhone: '0123456789',
+      accessCode: 'TEST001',
       isActive: true,
     },
   });
 
   // Create client user
-  const client = await prisma.user.create({
+  const client = await db.user.create({
     data: {
       email: 'client@test.com',
       name: 'Client User Test',
@@ -119,12 +142,15 @@ export async function seedTestData(): Promise<{
  * Gets the Prisma client for direct database access in tests
  */
 export function getPrismaClient(): PrismaClient {
-  return prisma;
+  return getPrisma();
 }
 
 /**
  * Disconnects the Prisma client
  */
 export async function disconnectDatabase(): Promise<void> {
-  await prisma.$disconnect();
+  if (prisma) {
+    await prisma.$disconnect();
+    prisma = null;
+  }
 }

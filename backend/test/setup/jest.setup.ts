@@ -3,6 +3,12 @@
  * Runs before all test suites
  */
 
+// Load test environment variables
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config({ path: path.join(__dirname, '../../.env.test') });
+
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 

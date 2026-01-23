@@ -4,9 +4,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientProjectController } from '../../presentation/controllers/client-project.controller';
 import { ClientAuthGuard } from '../auth/guards/client-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

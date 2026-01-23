@@ -1,0 +1,125 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Backend application logs
+  - job_name: bc-pms-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bc-pms-backend
+          app: bc-pms
+          service: backend
+          __path__: /var/log/backend/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            message: message
+            timestamp: timestamp
+            context: context
+            trace_id: traceId
+      - labels:
+          level:
+          context:
+          trace_id:
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - output:
+          source: message
+
+  # Frontend application logs
+  - job_name: bc-pms-frontend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bc-pms-frontend
+          app: bc-pms
+          service: frontend
+          __path__: /var/log/frontend/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            message: message
+            timestamp: timestamp
+      - labels:
+          level:
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - output:
+          source: message
+
+  # System logs (Linux)
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\w+)\s+(?P<service>[\w\-]+)(?:\[(?P<pid>\d+)\])?\:\s+(?P<message>.*)$'
+      - labels:
+          hostname:
+          service:
+          pid:
+      - output:
+          source: message
+
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/**/*-json.log
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+      - labels:
+          stream:
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - output:
+          source: log
+
+  # Nginx access logs (if using nginx)
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<remote_addr>[\d\.]+)\s+-\s+(?P<remote_user>\S+)\s+\[(?P<time_local>[^\]]+)\]\s+"(?P<method>\w+)\s+(?P<request>[^\s"]+)\s+(?P<protocol>[^"]+)"\s+(?P<status>\d+)\s+(?P<body_bytes_sent>\d+)\s+"(?P<http_referer>[^"]*)"\s+"(?P<http_user_agent>[^"]*)"'
+      - labels:
+          method:
+          status:
+          request:
+      - metrics:
+          http_request_duration_seconds:
+            type: Histogram
+            description: "HTTP request duration"
+            source: request_time
+            config:
+              buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
