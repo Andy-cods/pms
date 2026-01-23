@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { API_PREFIX, APP_NAME } from './shared/constants/index.js';
 
@@ -13,6 +14,22 @@ async function bootstrap() {
   const frontendUrl = configService.get<string>(
     'FRONTEND_URL',
     'http://localhost:3000',
+  );
+
+  // Security headers with helmet
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          scriptSrc: ["'self'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // Disabled for API compatibility
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
   );
 
   // Global prefix for all routes
