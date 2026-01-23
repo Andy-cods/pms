@@ -4,3 +4,5 @@ export * from './use-client-projects';
 export * from './use-admin';
 export * from './use-projects';
 export * from './use-tasks';
+export * from './use-files';
+export * from './use-approvals';
