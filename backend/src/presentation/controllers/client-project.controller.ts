@@ -7,7 +7,10 @@ import {
   Req,
   NotFoundException,
 } from '@nestjs/common';
-import { ClientAuthGuard, ClientUser } from '../../modules/auth/guards/client-auth.guard';
+import {
+  ClientAuthGuard,
+  ClientUser,
+} from '../../modules/auth/guards/client-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
 import {
   type ClientProjectResponseDto,
@@ -157,8 +160,13 @@ export class ClientProjectController {
     }
 
     const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter((t) => t.status === 'DONE').length;
-    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : project.stageProgress;
+    const completedTasks = project.tasks.filter(
+      (t) => t.status === 'DONE',
+    ).length;
+    const progress =
+      totalTasks > 0
+        ? Math.round((completedTasks / totalTasks) * 100)
+        : project.stageProgress;
 
     return {
       projectId: id,
@@ -183,7 +191,10 @@ export class ClientProjectController {
   }): ClientProjectResponseDto {
     const tasks = project.tasks;
     const completedTasks = tasks.filter((t) => t.status === 'DONE').length;
-    const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : project.stageProgress;
+    const progress =
+      tasks.length > 0
+        ? Math.round((completedTasks / tasks.length) * 100)
+        : project.stageProgress;
 
     return {
       id: project.id,
@@ -245,10 +256,12 @@ export class ClientProjectController {
         status: t.status,
         priority: t.priority,
         dueDate: t.deadline?.toISOString() || null,
-        assignee: t.assignees[0] ? {
-          id: t.assignees[0].user.id,
-          name: t.assignees[0].user.name,
-        } : null,
+        assignee: t.assignees[0]
+          ? {
+              id: t.assignees[0].user.id,
+              name: t.assignees[0].user.name,
+            }
+          : null,
       })),
       files: project.files.map((f) => ({
         id: f.id,

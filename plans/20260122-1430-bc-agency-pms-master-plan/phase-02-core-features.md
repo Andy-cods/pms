@@ -755,18 +755,18 @@ GET    /api/dashboard/my-tasks          # Get current user's tasks
 - [x] My tasks view
 
 ### Week 6 - Files & Dashboard
-- [x] File domain and MinIO service
-- [x] File repository
-- [x] File upload/download use cases
-- [x] File controller
-- [x] File upload component
-- [x] File browser page
-- [x] File preview modal
-- [x] Dashboard service with caching
-- [x] Dashboard controller
-- [x] Dashboard page with charts
-- [x] Integration testing
-- [x] Performance optimization
+- [⚠️] File domain and MinIO service (PARTIAL - missing domain entities, violates Clean Architecture)
+- [❌] File repository (NOT IMPLEMENTED - controller calls Prisma directly)
+- [❌] File upload/download use cases (NOT IMPLEMENTED - business logic in controller)
+- [⚠️] File controller (IMPLEMENTED but with critical security issues - see review)
+- [✅] File upload component (COMPLETE)
+- [✅] File browser page (COMPLETE)
+- [⚠️] File preview modal (UI exists but not wired to backend stream endpoint)
+- [✅] Dashboard service with caching
+- [✅] Dashboard controller
+- [✅] Dashboard page with charts
+- [⚠️] Integration testing (PARTIAL - no automated tests, manual testing unclear)
+- [❌] Performance optimization (NOT DONE - missing pagination enforcement, no limits)
 
 ---
 
@@ -810,14 +810,20 @@ GET    /api/dashboard/my-tasks          # Get current user's tasks
 
 ## Definition of Done
 
-- [x] All tasks have acceptance criteria met
-- [x] Code reviewed (self-review checklist)
-- [x] No TypeScript errors
-- [x] No ESLint warnings
-- [x] Unit tests for use cases (>70% coverage)
-- [x] API endpoints documented in Swagger
-- [x] Works on development environment
-- [x] Manual testing completed for all flows
+- [⚠️] All tasks have acceptance criteria met (3/7 FR-F requirements FAIL - see code review)
+- [✅] Code reviewed (comprehensive review completed 2026-01-23)
+- [✅] No TypeScript errors (builds successfully)
+- [❌] No ESLint warnings (17 errors, 2 warnings in backend)
+- [❌] Unit tests for use cases (>70% coverage) - 0% coverage currently
+- [❌] API endpoints documented in Swagger (not verified)
+- [⚠️] Works on development environment (code complete, MinIO integration untested)
+- [❌] Manual testing completed for all flows (not verified end-to-end)
+
+**CODE REVIEW FINDINGS (2026-01-23):**
+- 6 CRITICAL issues found (security, architecture violations)
+- 7 IMPORTANT issues (error handling, performance, incomplete features)
+- Requirements coverage: 43% (3/7 PASS, 2/7 PARTIAL, 2/7 FAIL)
+- **Status: NOT READY FOR MERGE** - See `plans/.../reports/260123-code-review-file-management-week6.md`
 
 ---
 
@@ -842,3 +848,33 @@ GET    /api/dashboard/my-tasks          # Get current user's tasks
 - Dashboard charts can start with simple tables, upgrade later
 - File preview can start with images only, add PDF later
 - Focus on happy path first, edge cases in integration testing
+
+---
+
+## TODO: Critical Fixes Required (from Code Review 2026-01-23)
+
+### BLOCKER - Must Fix Before Merge
+1. **[C1] Security:** Change file size limit from 50MB to 20MB (controller + frontend)
+2. **[C2] Security:** Add MIME type whitelist validation to prevent malware uploads
+3. **[C4] Security:** Fix delete authorization - restrict to admins only (currently allows uploader)
+4. **[C5] Security:** Add path traversal protection in MinIO path generation
+5. **[C6] Missing Feature:** Implement file versioning (FR-F04) - schema ready but not wired
+6. **[C3] Architecture:** Refactor to Clean Architecture - add domain/repository/use-case layers
+
+### HIGH Priority
+7. **[I1] Error Handling:** Fix MinIO delete failure handling (currently swallows errors)
+8. **[I2] Performance:** Enforce pagination limits to prevent OOM
+9. **[I4] Validation:** Add input validation decorators (IsNotEmpty, ArrayMaxSize, etc.)
+10. **[I5] Feature:** Wire preview modal to stream endpoint for images/PDFs
+11. **[I7] Testing:** Add unit tests for file operations (target >70% coverage)
+12. Fix 17 ESLint errors in backend
+
+### MEDIUM Priority (Next Sprint)
+13. Extract duplicate access control logic to shared helpers
+14. Add structured logging for file operations audit trail
+15. Implement real upload progress tracking (currently hardcoded 50%)
+16. Add accessibility attributes (ARIA labels, keyboard navigation)
+17. Performance testing with 1000+ files
+18. Document Swagger endpoints
+
+**Full Details:** See `plans/20260122-1430-bc-agency-pms-master-plan/reports/260123-code-review-file-management-week6.md`

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Body,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { Roles } from '../../modules/auth/decorators/roles.decorator';
@@ -40,7 +33,9 @@ export class SettingsController {
   }
 
   @Get(':key')
-  async getSetting(@Param('key') key: string): Promise<SettingResponseDto | null> {
+  async getSetting(
+    @Param('key') key: string,
+  ): Promise<SettingResponseDto | null> {
     const setting = await this.prisma.systemSetting.findUnique({
       where: { key },
     });

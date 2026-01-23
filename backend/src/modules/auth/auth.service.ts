@@ -86,7 +86,11 @@ export class AuthService {
     }
 
     // Generate tokens for client (using client id as sub)
-    const tokens = await this.generateTokens(client.id, client.accessCode, 'CLIENT');
+    const tokens = await this.generateTokens(
+      client.id,
+      client.accessCode,
+      'CLIENT',
+    );
 
     return {
       client: {
@@ -119,7 +123,10 @@ export class AuthService {
 
       return this.generateTokens(user.id, user.email, user.role);
     } catch (error) {
-      if (error instanceof UnauthorizedException || error instanceof BadRequestException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -171,19 +178,28 @@ export class AuthService {
       type: 'refresh',
     };
 
-    const accessExpiresIn = this.configService.get('JWT_EXPIRES_IN', '1h') as '1h';
-    const refreshExpiresIn = this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d') as '7d';
+    const accessExpiresIn = this.configService.get('JWT_EXPIRES_IN', '1h');
+    const refreshExpiresIn = this.configService.get(
+      'JWT_REFRESH_EXPIRES_IN',
+      '7d',
+    );
     const secret = this.configService.get<string>('JWT_SECRET');
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(accessPayload as unknown as Record<string, unknown>, {
-        secret,
-        expiresIn: accessExpiresIn,
-      }),
-      this.jwtService.signAsync(refreshPayload as unknown as Record<string, unknown>, {
-        secret,
-        expiresIn: refreshExpiresIn,
-      }),
+      this.jwtService.signAsync(
+        accessPayload as unknown as Record<string, unknown>,
+        {
+          secret,
+          expiresIn: accessExpiresIn,
+        },
+      ),
+      this.jwtService.signAsync(
+        refreshPayload as unknown as Record<string, unknown>,
+        {
+          secret,
+          expiresIn: refreshExpiresIn,
+        },
+      ),
     ]);
 
     // Parse expiry to seconds

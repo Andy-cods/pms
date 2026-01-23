@@ -47,7 +47,16 @@ export class ProjectController {
     @Query() query: ProjectListQueryDto,
     @Req() req: { user: { sub: string; role: string } },
   ): Promise<ProjectListResponseDto> {
-    const { status, stage, clientId, search, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const {
+      status,
+      stage,
+      clientId,
+      search,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
 
     const where: Record<string, unknown> = {
       archivedAt: null,
@@ -66,7 +75,9 @@ export class ProjectController {
     }
 
     // Non-admin users only see projects they are part of
-    const isAdmin = req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
     if (!isAdmin) {
       where.team = {
         some: { userId: req.user.sub },
@@ -82,7 +93,9 @@ export class ProjectController {
           client: { select: { id: true, companyName: true } },
           team: {
             include: {
-              user: { select: { id: true, name: true, email: true, avatar: true } },
+              user: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
           _count: { select: { tasks: true } },
@@ -112,7 +125,8 @@ export class ProjectController {
 
         taskStats.forEach((stat) => {
           if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-          if (stat.status === TaskStatus.IN_PROGRESS) stats.inProgress = stat._count;
+          if (stat.status === TaskStatus.IN_PROGRESS)
+            stats.inProgress = stat._count;
           if (stat.status === TaskStatus.DONE) stats.done = stat._count;
         });
 
@@ -140,7 +154,9 @@ export class ProjectController {
         client: { select: { id: true, companyName: true } },
         team: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { tasks: true } },
@@ -170,7 +186,8 @@ export class ProjectController {
 
     taskStats.forEach((stat) => {
       if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-      if (stat.status === TaskStatus.IN_PROGRESS) stats.inProgress = stat._count;
+      if (stat.status === TaskStatus.IN_PROGRESS)
+        stats.inProgress = stat._count;
       if (stat.status === TaskStatus.DONE) stats.done = stat._count;
     });
 
@@ -189,13 +206,17 @@ export class ProjectController {
       code = generateProjectCode();
       let attempts = 0;
       while (attempts < 10) {
-        const existing = await this.prisma.project.findUnique({ where: { code } });
+        const existing = await this.prisma.project.findUnique({
+          where: { code },
+        });
         if (!existing) break;
         code = generateProjectCode();
         attempts++;
       }
     } else {
-      const existing = await this.prisma.project.findUnique({ where: { code } });
+      const existing = await this.prisma.project.findUnique({
+        where: { code },
+      });
       if (existing) {
         throw new BadRequestException('Project code already exists');
       }
@@ -227,14 +248,21 @@ export class ProjectController {
         client: { select: { id: true, companyName: true } },
         team: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { tasks: true } },
       },
     });
 
-    return this.mapToResponse(project, { total: 0, todo: 0, inProgress: 0, done: 0 });
+    return this.mapToResponse(project, {
+      total: 0,
+      todo: 0,
+      inProgress: 0,
+      done: 0,
+    });
   }
 
   @Patch(':id')
@@ -265,7 +293,9 @@ export class ProjectController {
         client: { select: { id: true, companyName: true } },
         team: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { tasks: true } },
@@ -288,7 +318,8 @@ export class ProjectController {
 
     taskStats.forEach((stat) => {
       if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-      if (stat.status === TaskStatus.IN_PROGRESS) stats.inProgress = stat._count;
+      if (stat.status === TaskStatus.IN_PROGRESS)
+        stats.inProgress = stat._count;
       if (stat.status === TaskStatus.DONE) stats.done = stat._count;
     });
 
@@ -343,7 +374,9 @@ export class ProjectController {
     await this.checkProjectAccess(id, req.user, true);
 
     // Check if user exists
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -359,7 +392,9 @@ export class ProjectController {
       },
     });
     if (existing) {
-      throw new BadRequestException('User is already a team member with this role');
+      throw new BadRequestException(
+        'User is already a team member with this role',
+      );
     }
 
     const member = await this.prisma.projectTeam.create({
@@ -423,7 +458,9 @@ export class ProjectController {
     await this.checkProjectAccess(id, req.user, true);
 
     // Check if this is the last PM
-    const member = await this.prisma.projectTeam.findUnique({ where: { id: memberId } });
+    const member = await this.prisma.projectTeam.findUnique({
+      where: { id: memberId },
+    });
     if (!member) {
       throw new NotFoundException('Team member not found');
     }
@@ -455,7 +492,8 @@ export class ProjectController {
       throw new NotFoundException('Project not found');
     }
 
-    const isAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
+    const isAdmin =
+      user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
     const isMember = project.team.some((m) => m.userId === user.sub);
 
     if (!isAdmin && !isMember) {
@@ -463,9 +501,13 @@ export class ProjectController {
     }
 
     if (requireEdit && !isAdmin) {
-      const isPM = project.team.some((m) => m.userId === user.sub && m.role === UserRole.PM);
+      const isPM = project.team.some(
+        (m) => m.userId === user.sub && m.role === UserRole.PM,
+      );
       if (!isPM) {
-        throw new ForbiddenException('Only Project Managers can edit this project');
+        throw new ForbiddenException(
+          'Only Project Managers can edit this project',
+        );
       }
     }
   }
@@ -493,13 +535,23 @@ export class ProjectController {
         userId: string;
         role: string;
         isPrimary: boolean;
-        user: { id: string; name: string; email: string; avatar: string | null };
+        user: {
+          id: string;
+          name: string;
+          email: string;
+          avatar: string | null;
+        };
       }>;
       createdAt: Date;
       updatedAt: Date;
       archivedAt: Date | null;
     },
-    taskStats: { total: number; todo: number; inProgress: number; done: number },
+    taskStats: {
+      total: number;
+      todo: number;
+      inProgress: number;
+      done: number;
+    },
   ): ProjectResponseDto {
     return {
       id: project.id,

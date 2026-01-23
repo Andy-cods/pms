@@ -163,7 +163,9 @@ export class AdminClientController {
   }
 
   @Post(':id/regenerate-code')
-  async regenerateAccessCode(@Param('id') id: string): Promise<ClientResponseDto> {
+  async regenerateAccessCode(
+    @Param('id') id: string,
+  ): Promise<ClientResponseDto> {
     const existing = await this.prisma.client.findUnique({ where: { id } });
 
     if (!existing) {

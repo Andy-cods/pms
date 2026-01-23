@@ -129,7 +129,11 @@ export class DashboardController {
   async getMyTasks(@Req() req: RequestWithUser): Promise<MyTasksResponseDto> {
     const userId = req.user.sub;
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
 
     const tasks = await this.prisma.task.findMany({
@@ -148,7 +152,8 @@ export class DashboardController {
       (t) => t.deadline && t.deadline < startOfToday,
     ).length;
     const dueToday = tasks.filter(
-      (t) => t.deadline && t.deadline >= startOfToday && t.deadline < endOfToday,
+      (t) =>
+        t.deadline && t.deadline >= startOfToday && t.deadline < endOfToday,
     ).length;
 
     return {

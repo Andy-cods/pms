@@ -31,15 +31,20 @@ export class ClientAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid authorization header');
+      throw new UnauthorizedException(
+        'Missing or invalid authorization header',
+      );
     }
 
     const token = authHeader.substring(7);
 
     try {
-      const payload = await this.jwtService.verifyAsync<ClientJwtPayload>(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
+      const payload = await this.jwtService.verifyAsync<ClientJwtPayload>(
+        token,
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+        },
+      );
 
       if (payload.role !== 'CLIENT') {
         throw new UnauthorizedException('Invalid role for client access');

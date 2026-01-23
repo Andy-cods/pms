@@ -70,7 +70,9 @@ export class TaskController {
       where.projectId = projectId;
     } else {
       // Global task list - only tasks from user's projects
-      const isAdmin = req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+      const isAdmin =
+        req.user.role === UserRole.SUPER_ADMIN ||
+        req.user.role === UserRole.ADMIN;
       if (!isAdmin) {
         const userProjects = await this.prisma.projectTeam.findMany({
           where: { userId: req.user.sub },
@@ -104,7 +106,9 @@ export class TaskController {
           createdBy: { select: { id: true, name: true, avatar: true } },
           assignees: {
             include: {
-              user: { select: { id: true, name: true, email: true, avatar: true } },
+              user: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
           _count: { select: { subtasks: true } },
@@ -154,7 +158,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -205,7 +211,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -264,7 +272,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -319,7 +329,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -365,7 +377,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -410,7 +424,9 @@ export class TaskController {
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
         _count: { select: { subtasks: true } },
@@ -446,7 +462,9 @@ export class TaskController {
                 ? { set: new Date() }
                 : undefined,
             completedAt:
-              t.status === TaskStatusEnum.DONE ? { set: new Date() } : undefined,
+              t.status === TaskStatusEnum.DONE
+                ? { set: new Date() }
+                : undefined,
           },
         }),
       ),
@@ -510,7 +528,9 @@ export class TaskController {
           createdBy: { select: { id: true, name: true, avatar: true } },
           assignees: {
             include: {
-              user: { select: { id: true, name: true, email: true, avatar: true } },
+              user: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
           _count: { select: { subtasks: true } },
@@ -554,7 +574,8 @@ export class TaskController {
       throw new NotFoundException('Project not found');
     }
 
-    const isAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
+    const isAdmin =
+      user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
     const isMember = project.team.some((m) => m.userId === user.sub);
 
     if (!isAdmin && !isMember) {
@@ -585,7 +606,12 @@ export class TaskController {
       assignees: Array<{
         id: string;
         userId: string;
-        user: { id: string; name: string; email: string; avatar: string | null };
+        user: {
+          id: string;
+          name: string;
+          email: string;
+          avatar: string | null;
+        };
       }>;
       project: { id: string; code: string; name: string };
       createdAt: Date;
