@@ -62,10 +62,14 @@ export class CommentController {
       this.prisma.comment.findMany({
         where,
         include: {
-          author: { select: { id: true, name: true, email: true, avatar: true } },
+          author: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
           replies: {
             include: {
-              author: { select: { id: true, name: true, email: true, avatar: true } },
+              author: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
               _count: { select: { replies: true } },
             },
             orderBy: { createdAt: 'asc' },
@@ -142,7 +146,11 @@ export class CommentController {
         select: { authorId: true },
       });
       if (parent && parent.authorId !== req.user.sub) {
-        await this.createReplyNotification(parent.authorId, comment, req.user.sub);
+        await this.createReplyNotification(
+          parent.authorId,
+          comment,
+          req.user.sub,
+        );
       }
     }
 
@@ -193,7 +201,8 @@ export class CommentController {
     }
 
     const isAdmin =
-      req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
 
     if (comment.authorId !== req.user.sub && !isAdmin) {
       throw new ForbiddenException('You can only delete your own comments');
@@ -254,7 +263,12 @@ export class CommentController {
 
   private async createMentionNotifications(
     mentions: string[],
-    comment: { id: string; content: string; projectId: string | null; taskId: string | null },
+    comment: {
+      id: string;
+      content: string;
+      projectId: string | null;
+      taskId: string | null;
+    },
     authorId: string,
   ): Promise<void> {
     // Find users by email prefix (the @mention format)
@@ -326,7 +340,12 @@ export class CommentController {
       projectId: string | null;
       taskId: string | null;
       parentId: string | null;
-      author: { id: string; name: string; email: string; avatar: string | null };
+      author: {
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+      };
       _count: { replies: number };
       createdAt: Date;
       updatedAt: Date;

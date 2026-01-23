@@ -103,7 +103,8 @@ export class ReportService {
     };
 
     // Scope to user's accessible projects if not admin
-    const isAdmin = userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN;
+    const isAdmin =
+      userRole === UserRole.SUPER_ADMIN || userRole === UserRole.ADMIN;
     if (!isAdmin) {
       projectWhere.team = {
         some: { userId },
@@ -230,13 +231,16 @@ export class ReportService {
     // Calculate summary
     const projectStatusBreakdown = {
       stable: projects.filter((p) => p.status === ProjectStatus.STABLE).length,
-      warning: projects.filter((p) => p.status === ProjectStatus.WARNING).length,
-      critical: projects.filter((p) => p.status === ProjectStatus.CRITICAL).length,
+      warning: projects.filter((p) => p.status === ProjectStatus.WARNING)
+        .length,
+      critical: projects.filter((p) => p.status === ProjectStatus.CRITICAL)
+        .length,
     };
 
     const taskStatusBreakdown = {
       todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
-      inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+      inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS)
+        .length,
       review: tasks.filter((t) => t.status === TaskStatus.REVIEW).length,
       done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
       blocked: tasks.filter((t) => t.status === TaskStatus.BLOCKED).length,
@@ -312,15 +316,23 @@ export class ReportService {
 
       // Project Status Breakdown
       doc.text('Trang thai du an:', { underline: true });
-      doc.text(`  - On dinh (Stable): ${data.summary.projectStatusBreakdown.stable}`);
-      doc.text(`  - Canh bao (Warning): ${data.summary.projectStatusBreakdown.warning}`);
-      doc.text(`  - Nghiem trong (Critical): ${data.summary.projectStatusBreakdown.critical}`);
+      doc.text(
+        `  - On dinh (Stable): ${data.summary.projectStatusBreakdown.stable}`,
+      );
+      doc.text(
+        `  - Canh bao (Warning): ${data.summary.projectStatusBreakdown.warning}`,
+      );
+      doc.text(
+        `  - Nghiem trong (Critical): ${data.summary.projectStatusBreakdown.critical}`,
+      );
       doc.moveDown();
 
       // Task Status Breakdown
       doc.text('Trang thai cong viec:', { underline: true });
       doc.text(`  - Chua bat dau: ${data.summary.taskStatusBreakdown.todo}`);
-      doc.text(`  - Dang thuc hien: ${data.summary.taskStatusBreakdown.inProgress}`);
+      doc.text(
+        `  - Dang thuc hien: ${data.summary.taskStatusBreakdown.inProgress}`,
+      );
       doc.text(`  - Dang review: ${data.summary.taskStatusBreakdown.review}`);
       doc.text(`  - Hoan thanh: ${data.summary.taskStatusBreakdown.done}`);
       doc.text(`  - Bi chan: ${data.summary.taskStatusBreakdown.blocked}`);
@@ -340,8 +352,12 @@ export class ReportService {
 
           doc.fontSize(10).font('Helvetica');
           doc.text(`   Khach hang: ${project.client?.companyName || 'N/A'}`);
-          doc.text(`   Trang thai: ${this.getProjectStatusVietnamese(project.status)}`);
-          doc.text(`   Giai doan: ${this.getProjectStageVietnamese(project.stage)}`);
+          doc.text(
+            `   Trang thai: ${this.getProjectStatusVietnamese(project.status)}`,
+          );
+          doc.text(
+            `   Giai doan: ${this.getProjectStageVietnamese(project.stage)}`,
+          );
           doc.text(`   Tien do: ${project.stageProgress}%`);
           doc.text(
             `   Cong viec: ${project.taskStats.done}/${project.taskStats.total} hoan thanh (${project.completionPercentage}%)`,
@@ -408,12 +424,9 @@ export class ReportService {
       const pageCount = doc.bufferedPageRange().count;
       for (let i = 0; i < pageCount; i++) {
         doc.switchToPage(i);
-        doc.text(
-          `Trang ${i + 1}/${pageCount}`,
-          50,
-          doc.page.height - 50,
-          { align: 'center' },
-        );
+        doc.text(`Trang ${i + 1}/${pageCount}`, 50, doc.page.height - 50, {
+          align: 'center',
+        });
       }
 
       doc.end();
@@ -470,7 +483,8 @@ export class ReportService {
     sheet.getCell('A3').value = 'Loai bao cao:';
     sheet.getCell('B3').value = this.getReportTypeVietnamese(reportType);
     sheet.getCell('A4').value = 'Thoi gian:';
-    sheet.getCell('B4').value = `${this.formatDate(summary.dateRange.startDate)} - ${this.formatDate(summary.dateRange.endDate)}`;
+    sheet.getCell('B4').value =
+      `${this.formatDate(summary.dateRange.startDate)} - ${this.formatDate(summary.dateRange.endDate)}`;
     sheet.getCell('A5').value = 'Ngay tao:';
     sheet.getCell('B5').value = this.formatDate(summary.generatedAt);
 
@@ -685,7 +699,8 @@ export class ReportService {
       sheet.getCell(`A${currentRow}`).font = { bold: true };
       sheet.getCell(`B${currentRow}`).value = project.taskStats.total;
       sheet.getCell(`B${currentRow}`).font = { bold: true };
-      sheet.getCell(`C${currentRow}`).value = `${project.completionPercentage}% hoan thanh`;
+      sheet.getCell(`C${currentRow}`).value =
+        `${project.completionPercentage}% hoan thanh`;
       currentRow += 2;
     });
 

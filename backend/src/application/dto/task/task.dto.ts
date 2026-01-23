@@ -8,7 +8,8 @@ import {
   IsNumber,
   IsArray,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
+import { sanitizeInput, sanitizeRichText } from '@shared/utils/sanitize.util.js';
 
 // Enums matching Prisma schema
 export enum TaskStatus {
@@ -36,10 +37,12 @@ export class CreateTaskDto {
   @IsString()
   parentId?: string;
 
+  @Transform(({ value }) => sanitizeInput(value))
   @IsString()
   title!: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeRichText(value) : value))
   @IsString()
   description?: string;
 
@@ -72,10 +75,12 @@ export class CreateTaskDto {
 // Update Task DTO
 export class UpdateTaskDto {
   @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
   @IsString()
   title?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeRichText(value) : value))
   @IsString()
   description?: string;
 

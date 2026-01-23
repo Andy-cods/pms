@@ -12,6 +12,7 @@ import {
   ForbiddenException,
   Request,
 } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
@@ -27,11 +28,18 @@ import {
 } from '../../application/dto/admin/admin-user.dto';
 import type { RequestWithUser } from '../../modules/auth/guards/jwt-auth.guard';
 
+/**
+ * Generate a cryptographically secure temporary password
+ * Uses crypto.randomBytes for secure random generation
+ */
 function generateTempPassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  const bytes = randomBytes(12);
   let password = '';
   for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    // Use modulo to map random byte to character set
+    // This provides uniform distribution for character sets < 256
+    password += chars.charAt(bytes[i]! % chars.length);
   }
   return password;
 }
@@ -186,8 +194,13 @@ export class AdminUserController {
       const changingToAdmin = dto.role === UserRole.ADMIN;
       const changingFromAdmin = existing.role === UserRole.ADMIN;
 
-      if ((changingToAdmin || changingFromAdmin) && req.user.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('Chỉ Super Admin mới có thể thay đổi vai trò Admin');
+      if (
+        (changingToAdmin || changingFromAdmin) &&
+        req.user.role !== UserRole.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException(
+          'Chỉ Super Admin mới có thể thay đổi vai trò Admin',
+        );
       }
     }
 
@@ -235,8 +248,13 @@ export class AdminUserController {
     }
 
     // Only SUPER_ADMIN can deactivate ADMIN users
-    if (existing.role === UserRole.ADMIN && req.user.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Chỉ Super Admin mới có thể vô hiệu hóa Admin');
+    if (
+      existing.role === UserRole.ADMIN &&
+      req.user.role !== UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Chỉ Super Admin mới có thể vô hiệu hóa Admin',
+      );
     }
 
     const user = await this.prisma.user.update({
@@ -274,8 +292,13 @@ export class AdminUserController {
     }
 
     // Only SUPER_ADMIN can reset password for ADMIN users
-    if (existing.role === UserRole.ADMIN && req.user.role !== UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Chỉ Super Admin mới có thể đặt lại mật khẩu Admin');
+    if (
+      existing.role === UserRole.ADMIN &&
+      req.user.role !== UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Chỉ Super Admin mới có thể đặt lại mật khẩu Admin',
+      );
     }
 
     const tempPassword = generateTempPassword();
@@ -291,7 +314,8 @@ export class AdminUserController {
 
     return {
       tempPassword,
-      message: 'Mật khẩu đã được đặt lại. Vui lòng gửi mật khẩu tạm thời cho người dùng.',
+      message:
+        'Mật khẩu đã được đặt lại. Vui lòng gửi mật khẩu tạm thời cho người dùng.',
     };
   }
 

@@ -1,6 +1,7 @@
 # Phase 3: Workflow & Calendar (Week 7-9)
 
-**Duration:** 3 weeks | **Status:** [x] Ready to Start | **Depends on:** Phase 2 (Complete)
+**Duration:** 3 weeks | **Status:** [x] COMPLETE (with minor items deferred) | **Depends on:** Phase 2 (Complete)
+**Code Review:** See `reports/260123-phase3-phase4-code-review.md` for detailed analysis
 
 ---
 
@@ -656,43 +657,43 @@ REDIS_PORT=6379
 ## Todo Checklist
 
 ### Week 7
-- [ ] Approval DTOs and enums
-- [ ] Approval controller with all endpoints
-- [ ] Approval module wired up
-- [ ] Escalation cron service
-- [ ] Frontend API and hooks
-- [ ] Approval list page with tabs
-- [ ] Approval detail modal
-- [ ] Submit approval modal
-- [ ] Project detail integration
-- [ ] Sidebar navigation update
+- [x] Approval DTOs and enums
+- [x] Approval controller with all endpoints
+- [x] Approval module wired up
+- [x] Escalation cron service
+- [x] Frontend API and hooks
+- [x] Approval list page with tabs
+- [x] Approval detail modal
+- [x] Submit approval modal
+- [x] Project detail integration
+- [x] Sidebar navigation update
 
 ### Week 8
-- [ ] Event DTOs
-- [ ] RRULE service
-- [ ] Event controller with recurring support
-- [ ] Calendar module
-- [ ] Deadline sync service
-- [ ] Frontend API and hooks
-- [ ] Calendar view component (react-big-calendar)
-- [ ] Event form modal
-- [ ] Event detail modal
-- [ ] Calendar page
-- [ ] Sidebar navigation update
+- [x] Event DTOs
+- [x] RRULE service
+- [x] Event controller with recurring support
+- [x] Calendar module
+- [x] Deadline sync service (on-demand implementation)
+- [x] Frontend API and hooks
+- [x] Calendar view component (react-big-calendar)
+- [x] Event form modal
+- [x] Event detail modal
+- [x] Calendar page
+- [x] Sidebar navigation update
 
 ### Week 9
-- [ ] Telegram service
-- [ ] Telegram module
-- [ ] User Telegram linking
-- [ ] Notification templates
-- [ ] Notification DTOs and controller
-- [ ] Notification service with cleanup cron
-- [ ] Notification UI (bell, dropdown, preferences)
-- [ ] Navbar integration
-- [ ] Comment DTOs and controller
-- [ ] Mention parser
-- [ ] Comment UI components
-- [ ] Project/Task detail integration
+- [ ] Telegram service (DEFERRED - stub implementation)
+- [ ] Telegram module (DEFERRED - stub implementation)
+- [ ] User Telegram linking (DEFERRED)
+- [x] Notification templates (partial - in-app only)
+- [x] Notification DTOs and controller
+- [x] Notification service with cleanup cron
+- [x] Notification UI (bell, dropdown, preferences)
+- [x] Navbar integration
+- [x] Comment DTOs and controller
+- [x] Mention parser
+- [x] Comment UI components
+- [x] Project/Task detail integration
 
 ---
 

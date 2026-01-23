@@ -55,7 +55,10 @@ export class EventController {
         endTime: { gte: rangeStart, lte: rangeEnd },
       },
       {
-        AND: [{ startTime: { lte: rangeStart } }, { endTime: { gte: rangeEnd } }],
+        AND: [
+          { startTime: { lte: rangeStart } },
+          { endTime: { gte: rangeEnd } },
+        ],
       },
       {
         recurrence: { not: null },
@@ -70,11 +73,17 @@ export class EventController {
     // - Events they created
     // - Events they're attending
     // - Events from projects they're part of (if admin/PM)
-    const isAdmin = req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
 
     if (!isAdmin) {
       where.AND = [
-        ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+        ...(Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+            ? [where.AND]
+            : []),
         {
           OR: [
             { createdById: req.user.sub },
@@ -94,10 +103,14 @@ export class EventController {
         where,
         include: {
           project: { select: { id: true, code: true, name: true } },
-          createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+          createdBy: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
           attendees: {
             include: {
-              user: { select: { id: true, name: true, email: true, avatar: true } },
+              user: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
         },
@@ -123,7 +136,8 @@ export class EventController {
           const duration = event.endTime
             ? event.endTime.getTime() - event.startTime.getTime()
             : 0;
-          const occurrenceEnd = duration > 0 ? new Date(occurrence.getTime() + duration) : null;
+          const occurrenceEnd =
+            duration > 0 ? new Date(occurrence.getTime() + duration) : null;
 
           expandedEvents.push({
             ...this.mapToResponse(event),
@@ -140,11 +154,15 @@ export class EventController {
 
     // Sort by start time and apply pagination
     expandedEvents.sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
     const startIndex = (page - 1) * limit;
-    const paginatedEvents = expandedEvents.slice(startIndex, startIndex + limit);
+    const paginatedEvents = expandedEvents.slice(
+      startIndex,
+      startIndex + limit,
+    );
 
     return {
       events: paginatedEvents,
@@ -176,7 +194,9 @@ export class EventController {
     if (projectId) where.projectId = projectId;
 
     // Access control
-    const isAdmin = req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
     if (!isAdmin) {
       where.OR = [
         { assignees: { some: { userId: req.user.sub } } },
@@ -195,10 +215,14 @@ export class EventController {
         project: { select: { id: true, code: true, name: true } },
         assignees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
-        createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
       },
       orderBy: { deadline: 'asc' },
     });
@@ -242,10 +266,14 @@ export class EventController {
       where: { id },
       include: {
         project: { select: { id: true, code: true, name: true } },
-        createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
         attendees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
       },
@@ -313,10 +341,14 @@ export class EventController {
       },
       include: {
         project: { select: { id: true, code: true, name: true } },
-        createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
         attendees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
       },
@@ -341,7 +373,9 @@ export class EventController {
 
     // Only creator can update
     if (event.createdById !== req.user.sub) {
-      throw new ForbiddenException('Only the event creator can update this event');
+      throw new ForbiddenException(
+        'Only the event creator can update this event',
+      );
     }
 
     // Validate recurrence if provided
@@ -394,10 +428,14 @@ export class EventController {
       },
       include: {
         project: { select: { id: true, code: true, name: true } },
-        createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
         attendees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
       },
@@ -420,9 +458,13 @@ export class EventController {
     }
 
     // Only creator or admin can delete
-    const isAdmin = req.user.role === UserRole.SUPER_ADMIN || req.user.role === UserRole.ADMIN;
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
     if (event.createdById !== req.user.sub && !isAdmin) {
-      throw new ForbiddenException('Only the event creator or admin can delete this event');
+      throw new ForbiddenException(
+        'Only the event creator or admin can delete this event',
+      );
     }
 
     await this.prisma.event.delete({ where: { id } });
@@ -460,10 +502,14 @@ export class EventController {
       where: { id },
       include: {
         project: { select: { id: true, code: true, name: true } },
-        createdBy: { select: { id: true, name: true, email: true, avatar: true } },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
         attendees: {
           include: {
-            user: { select: { id: true, name: true, email: true, avatar: true } },
+            user: {
+              select: { id: true, name: true, email: true, avatar: true },
+            },
           },
         },
       },
@@ -474,10 +520,15 @@ export class EventController {
 
   // Helper methods
   private async checkEventAccess(
-    event: { createdById: string; projectId: string | null; attendees: Array<{ userId: string | null }> },
+    event: {
+      createdById: string;
+      projectId: string | null;
+      attendees: Array<{ userId: string | null }>;
+    },
     user: { sub: string; role: string },
   ): Promise<void> {
-    const isAdmin = user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
+    const isAdmin =
+      user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
     if (isAdmin) return;
 
     const isCreator = event.createdById === user.sub;
@@ -499,7 +550,10 @@ export class EventController {
     throw new ForbiddenException('You do not have access to this event');
   }
 
-  private async checkProjectAccess(projectId: string, userId: string): Promise<void> {
+  private async checkProjectAccess(
+    projectId: string,
+    userId: string,
+  ): Promise<void> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: { team: true },
@@ -530,14 +584,24 @@ export class EventController {
     taskId: string | null;
     reminderBefore: number | null;
     project?: { id: string; code: string; name: string } | null;
-    createdBy: { id: string; name: string; email: string; avatar: string | null };
+    createdBy: {
+      id: string;
+      name: string;
+      email: string;
+      avatar: string | null;
+    };
     attendees: Array<{
       id: string;
       userId: string | null;
       email: string | null;
       name: string | null;
       status: string;
-      user?: { id: string; name: string; email: string; avatar: string | null } | null;
+      user?: {
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+      } | null;
     }>;
     createdAt: Date;
     updatedAt: Date;

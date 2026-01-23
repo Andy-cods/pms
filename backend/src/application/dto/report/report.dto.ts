@@ -1,9 +1,4 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsDateString,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsDateString } from 'class-validator';
 
 // Report Types
 export enum ReportType {

@@ -55,10 +55,7 @@ export class ApprovalEscalationService {
 
         // Determine new escalation level
         let newLevel = currentLevel;
-        if (
-          hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_3 &&
-          currentLevel < 3
-        ) {
+        if (hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_3 && currentLevel < 3) {
           newLevel = 3;
         } else if (
           hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_2 &&
@@ -93,7 +90,12 @@ export class ApprovalEscalationService {
     approval: any,
     newLevel: number,
   ): Promise<void> {
-    const levelNames = ['', 'Level 1 (Reminder)', 'Level 2 (PM)', 'Level 3 (Admin)'];
+    const levelNames = [
+      '',
+      'Level 1 (Reminder)',
+      'Level 2 (PM)',
+      'Level 3 (Admin)',
+    ];
 
     this.logger.log(
       `Escalating approval ${approval.id} (${approval.title}) to ${levelNames[newLevel]}`,

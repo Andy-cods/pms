@@ -38,7 +38,15 @@ export class RRuleService {
     }
 
     if (options.byweekday && options.byweekday.length > 0) {
-      const weekdayMap: Weekday[] = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA, RRule.SU];
+      const weekdayMap: Weekday[] = [
+        RRule.MO,
+        RRule.TU,
+        RRule.WE,
+        RRule.TH,
+        RRule.FR,
+        RRule.SA,
+        RRule.SU,
+      ];
       const weekdays = options.byweekday
         .map((day) => weekdayMap[day])
         .filter((wd): wd is Weekday => wd !== undefined);
@@ -101,7 +109,11 @@ export class RRuleService {
   /**
    * Get next occurrence after a given date
    */
-  getNextOccurrence(rruleString: string, startTime: Date, afterDate: Date): Date | null {
+  getNextOccurrence(
+    rruleString: string,
+    startTime: Date,
+    afterDate: Date,
+  ): Date | null {
     try {
       const rule = rrulestr(rruleString);
       const ruleWithStart = new RRule({
@@ -134,7 +146,10 @@ export class RRuleService {
   getCommonPatterns(): Array<{ label: string; value: string }> {
     return [
       { label: 'Hàng ngày', value: this.generateRRule({ frequency: 'daily' }) },
-      { label: 'Hàng tuần', value: this.generateRRule({ frequency: 'weekly' }) },
+      {
+        label: 'Hàng tuần',
+        value: this.generateRRule({ frequency: 'weekly' }),
+      },
       {
         label: 'Các ngày trong tuần',
         value: this.generateRRule({
@@ -142,7 +157,10 @@ export class RRuleService {
           byweekday: [0, 1, 2, 3, 4], // Mon-Fri
         }),
       },
-      { label: 'Hàng tháng', value: this.generateRRule({ frequency: 'monthly' }) },
+      {
+        label: 'Hàng tháng',
+        value: this.generateRRule({ frequency: 'monthly' }),
+      },
       { label: 'Hàng năm', value: this.generateRRule({ frequency: 'yearly' }) },
     ];
   }

@@ -1,4 +1,13 @@
-import { Controller, Get, Put, Patch, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { Roles } from '../../modules/auth/decorators/roles.decorator';
@@ -67,7 +76,8 @@ export class SettingsController {
     const company = (companyInfo?.value as Record<string, unknown>) || {};
     const email = (emailSettings?.value as Record<string, unknown>) || {};
     const telegram = (telegramSettings?.value as Record<string, unknown>) || {};
-    const notifications = (notificationDefaults?.value as unknown as NotificationDefaultsDto) ||
+    const notifications =
+      (notificationDefaults?.value as unknown as NotificationDefaultsDto) ||
       DEFAULT_NOTIFICATION_SETTINGS;
 
     return {
@@ -108,7 +118,10 @@ export class SettingsController {
         this.prisma.systemSetting.upsert({
           where: { key: SettingKeys.COMPANY_INFO },
           update: { value: newValue as Prisma.InputJsonValue },
-          create: { key: SettingKeys.COMPANY_INFO, value: newValue as Prisma.InputJsonValue },
+          create: {
+            key: SettingKeys.COMPANY_INFO,
+            value: newValue as Prisma.InputJsonValue,
+          },
         }),
       );
     }
@@ -135,7 +148,10 @@ export class SettingsController {
         this.prisma.systemSetting.upsert({
           where: { key: SettingKeys.EMAIL_SETTINGS },
           update: { value: newValue as Prisma.InputJsonValue },
-          create: { key: SettingKeys.EMAIL_SETTINGS, value: newValue as Prisma.InputJsonValue },
+          create: {
+            key: SettingKeys.EMAIL_SETTINGS,
+            value: newValue as Prisma.InputJsonValue,
+          },
         }),
       );
     }
@@ -152,9 +168,15 @@ export class SettingsController {
       const currentValue = (existing?.value as Record<string, unknown>) || {};
       const newValue = {
         ...currentValue,
-        ...(dto.telegramEnabled !== undefined && { enabled: dto.telegramEnabled }),
-        ...(dto.telegramBotToken !== undefined && { botToken: dto.telegramBotToken }),
-        ...(dto.telegramBotUsername !== undefined && { botUsername: dto.telegramBotUsername }),
+        ...(dto.telegramEnabled !== undefined && {
+          enabled: dto.telegramEnabled,
+        }),
+        ...(dto.telegramBotToken !== undefined && {
+          botToken: dto.telegramBotToken,
+        }),
+        ...(dto.telegramBotUsername !== undefined && {
+          botUsername: dto.telegramBotUsername,
+        }),
       };
       updates.push(
         this.prisma.systemSetting.upsert({
@@ -174,7 +196,8 @@ export class SettingsController {
         where: { key: SettingKeys.NOTIFICATION_DEFAULTS },
       });
       const currentValue =
-        (existing?.value as unknown as NotificationDefaultsDto) || DEFAULT_NOTIFICATION_SETTINGS;
+        (existing?.value as unknown as NotificationDefaultsDto) ||
+        DEFAULT_NOTIFICATION_SETTINGS;
       const newValue = {
         ...currentValue,
         ...dto.defaultNotifications,
@@ -209,7 +232,9 @@ export class SettingsController {
   }
 
   @Get(':key')
-  async getSetting(@Param('key') key: string): Promise<SettingResponseDto | null> {
+  async getSetting(
+    @Param('key') key: string,
+  ): Promise<SettingResponseDto | null> {
     const setting = await this.prisma.systemSetting.findUnique({
       where: { key },
     });

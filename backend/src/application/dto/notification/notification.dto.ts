@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsBoolean,
-  IsNumber,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsOptional, IsBoolean, IsNumber, Min, Max } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 // Notification Types

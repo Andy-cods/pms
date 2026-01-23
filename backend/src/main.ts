@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { API_PREFIX, APP_NAME } from './shared/constants/index.js';
 
@@ -32,6 +33,9 @@ async function bootstrap() {
     }),
   );
 
+  // Cookie parser middleware - required for httpOnly JWT cookies
+  app.use(cookieParser());
+
   // Global prefix for all routes
   app.setGlobalPrefix(API_PREFIX);
 
@@ -40,7 +44,7 @@ async function bootstrap() {
     origin: frontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-XSRF-TOKEN'],
   });
 
   // Global validation pipe

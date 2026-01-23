@@ -19,7 +19,9 @@ export class AuditLogController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
-  async getAuditLogs(@Query() query: AuditLogQueryDto): Promise<AuditLogsResponseDto> {
+  async getAuditLogs(
+    @Query() query: AuditLogQueryDto,
+  ): Promise<AuditLogsResponseDto> {
     const {
       userId,
       action,
@@ -98,7 +100,9 @@ export class AuditLogController {
   }
 
   @Get(':id')
-  async getAuditLog(@Param('id') id: string): Promise<AuditLogResponseDto | null> {
+  async getAuditLog(
+    @Param('id') id: string,
+  ): Promise<AuditLogResponseDto | null> {
     const log = await this.prisma.auditLog.findUnique({
       where: { id },
       include: {

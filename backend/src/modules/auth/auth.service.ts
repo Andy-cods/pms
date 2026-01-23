@@ -17,6 +17,7 @@ import {
   TokensDto,
 } from './dto/index.js';
 import type { JwtPayload } from './strategies/jwt.strategy.js';
+import { TokenBlacklistService } from './token-blacklist.service.js';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private tokenBlacklistService: TokenBlacklistService,
   ) {}
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
@@ -133,10 +135,27 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string, token: string): Promise<void> {
+    // Blacklist the token
+    try {
+      // Decode token to get expiry time
+      const decoded = this.jwtService.decode(token) as { exp?: number } | null;
+      if (decoded?.exp) {
+        // Calculate remaining TTL
+        const now = Math.floor(Date.now() / 1000);
+        const remainingTtl = decoded.exp - now;
+
+        if (remainingTtl > 0) {
+          await this.tokenBlacklistService.blacklist(token, remainingTtl);
+          this.logger.debug(`Token blacklisted for user ${userId} with TTL ${remainingTtl}s`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Failed to blacklist token: ${error}`);
+    }
+
     // Log logout event
     await this.logAuthEvent(userId, 'LOGOUT');
-    // In production, you might want to blacklist the token in Redis
   }
 
   async validateUser(userId: string) {

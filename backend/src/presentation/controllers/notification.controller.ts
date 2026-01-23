@@ -93,7 +93,9 @@ export class NotificationController {
     }
 
     if (notification.userId !== req.user.sub) {
-      throw new ForbiddenException('You do not have access to this notification');
+      throw new ForbiddenException(
+        'You do not have access to this notification',
+      );
     }
 
     const updated = await this.prisma.notification.update({

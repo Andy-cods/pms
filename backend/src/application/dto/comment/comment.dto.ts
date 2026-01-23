@@ -8,9 +8,11 @@ import {
   Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { sanitizeRichText } from '@shared/utils/sanitize.util.js';
 
 // Create Comment DTO
 export class CreateCommentDto {
+  @Transform(({ value }) => sanitizeRichText(value))
   @IsString()
   @MinLength(1)
   @MaxLength(5000)
@@ -31,6 +33,7 @@ export class CreateCommentDto {
 
 // Update Comment DTO
 export class UpdateCommentDto {
+  @Transform(({ value }) => sanitizeRichText(value))
   @IsString()
   @MinLength(1)
   @MaxLength(5000)
@@ -94,5 +97,7 @@ export interface CommentListResponseDto {
 export function parseMentions(content: string): string[] {
   const mentionRegex = /@([a-zA-Z0-9._-]+)/g;
   const matches = content.matchAll(mentionRegex);
-  return [...matches].map((m) => m[1]).filter((m): m is string => m !== undefined);
+  return [...matches]
+    .map((m) => m[1])
+    .filter((m): m is string => m !== undefined);
 }
