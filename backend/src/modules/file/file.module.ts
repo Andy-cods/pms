@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/persistence/prisma.module.js';
+import { MinioModule } from '../../infrastructure/external-services/minio/minio.module.js';
+import { FileController } from '../../presentation/controllers/file.controller.js';
 
-// Stub module - controllers and use cases to be implemented
 @Module({
-  imports: [PrismaModule],
-  controllers: [],
+  imports: [PrismaModule, MinioModule],
+  controllers: [FileController],
   providers: [],
   exports: [],
 })
