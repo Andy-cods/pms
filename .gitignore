@@ -91,6 +91,7 @@ temp/
 # ============================================
 .claude/.env
 .claude/skills/*/.env
+.claude/settings.local.json
 
 # ============================================
 # Prisma
