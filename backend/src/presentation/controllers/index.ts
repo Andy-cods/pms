@@ -9,3 +9,4 @@ export * from './project.controller.js';
 export * from './task.controller.js';
 export * from './file.controller.js';
 export * from './approval.controller.js';
+export * from './event.controller.js';

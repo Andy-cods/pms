@@ -8,3 +8,4 @@ export * from './project/project.dto.js';
 export * from './task/task.dto.js';
 export * from './file/file.dto.js';
 export * from './approval/approval.dto.js';
+export * from './event/event.dto.js';

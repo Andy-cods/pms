@@ -14,6 +14,7 @@ import { TaskModule } from './modules/task/task.module.js';
 import { FileModule } from './modules/file/file.module.js';
 import { MinioModule } from './infrastructure/external-services/minio/minio.module.js';
 import { ApprovalModule } from './modules/approval/approval.module.js';
+import { CalendarModule } from './modules/calendar/calendar.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ApprovalModule } from './modules/approval/approval.module.js';
     TaskModule,
     FileModule,
     ApprovalModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],
