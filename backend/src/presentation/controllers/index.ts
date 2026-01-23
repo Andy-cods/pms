@@ -3,6 +3,8 @@
 
 export * from './settings.controller.js';
 export * from './admin-client.controller.js';
+export * from './admin-user.controller.js';
+export * from './audit-log.controller.js';
 export * from './client-project.controller.js';
 export * from './dashboard.controller.js';
 export * from './project.controller.js';

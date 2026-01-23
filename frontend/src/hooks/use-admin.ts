@@ -1,5 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsApi, clientsApi, type SystemSetting, type Client, type CreateClientInput, type UpdateClientInput } from '@/lib/api/admin';
+import {
+  settingsApi,
+  clientsApi,
+  auditLogsApi,
+  type SystemSetting,
+  type SystemSettings,
+  type UpdateSystemSettingsInput,
+  type Client,
+  type CreateClientInput,
+  type UpdateClientInput,
+  type AuditLog,
+  type AuditLogsResponse,
+  type AuditLogsQueryParams,
+} from '@/lib/api/admin';
 import { toast } from 'sonner';
 
 // Settings Hooks
@@ -31,6 +44,62 @@ export function useUpdateSetting() {
     onError: () => {
       toast.error('Không thể cập nhật cài đặt');
     },
+  });
+}
+
+// Enhanced System Settings Hooks
+export function useSystemSettings() {
+  return useQuery<SystemSettings>({
+    queryKey: ['systemSettings'],
+    queryFn: () => settingsApi.getSystemSettings(),
+  });
+}
+
+export function useUpdateSystemSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateSystemSettingsInput) => settingsApi.updateSystemSettings(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      toast.success('Cài đặt hệ thống đã được cập nhật');
+    },
+    onError: () => {
+      toast.error('Không thể cập nhật cài đặt hệ thống');
+    },
+  });
+}
+
+// Audit Logs Hooks
+export function useAuditLogs(params?: AuditLogsQueryParams) {
+  return useQuery<AuditLogsResponse>({
+    queryKey: ['auditLogs', params],
+    queryFn: () => auditLogsApi.list(params),
+  });
+}
+
+export function useAuditLog(id: string) {
+  return useQuery<AuditLog>({
+    queryKey: ['auditLog', id],
+    queryFn: () => auditLogsApi.getById(id),
+    enabled: !!id,
+  });
+}
+
+export function useAuditLogActions() {
+  return useQuery<{ actions: string[] }>({
+    queryKey: ['auditLogActions'],
+    queryFn: () => auditLogsApi.getActions(),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}
+
+export function useAuditLogEntityTypes() {
+  return useQuery<{ entityTypes: string[] }>({
+    queryKey: ['auditLogEntityTypes'],
+    queryFn: () => auditLogsApi.getEntityTypes(),
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 }
 

@@ -16,6 +16,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  History,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -76,14 +78,26 @@ const navItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   {
-    title: 'Quản lý Users',
-    href: '/admin/users',
+    title: 'Quan ly Users',
+    href: '/dashboard/admin/users',
     icon: Users,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   },
   {
-    title: 'Cài đặt',
-    href: '/admin/settings',
+    title: 'Quan ly Clients',
+    href: '/dashboard/admin/clients',
+    icon: Building2,
+    roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  },
+  {
+    title: 'Nhat ky hoat dong',
+    href: '/dashboard/admin/audit-logs',
+    icon: History,
+    roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+  },
+  {
+    title: 'Cai dat',
+    href: '/dashboard/admin/settings',
     icon: Settings,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   },
