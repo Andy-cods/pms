@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/persistence/prisma.module.js';
+import { NotificationController } from '../../presentation/controllers/notification.controller.js';
+import { CommentController } from '../../presentation/controllers/comment.controller.js';
 
-// Stub module - controllers and use cases to be implemented
 @Module({
   imports: [PrismaModule],
-  controllers: [],
+  controllers: [NotificationController, CommentController],
   providers: [],
   exports: [],
 })

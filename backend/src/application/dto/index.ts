@@ -9,3 +9,5 @@ export * from './task/task.dto.js';
 export * from './file/file.dto.js';
 export * from './approval/approval.dto.js';
 export * from './event/event.dto.js';
+export * from './notification/notification.dto.js';
+export * from './comment/comment.dto.js';

@@ -10,3 +10,5 @@ export * from './task.controller.js';
 export * from './file.controller.js';
 export * from './approval.controller.js';
 export * from './event.controller.js';
+export * from './notification.controller.js';
+export * from './comment.controller.js';
