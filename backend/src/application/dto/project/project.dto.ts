@@ -8,7 +8,7 @@ import {
   Max,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { sanitizeInput, sanitizeRichText } from '@shared/utils/sanitize.util.js';
+import { sanitizeInput, sanitizeRichText } from '@shared/utils/sanitize.util';
 
 // Enums matching Prisma schema
 export enum ProjectStatus {

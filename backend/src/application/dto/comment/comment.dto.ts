@@ -8,7 +8,7 @@ import {
   Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { sanitizeRichText } from '@shared/utils/sanitize.util.js';
+import { sanitizeRichText } from '@shared/utils/sanitize.util';
 
 // Create Comment DTO
 export class CreateCommentDto {
