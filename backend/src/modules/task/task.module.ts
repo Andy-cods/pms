@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/persistence/prisma.module.js';
+import { TaskController } from '../../presentation/controllers/task.controller.js';
 
-// Stub module - controllers and use cases to be implemented
 @Module({
   imports: [PrismaModule],
-  controllers: [],
+  controllers: [TaskController],
   providers: [],
   exports: [],
 })
