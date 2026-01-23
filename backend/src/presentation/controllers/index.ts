@@ -7,3 +7,5 @@ export * from './client-project.controller.js';
 export * from './dashboard.controller.js';
 export * from './project.controller.js';
 export * from './task.controller.js';
+export * from './file.controller.js';
+export * from './approval.controller.js';

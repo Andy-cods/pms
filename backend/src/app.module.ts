@@ -11,6 +11,9 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { ProjectModule } from './modules/project/project.module.js';
 import { TaskModule } from './modules/task/task.module.js';
+import { FileModule } from './modules/file/file.module.js';
+import { MinioModule } from './infrastructure/external-services/minio/minio.module.js';
+import { ApprovalModule } from './modules/approval/approval.module.js';
 
 @Module({
   imports: [
@@ -20,6 +23,7 @@ import { TaskModule } from './modules/task/task.module.js';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    MinioModule,
     AuthModule,
     UsersModule,
     ClientModule,
@@ -27,6 +31,8 @@ import { TaskModule } from './modules/task/task.module.js';
     DashboardModule,
     ProjectModule,
     TaskModule,
+    FileModule,
+    ApprovalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
