@@ -81,10 +81,10 @@ export function useUploadFile() {
           queryKey: fileKeys.taskFiles(file.task.id),
         });
       }
-      toast.success('File uploaded successfully');
+      toast.success('Tải tệp lên thành công');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to upload file');
+      toast.error(error.message || 'Tải tệp thất bại');
     },
   });
 }
@@ -104,10 +104,10 @@ export function useUpdateFile() {
           queryKey: fileKeys.projectFiles(file.project.id),
         });
       }
-      toast.success('File updated successfully');
+      toast.success('Cập nhật tệp thành công');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update file');
+      toast.error(error.message || 'Cập nhật tệp thất bại');
     },
   });
 }
@@ -120,10 +120,10 @@ export function useDeleteFile() {
     mutationFn: (id: string) => filesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileKeys.lists() });
-      toast.success('File deleted');
+      toast.success('Đã xóa tệp');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete file');
+      toast.error(error.message || 'Xóa tệp thất bại');
     },
   });
 }
@@ -134,7 +134,7 @@ export function useDownloadFile() {
     mutationFn: ({ id, filename }: { id: string; filename: string }) =>
       filesApi.downloadFile(id, filename),
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to download file');
+      toast.error(error.message || 'Tải tệp xuống thất bại');
     },
   });
 }

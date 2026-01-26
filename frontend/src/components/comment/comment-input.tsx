@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, startTransition } from 'react';
 import { Send, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -39,8 +39,12 @@ export function CommentInput({
 
   useEffect(() => {
     if (editingComment) {
-      setContent(editingComment.content);
-      textareaRef.current?.focus();
+      startTransition(() => {
+        setContent(editingComment.content);
+        textareaRef.current?.focus();
+      });
+    } else {
+      startTransition(() => setContent(''));
     }
   }, [editingComment]);
 

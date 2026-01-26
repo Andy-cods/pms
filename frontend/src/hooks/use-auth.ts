@@ -8,32 +8,54 @@ import { authApi, type LoginPayload, type ClientLoginPayload } from '@/lib/api/a
 import type { AuthResponse, ClientAuthResponse } from '@/types';
 
 export function useAuth() {
-  const { user, tokens, isAuthenticated, isLoading, setAuth, setLoading, logout: storeLogout } = useAuthStore();
+  const {
+    user,
+    tokens,
+    isAuthenticated,
+    isLoading,
+    hasCheckedAuth,
+    setAuth,
+    setUser,
+    setLoading,
+    setHasCheckedAuth,
+    logout: storeLogout,
+  } = useAuthStore();
   const router = useRouter();
 
   // Initialize auth state on mount
   useEffect(() => {
+    if (hasCheckedAuth) return;
+
     const initAuth = async () => {
+      setHasCheckedAuth(true);
+
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
         setLoading(false);
         return;
       }
 
+      // If user is already hydrated from storage, avoid extra API calls
+      if (user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const profile = await authApi.getProfile();
-        if (profile) {
-          // User is already authenticated via persisted store
-          setLoading(false);
+        if (profile?.user) {
+          setUser(profile.user);
         }
-      } catch {
-        // Token expired or invalid
+      } catch (err) {
         storeLogout();
+        return;
+      } finally {
+        setLoading(false);
       }
     };
 
     initAuth();
-  }, [setLoading, storeLogout]);
+  }, [hasCheckedAuth, setHasCheckedAuth, setLoading, setUser, storeLogout, user]);
 
   const logout = useCallback(async () => {
     try {

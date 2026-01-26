@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
   Upload,
   Download,
   Trash2,
@@ -13,10 +12,11 @@ import {
   Eye,
   MoreHorizontal,
   FolderOpen,
+  ArrowRight,
 } from 'lucide-react';
 
-import { useProject } from '@/hooks/use-projects';
-import { useProjectFiles, useDeleteFile, useDownloadFile } from '@/hooks/use-files';
+import { useFiles, useDeleteFile, useDownloadFile } from '@/hooks/use-files';
+import { useProjects } from '@/hooks/use-projects';
 import {
   type FileCategory,
   FileCategoryLabels,
@@ -66,29 +66,27 @@ import {
 
 import { FileUploader } from '@/components/file/file-uploader';
 
-export default function ProjectFilesPage() {
-  const params = useParams();
+export default function FilesPage() {
   const router = useRouter();
-  const projectId = params.id as string;
-
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<FileCategory | 'ALL'>('ALL');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>('');
 
-  const { data: project, isLoading: projectLoading } = useProject(projectId);
-  const { data: filesData, isLoading: filesLoading, refetch } = useProjectFiles(projectId, {
+  const { data: filesData, isLoading, refetch } = useFiles({
     search: search || undefined,
     category: categoryFilter !== 'ALL' ? categoryFilter : undefined,
     limit: 100,
   });
+  const { data: projectsData } = useProjects({ limit: 100 });
 
   const deleteMutation = useDeleteFile();
   const downloadMutation = useDownloadFile();
 
-  const isLoading = projectLoading || filesLoading;
+  const files = useMemo(() => filesData?.files ?? [], [filesData?.files]);
 
   const handleDelete = async () => {
     if (deletingFileId) {
@@ -109,35 +107,26 @@ export default function ProjectFilesPage() {
       year: 'numeric',
     });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Skeleton key={i} className="h-40" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const files = filesData?.files ?? [];
+  const groupedByProject = useMemo(() => {
+    const groups: Record<string, typeof files> = {};
+    files.forEach((f) => {
+      const key = f.project?.id ? `${f.project.code} — ${f.project.name}` : 'Không gắn dự án';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(f);
+    });
+    return groups;
+  }, [files]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Tài liệu dự án</h1>
-            <p className="text-muted-foreground">
-              {project?.code} - {project?.name}
-            </p>
-          </div>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground mb-1">Quản lý tài liệu</p>
+          <h1 className="text-2xl font-semibold">Tài liệu</h1>
+          <p className="text-sm text-muted-foreground">
+            Tìm kiếm, tải lên và tải xuống tài liệu dự án.
+          </p>
         </div>
 
         <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
@@ -150,25 +139,53 @@ export default function ProjectFilesPage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Tải tệp lên</DialogTitle>
-              <DialogDescription>Thêm tài liệu vào {project?.name}</DialogDescription>
+              <DialogDescription>
+                Chọn dự án (bắt buộc) và tải tài liệu lên hệ thống.
+              </DialogDescription>
             </DialogHeader>
-            <FileUploader
-              projectId={projectId}
-              onSuccess={() => {
-                setIsUploadDialogOpen(false);
-                refetch();
-              }}
-            />
+            <div className="space-y-3">
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn dự án" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectsData?.projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.code} · {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedProject && (
+                <p className="text-xs text-muted-foreground">
+                  Vui lòng chọn dự án trước khi tải lên.
+                </p>
+              )}
+            </div>
+            {selectedProject ? (
+              <FileUploader
+                projectId={selectedProject}
+                onSuccess={() => {
+                  setIsUploadDialogOpen(false);
+                  refetch();
+                  setSelectedProject('');
+                }}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                Chọn dự án để bật tính năng tải tệp.
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Filters */}
       <div className="flex gap-4 flex-wrap items-center">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Tìm kiếm tài liệu..."
+            placeholder="Tìm kiếm theo tên, thẻ, dự án..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -178,7 +195,7 @@ export default function ProjectFilesPage() {
           value={categoryFilter}
           onValueChange={(v) => setCategoryFilter(v as FileCategory | 'ALL')}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-44">
             <SelectValue placeholder="Danh mục" />
           </SelectTrigger>
           <SelectContent>
@@ -191,7 +208,6 @@ export default function ProjectFilesPage() {
           </SelectContent>
         </Select>
 
-        {/* View Toggle */}
         <div className="flex border rounded-md">
           <Button
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
@@ -210,14 +226,19 @@ export default function ProjectFilesPage() {
         </div>
       </div>
 
-      {/* Files */}
-      {files.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      ) : files.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground" />
             <h3 className="mt-4 font-medium">Chưa có tài liệu</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Tải tài liệu đầu tiên để bắt đầu
+              Tải tài liệu đầu tiên để bắt đầu.
             </p>
             <Button className="mt-4" onClick={() => setIsUploadDialogOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
@@ -226,15 +247,12 @@ export default function ProjectFilesPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {files.map((file) => (
-            <Card
-              key={file.id}
-              className="cursor-pointer hover:shadow-md transition-shadow group"
-            >
-              <CardContent className="p-4">
+            <Card key={file.id} className="hover:shadow-md transition-shadow group">
+              <CardContent className="p-4 flex flex-col gap-3">
                 <div className="flex items-start justify-between">
-                  <div className="text-4xl">{getFileIcon(file.mimeType)}</div>
+                  <div className="text-3xl">{getFileIcon(file.mimeType)}</div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -269,59 +287,100 @@ export default function ProjectFilesPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <h4 className="font-medium mt-3 truncate text-sm">{file.originalName}</h4>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className={FileCategoryColors[file.category]}>
-                    {FileCategoryLabels[file.category]}
-                  </Badge>
+                <div className="space-y-1">
+                  <p className="font-medium truncate">{file.originalName}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className={FileCategoryColors[file.category]}>
+                      {FileCategoryLabels[file.category]}
+                    </Badge>
+                    <span>•</span>
+                    <span>{formatFileSize(file.size)}</span>
+                    <span>•</span>
+                    <span>{formatDate(file.uploadedAt)}</span>
+                  </div>
+                  {file.project && (
+                    <button
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      onClick={() => router.push(`/dashboard/projects/${file.project?.id}`)}
+                    >
+                      {file.project.code} · {file.project.name}
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {formatFileSize(file.size)} • {formatDate(file.uploadedAt)}
-                </p>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
-          {files.map((file) => (
-            <Card key={file.id}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="text-2xl">{getFileIcon(file.mimeType)}</div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium truncate">{file.originalName}</h4>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                    <span>{formatFileSize(file.size)}</span>
-                    <span>•</span>
-                    <Badge variant="outline" className={FileCategoryColors[file.category]}>
-                      {FileCategoryLabels[file.category]}
-                    </Badge>
-                    <span>•</span>
-                    <span>{formatDate(file.uploadedAt)}</span>
-                    <span>•</span>
-                    <span>từ {file.uploadedBy.name}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isPreviewable(file.mimeType) && (
-                    <Button variant="ghost" size="icon" onClick={() => setPreviewUrl(file.id)}>
-                      <Eye className="h-4 w-4" />
+        <div className="space-y-4">
+          {Object.entries(groupedByProject).map(([projectTitle, projectFiles]) => (
+            <Card key={projectTitle}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-sm text-foreground">{projectTitle}</p>
+                  {projectTitle !== 'Không gắn dự án' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        const projectId = projectFiles[0].project?.id;
+                        if (projectId) router.push(`/dashboard/projects/${projectId}/files`);
+                      }}
+                    >
+                      Xem tất cả
                     </Button>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDownload(file.id, file.originalName)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeletingFileId(file.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {projectFiles.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-3 rounded-lg border px-3 py-2"
+                    >
+                      <div className="text-xl">{getFileIcon(file.mimeType)}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{file.originalName}</p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className={FileCategoryColors[file.category]}>
+                            {FileCategoryLabels[file.category]}
+                          </Badge>
+                          <span>•</span>
+                          <span>{formatFileSize(file.size)}</span>
+                          <span>•</span>
+                          <span>{formatDate(file.uploadedAt)}</span>
+                          <span>•</span>
+                          <span>từ {file.uploadedBy.name}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {isPreviewable(file.mimeType) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setPreviewUrl(file.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDownload(file.id, file.originalName)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeletingFileId(file.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -340,7 +399,10 @@ export default function ProjectFilesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Xóa
             </AlertDialogAction>
           </AlertDialogFooter>

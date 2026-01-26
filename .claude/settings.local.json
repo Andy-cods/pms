@@ -68,7 +68,12 @@
       "Bash($env:DATABASE_URL=\"postgresql://bc_user:bc_password@localhost:5433/pms_test\")",
       "Bash(set:*)",
       "Bash(npx cross-env DATABASE_URL=\"postgresql://bc_user:bc_password@localhost:5433/pms_test\" npx prisma db push)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(npx eslint:*)",
+      "Skill(aesthetic)",
+      "Skill(aesthetic:*)",
+      "Bash(npx next lint:*)",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }\")"
     ]
   }
 }

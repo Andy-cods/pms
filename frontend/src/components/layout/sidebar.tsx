@@ -36,43 +36,43 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: 'Dashboard',
+    title: 'Tổng quan',
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    title: 'Du an',
+    title: 'Dự án',
     href: '/dashboard/projects',
     icon: FolderKanban,
   },
   {
-    title: 'Tasks',
+    title: 'Nhiệm vụ',
     href: '/dashboard/tasks',
     icon: CheckSquare,
   },
   {
-    title: 'Files',
+    title: 'Tài liệu',
     href: '/dashboard/files',
     icon: Files,
   },
   {
-    title: 'Phe duyet',
+    title: 'Phê duyệt',
     href: '/dashboard/approvals',
     icon: ClipboardCheck,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.NVKD, UserRole.PM],
   },
   {
-    title: 'Lich',
+    title: 'Lịch',
     href: '/dashboard/calendar',
     icon: Calendar,
   },
   {
-    title: 'Thong bao',
+    title: 'Thông báo',
     href: '/dashboard/notifications',
     icon: Bell,
   },
   {
-    title: 'Bao cao',
+    title: 'Báo cáo',
     href: '/dashboard/reports',
     icon: BarChart3,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.NVKD, UserRole.PM],
@@ -81,25 +81,25 @@ const navItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
   {
-    title: 'Quan ly Users',
+    title: 'Quản lý người dùng',
     href: '/dashboard/admin/users',
     icon: Users,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   },
   {
-    title: 'Quan ly Clients',
+    title: 'Quản lý khách hàng',
     href: '/dashboard/admin/clients',
     icon: Building2,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   },
   {
-    title: 'Nhat ky',
+    title: 'Nhật ký',
     href: '/dashboard/admin/audit-logs',
     icon: History,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   },
   {
-    title: 'Cai dat',
+    title: 'Cài đặt',
     href: '/dashboard/admin/settings',
     icon: Settings,
     roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
@@ -212,7 +212,7 @@ export function Sidebar({ userRole, isCollapsed = false, onToggle }: SidebarProp
                   BC Agency
                 </span>
                 <span className="text-[10px] text-sidebar-muted leading-tight">
-                  Project Management
+                  Quản lý dự án
                 </span>
               </div>
             </Link>
@@ -233,7 +233,7 @@ export function Sidebar({ userRole, isCollapsed = false, onToggle }: SidebarProp
             <div className="mt-6">
               {!isCollapsed && (
                 <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted/70">
-                  Quan tri
+                  Quản trị
                 </p>
               )}
               {isCollapsed && <div className="my-3 mx-2 border-t border-sidebar-border" />}
@@ -322,7 +322,7 @@ export function Sidebar({ userRole, isCollapsed = false, onToggle }: SidebarProp
             ) : (
               <>
                 <ChevronLeft className="h-4 w-4" />
-                <span className="ml-2 text-[13px]">Thu gon</span>
+                <span className="ml-2 text-[13px]">Thu gọn</span>
               </>
             )}
           </Button>

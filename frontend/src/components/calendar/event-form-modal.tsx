@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -67,38 +67,54 @@ export function EventFormModal({
   // Initialize form with event data or defaults
   useEffect(() => {
     if (event) {
-      setTitle(event.title);
-      setDescription(event.description || '');
-      setType(event.type);
-      setStartDate(format(new Date(event.startTime), 'yyyy-MM-dd'));
-      setStartTime(format(new Date(event.startTime), 'HH:mm'));
-      if (event.endTime) {
-        setEndDate(format(new Date(event.endTime), 'yyyy-MM-dd'));
-        setEndTime(format(new Date(event.endTime), 'HH:mm'));
-      }
-      setIsAllDay(event.isAllDay);
-      setRecurrence(event.recurrence || '');
-      setLocation(event.location || '');
-      setMeetingLink(event.meetingLink || '');
+      startTransition(() => {
+        setTitle(event.title);
+        setDescription(event.description || '');
+        setType(event.type);
+        setStartDate(format(new Date(event.startTime), 'yyyy-MM-dd'));
+        setStartTime(format(new Date(event.startTime), 'HH:mm'));
+        if (event.endTime) {
+          setEndDate(format(new Date(event.endTime), 'yyyy-MM-dd'));
+          setEndTime(format(new Date(event.endTime), 'HH:mm'));
+        } else {
+          setEndDate('');
+          setEndTime('');
+        }
+        setIsAllDay(event.isAllDay);
+        setRecurrence(event.recurrence || '');
+        setLocation(event.location || '');
+        setMeetingLink(event.meetingLink || '');
+      });
     } else if (initialDate) {
-      setStartDate(format(initialDate, 'yyyy-MM-dd'));
-      setStartTime(format(initialDate, 'HH:mm'));
-      setEndDate(format(initialDate, 'yyyy-MM-dd'));
-      setEndTime(format(new Date(initialDate.getTime() + 60 * 60 * 1000), 'HH:mm'));
+      startTransition(() => {
+        setTitle('');
+        setDescription('');
+        setType('MEETING');
+        setStartDate(format(initialDate, 'yyyy-MM-dd'));
+        setStartTime(format(initialDate, 'HH:mm'));
+        setEndDate(format(initialDate, 'yyyy-MM-dd'));
+        setEndTime(format(new Date(initialDate.getTime() + 60 * 60 * 1000), 'HH:mm'));
+        setIsAllDay(false);
+        setRecurrence('');
+        setLocation('');
+        setMeetingLink('');
+      });
     } else {
       // Reset to defaults
       const now = new Date();
-      setTitle('');
-      setDescription('');
-      setType('MEETING');
-      setStartDate(format(now, 'yyyy-MM-dd'));
-      setStartTime(format(now, 'HH:mm'));
-      setEndDate(format(now, 'yyyy-MM-dd'));
-      setEndTime(format(new Date(now.getTime() + 60 * 60 * 1000), 'HH:mm'));
-      setIsAllDay(false);
-      setRecurrence('');
-      setLocation('');
-      setMeetingLink('');
+      startTransition(() => {
+        setTitle('');
+        setDescription('');
+        setType('MEETING');
+        setStartDate(format(now, 'yyyy-MM-dd'));
+        setStartTime(format(now, 'HH:mm'));
+        setEndDate(format(now, 'yyyy-MM-dd'));
+        setEndTime(format(new Date(now.getTime() + 60 * 60 * 1000), 'HH:mm'));
+        setIsAllDay(false);
+        setRecurrence('');
+        setLocation('');
+        setMeetingLink('');
+      });
     }
   }, [event, initialDate, open]);
 

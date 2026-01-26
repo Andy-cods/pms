@@ -7,12 +7,14 @@ interface AuthState {
   tokens: TokensDto | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasCheckedAuth: boolean;
 
   // Actions
   setAuth: (user: AuthUser, tokens: TokensDto) => void;
   setUser: (user: AuthUser) => void;
   setTokens: (tokens: TokensDto) => void;
   setLoading: (loading: boolean) => void;
+  setHasCheckedAuth: (checked: boolean) => void;
   logout: () => void;
 }
 
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
       tokens: null,
       isAuthenticated: false,
       isLoading: true,
+      hasCheckedAuth: false,
 
       setAuth: (user, tokens) => {
         // Store tokens in localStorage for API interceptor
@@ -30,7 +33,13 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('accessToken', tokens.accessToken);
           localStorage.setItem('refreshToken', tokens.refreshToken);
         }
-        set({ user, tokens, isAuthenticated: true, isLoading: false });
+        set({
+          user,
+          tokens,
+          isAuthenticated: true,
+          isLoading: false,
+          hasCheckedAuth: true,
+        });
       },
 
       setUser: (user) => set({ user }),
@@ -45,12 +54,20 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (isLoading) => set({ isLoading }),
 
+      setHasCheckedAuth: (checked) => set({ hasCheckedAuth: checked }),
+
       logout: () => {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
-        set({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
+        set({
+          user: null,
+          tokens: null,
+          isAuthenticated: false,
+          isLoading: false,
+          hasCheckedAuth: true,
+        });
       },
     }),
     {

@@ -10,13 +10,29 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to add auth token
+// Helper to get cookie value
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+// Request interceptor to add auth token and CSRF token
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
+      // Add auth token
       const token = localStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Add CSRF token for state-changing requests
+      const csrfToken = getCookie('XSRF-TOKEN');
+      if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase() || '')) {
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
       }
     }
     return config;

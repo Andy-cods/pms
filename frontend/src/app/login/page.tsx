@@ -35,10 +35,10 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
-              Chao mung tro lai
+              Chào mừng trở lại
             </h1>
             <p className="text-base text-muted-foreground">
-              Dang nhap vao he thong quan ly du an
+              Đăng nhập vào hệ thống quản lý dự án
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function LoginPage() {
                   </svg>
                 </div>
                 <p className="text-sm text-red-600 dark:text-red-400">
-                  Email hoac mat khau khong dung
+                  Email hoặc mật khẩu không đúng
                 </p>
               </div>
             )}
@@ -101,13 +101,13 @@ export default function LoginPage() {
               <AppleSwitch
                 checked={rememberMe}
                 onCheckedChange={setRememberMe}
-                label="Ghi nho dang nhap"
+                label="Ghi nhớ đăng nhập"
               />
               <Link
                 href="#"
                 className="text-sm text-[#007AFF] hover:text-[#0066CC] transition-colors"
               >
-                Quen mat khau?
+                Quên mật khẩu?
               </Link>
             </div>
 
@@ -118,7 +118,7 @@ export default function LoginPage() {
                 variant="primary"
                 isLoading={loginMutation.isPending}
               >
-                Dang nhap
+                Đăng nhập
               </AppleButton>
             </div>
           </form>
@@ -142,7 +142,7 @@ export default function LoginPage() {
             href="/client-login"
             className="inline-flex items-center gap-2 text-sm text-[#007AFF] hover:text-[#0066CC] transition-colors group"
           >
-            <span>Dang nhap voi tu cach Khach hang</span>
+            <span>Đăng nhập với tư cách Khách hàng</span>
             <svg
               className="w-4 h-4 transition-transform group-hover:translate-x-0.5"
               fill="none"
@@ -161,7 +161,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground/60 pt-4">
-          &copy; 2026 BC Agency. All rights reserved.
+          &copy; 2026 BC Agency. Đã đăng ký bản quyền.
         </p>
       </div>
     </div>

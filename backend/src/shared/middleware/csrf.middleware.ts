@@ -24,11 +24,36 @@ export class CsrfMiddleware implements NestMiddleware {
   // Safe methods that don't require CSRF protection
   private readonly safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+  // Paths that don't require CSRF (no existing session to protect)
+  private readonly excludedPaths = new Set([
+    '/api/auth/login',
+    '/api/auth/client-login',
+    '/api/auth/refresh',
+    '/api/metrics',
+    '/api/health',
+  ]);
+
   constructor(configService: ConfigService) {
     this.isProduction = configService.get('NODE_ENV') === 'production';
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
+    // Skip CSRF for excluded paths (auth endpoints don't need CSRF protection)
+    // Use startsWith to handle paths with or without trailing query params
+    const isExcluded = Array.from(this.excludedPaths).some(
+      (path) => req.path === path || req.path.startsWith(path + '/')
+    );
+    if (isExcluded) {
+      return next();
+    }
+
+    // Also skip auth paths regardless of prefix
+    if (req.path.includes('/auth/login') ||
+        req.path.includes('/auth/client-login') ||
+        req.path.includes('/auth/refresh')) {
+      return next();
+    }
+
     // Generate or retrieve CSRF token
     let csrfToken = req.cookies?.[this.csrfCookieName];
 

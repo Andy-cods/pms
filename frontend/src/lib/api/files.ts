@@ -12,14 +12,14 @@ export type FileCategory =
   | 'OTHER';
 
 export const FileCategoryLabels: Record<FileCategory, string> = {
-  BRIEF: 'Brief',
-  PLAN: 'Plan',
-  PROPOSAL: 'Proposal',
-  REPORT: 'Report',
-  CREATIVE: 'Creative',
-  RAW_DATA: 'Raw Data',
-  CONTRACT: 'Contract',
-  OTHER: 'Other',
+  BRIEF: 'Tóm tắt',
+  PLAN: 'Kế hoạch',
+  PROPOSAL: 'Đề xuất',
+  REPORT: 'Báo cáo',
+  CREATIVE: 'Sáng tạo',
+  RAW_DATA: 'Dữ liệu thô',
+  CONTRACT: 'Hợp đồng',
+  OTHER: 'Khác',
 };
 
 export const FileCategoryColors: Record<FileCategory, string> = {
