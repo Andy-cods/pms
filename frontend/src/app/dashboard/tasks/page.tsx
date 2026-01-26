@@ -3,30 +3,26 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Calendar,
   Search,
-  Filter,
-  ExternalLink,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  Clock,
 } from 'lucide-react';
 
-import { useMyTasks } from '@/hooks/use-tasks';
+import { useMyTasks, useUpdateTaskStatus } from '@/hooks/use-tasks';
 import {
   type TaskStatus,
   type TaskPriority,
-  TaskStatusColors,
-  TaskStatusLabels,
-  TaskPriorityColors,
-  TaskPriorityLabels,
 } from '@/lib/api/tasks';
+import {
+  AppleStatusLabels,
+  ApplePriorityLabels,
+  getStatusStyles,
+} from '@/lib/task-design-tokens';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -35,7 +31,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TaskCard, TaskCardSkeleton } from '@/components/task/task-card';
+import { cn } from '@/lib/utils';
 
+/**
+ * My Tasks Page - Apple Design
+ *
+ * Features:
+ * - Clean, minimal layout
+ * - Apple-style stat cards with subtle backgrounds
+ * - Task list with subtle separators
+ * - Status and priority filters
+ * - Smooth transitions throughout
+ */
 export default function MyTasksPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -49,134 +57,115 @@ export default function MyTasksPage() {
     limit: 100,
   });
 
-  const formatDate = (date: string | null) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const isOverdue = (deadline: string | null) => {
-    if (!deadline) return false;
-    return new Date(deadline) < new Date();
-  };
+  const updateStatusMutation = useUpdateTaskStatus();
 
   // Group tasks by status
   const todoTasks = data?.tasks.filter((t) => t.status === 'TODO') ?? [];
   const inProgressTasks = data?.tasks.filter((t) => t.status === 'IN_PROGRESS') ?? [];
   const reviewTasks = data?.tasks.filter((t) => t.status === 'REVIEW') ?? [];
   const doneTasks = data?.tasks.filter((t) => t.status === 'DONE') ?? [];
+  const activeTasks = [...todoTasks, ...inProgressTasks, ...reviewTasks];
+
+  // Handle task status change
+  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+    updateStatusMutation.mutate({ id: taskId, status });
+  };
+
+  // Handle task click
+  const handleTaskClick = (taskId: string, projectId: string) => {
+    router.push(`/dashboard/projects/${projectId}/tasks`);
+  };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      </div>
-    );
+    return <MyTasksPageSkeleton />;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">My Tasks</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="space-y-1">
+        <h1 className="text-headline font-semibold tracking-tight">My Tasks</h1>
+        <p className="text-[15px] text-muted-foreground">
           Tasks assigned to you across all projects
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-gray-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{todoTasks.length}</div>
-              <div className="text-sm text-muted-foreground">To Do</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{inProgressTasks.length}</div>
-              <div className="text-sm text-muted-foreground">In Progress</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{reviewTasks.length}</div>
-              <div className="text-sm text-muted-foreground">In Review</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{doneTasks.length}</div>
-              <div className="text-sm text-muted-foreground">Completed</div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Cards - Apple Style */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={<Circle className="h-5 w-5" />}
+          label="To Do"
+          count={todoTasks.length}
+          color="#86868b"
+        />
+        <StatCard
+          icon={<AlertCircle className="h-5 w-5" />}
+          label="In Progress"
+          count={inProgressTasks.length}
+          color="#007aff"
+        />
+        <StatCard
+          icon={<Clock className="h-5 w-5" />}
+          label="In Review"
+          count={reviewTasks.length}
+          color="#ff9f0a"
+        />
+        <StatCard
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          label="Completed"
+          count={doneTasks.length}
+          color="#34c759"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 flex-wrap">
+      {/* Filters Section */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Search Input */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-10 h-10 rounded-xl border-border/50 bg-secondary/30 focus:bg-background"
           />
         </div>
+
+        {/* Status Filter */}
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as TaskStatus | 'ALL')}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-[140px] h-10 rounded-xl border-border/50 bg-secondary/30">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             <SelectItem value="ALL">All Status</SelectItem>
-            {Object.entries(TaskStatusLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
+            {Object.entries(AppleStatusLabels).map(([value, label]) => {
+              const styles = getStatusStyles(value as TaskStatus);
+              return (
+                <SelectItem key={value} value={value}>
+                  <div className="flex items-center gap-2">
+                    <span className={cn('h-2 w-2 rounded-full', styles.dot)} />
+                    {label}
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
+
+        {/* Priority Filter */}
         <Select
           value={priorityFilter}
           onValueChange={(v) => setPriorityFilter(v as TaskPriority | 'ALL')}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-[140px] h-10 rounded-xl border-border/50 bg-secondary/30">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             <SelectItem value="ALL">All Priority</SelectItem>
-            {Object.entries(TaskPriorityLabels).map(([value, label]) => (
+            {Object.entries(ApplePriorityLabels).map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {label}
               </SelectItem>
@@ -185,112 +174,176 @@ export default function MyTasksPage() {
         </Select>
       </div>
 
-      {/* Tasks */}
-      <Tabs defaultValue="active">
-        <TabsList>
-          <TabsTrigger value="active">
-            Active ({todoTasks.length + inProgressTasks.length + reviewTasks.length})
+      {/* Tasks List with Tabs */}
+      <Tabs defaultValue="active" className="space-y-4">
+        <TabsList className="bg-secondary/50 rounded-xl p-1">
+          <TabsTrigger
+            value="active"
+            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Active
+            <span className="ml-2 text-[12px] text-muted-foreground">
+              {activeTasks.length}
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="done">Completed ({doneTasks.length})</TabsTrigger>
+          <TabsTrigger
+            value="completed"
+            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Completed
+            <span className="ml-2 text-[12px] text-muted-foreground">
+              {doneTasks.length}
+            </span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active" className="mt-4 space-y-2">
-          {[...todoTasks, ...inProgressTasks, ...reviewTasks].length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 font-medium">No active tasks</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  You're all caught up!
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            [...todoTasks, ...inProgressTasks, ...reviewTasks].map((task) => (
-              <Card
-                key={task.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() =>
-                  router.push(`/dashboard/projects/${task.projectId}/tasks`)
-                }
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-medium">{task.title}</h4>
-                      <Badge className={TaskStatusColors[task.status]}>
-                        {TaskStatusLabels[task.status]}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className={TaskPriorityColors[task.priority]}
-                      >
-                        {TaskPriorityLabels[task.priority]}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                      <span>{task.project.code}</span>
-                      {task.deadline && (
-                        <span
-                          className={`flex items-center gap-1 ${
-                            isOverdue(task.deadline) ? 'text-red-600' : ''
-                          }`}
-                        >
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(task.deadline)}
-                          {isOverdue(task.deadline) && ' (Overdue)'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon">
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
+        <TabsContent value="active" className="mt-0">
+          <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+            {activeTasks.length === 0 ? (
+              <EmptyState
+                icon={<CheckCircle2 className="h-12 w-12" />}
+                title="No active tasks"
+                description="You're all caught up!"
+              />
+            ) : (
+              <div className="divide-y divide-border/30">
+                {activeTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    variant="list"
+                    onClick={() => handleTaskClick(task.id, task.projectId)}
+                    onStatusChange={(status) => handleStatusChange(task.id, status)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="done" className="mt-4 space-y-2">
-          {doneTasks.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 font-medium">No completed tasks</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Complete some tasks to see them here
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            doneTasks.map((task) => (
-              <Card
-                key={task.id}
-                className="cursor-pointer hover:shadow-md transition-shadow opacity-70"
-                onClick={() =>
-                  router.push(`/dashboard/projects/${task.projectId}/tasks`)
-                }
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium line-through">{task.title}</h4>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                      <span>{task.project.code}</span>
-                      {task.completedAt && (
-                        <span>Completed {formatDate(task.completedAt)}</span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+        <TabsContent value="completed" className="mt-0">
+          <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+            {doneTasks.length === 0 ? (
+              <EmptyState
+                icon={<CheckCircle2 className="h-12 w-12" />}
+                title="No completed tasks"
+                description="Complete some tasks to see them here"
+              />
+            ) : (
+              <div className="divide-y divide-border/30">
+                {doneTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    variant="list"
+                    onClick={() => handleTaskClick(task.id, task.projectId)}
+                    onStatusChange={(status) => handleStatusChange(task.id, status)}
+                    className="opacity-70"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Stat Card Component
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+  color: string;
+}
+
+function StatCard({ icon, label, count, color }: StatCardProps) {
+  return (
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-2xl p-5',
+        'bg-card border border-border/50',
+        'transition-all duration-200 hover:shadow-apple-sm'
+      )}
+    >
+      <div className="flex items-center gap-4">
+        <div
+          className="h-11 w-11 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: `${color}15` }}
+        >
+          <span style={{ color }}>{icon}</span>
+        </div>
+        <div>
+          <div className="text-2xl font-semibold">{count}</div>
+          <div className="text-[13px] text-muted-foreground">{label}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Empty State Component
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function EmptyState({ icon, title, description }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div className="text-muted-foreground/50 mb-4">{icon}</div>
+      <h3 className="text-[17px] font-medium mb-1">{title}</h3>
+      <p className="text-[14px] text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+// Loading Skeleton
+function MyTasksPageSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-5 w-72" />
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl p-5 bg-card border border-border/50"
+          >
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-11 w-11 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-12" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-64 rounded-xl" />
+        <Skeleton className="h-10 w-[140px] rounded-xl" />
+        <Skeleton className="h-10 w-[140px] rounded-xl" />
+      </div>
+
+      {/* Tasks */}
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-64 rounded-xl" />
+        <div className="bg-card rounded-2xl border border-border/50 divide-y divide-border/30">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <TaskCardSkeleton key={i} variant="list" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

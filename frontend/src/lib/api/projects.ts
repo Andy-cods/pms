@@ -195,11 +195,18 @@ export const projectsApi = {
   },
 };
 
-// Status colors for UI
+// Status colors for UI - Apple HIG inspired
 export const ProjectStatusColors: Record<ProjectStatus, string> = {
-  STABLE: 'bg-green-100 text-green-800',
-  WARNING: 'bg-yellow-100 text-yellow-800',
-  CRITICAL: 'bg-red-100 text-red-800',
+  STABLE: 'bg-[#34c759]/10 text-[#34c759] dark:bg-[#30d158]/15 dark:text-[#30d158]',
+  WARNING: 'bg-[#ff9f0a]/10 text-[#ff9f0a] dark:bg-[#ff9f0a]/15 dark:text-[#ffd60a]',
+  CRITICAL: 'bg-[#ff3b30]/10 text-[#ff3b30] dark:bg-[#ff453a]/15 dark:text-[#ff453a]',
+};
+
+// Apple status dot colors
+export const ProjectStatusDotColors: Record<ProjectStatus, string> = {
+  STABLE: 'bg-[#34c759] dark:bg-[#30d158]',
+  WARNING: 'bg-[#ff9f0a] dark:bg-[#ffd60a]',
+  CRITICAL: 'bg-[#ff3b30] dark:bg-[#ff453a]',
 };
 
 export const ProjectStatusLabels: Record<ProjectStatus, string> = {

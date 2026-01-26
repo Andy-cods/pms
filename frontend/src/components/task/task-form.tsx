@@ -3,18 +3,23 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CalendarIcon, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Clock, Tag, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
+import { cn } from '@/lib/utils';
 import { useCreateTask, useUpdateTask } from '@/hooks/use-tasks';
 import {
   type Task,
   type TaskStatus,
   type TaskPriority,
-  TaskStatusLabels,
-  TaskPriorityLabels,
 } from '@/lib/api/tasks';
+import {
+  AppleStatusLabels,
+  ApplePriorityLabels,
+  getStatusStyles,
+  getPriorityStyles,
+} from '@/lib/task-design-tokens';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +28,6 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -41,7 +45,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -61,6 +64,13 @@ interface TaskFormProps {
   onSuccess?: () => void;
 }
 
+/**
+ * Apple-style Task Form Component
+ * - Clean, well-spaced form fields
+ * - Rounded inputs with subtle borders
+ * - Apple-style select dropdowns with status indicators
+ * - Smooth focus transitions
+ */
 export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
@@ -106,18 +116,24 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         {/* Title */}
         <FormField
           control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title *</FormLabel>
+              <FormLabel className="text-[13px] font-medium text-muted-foreground">
+                Title
+              </FormLabel>
               <FormControl>
-                <Input placeholder="Task title" {...field} />
+                <Input
+                  placeholder="Task title"
+                  {...field}
+                  className="h-11 rounded-xl border-border/50 focus:border-[#007aff] transition-colors"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-[12px] text-[#ff3b30]" />
             </FormItem>
           )}
         />
@@ -128,19 +144,22 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel className="text-[13px] font-medium text-muted-foreground">
+                Description
+              </FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Task description..."
-                  className="min-h-[80px]"
+                  placeholder="Add a description..."
+                  className="min-h-[100px] rounded-xl border-border/50 focus:border-[#007aff] transition-colors resize-none"
                   {...field}
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-[12px] text-[#ff3b30]" />
             </FormItem>
           )}
         />
 
+        {/* Status & Priority Row */}
         <div className="grid gap-4 md:grid-cols-2">
           {/* Status */}
           <FormField
@@ -148,22 +167,31 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" />
+                  Status
+                </FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl border-border/50">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    {Object.entries(TaskStatusLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="rounded-xl">
+                    {Object.entries(AppleStatusLabels).map(([value, label]) => {
+                      const styles = getStatusStyles(value as TaskStatus);
+                      return (
+                        <SelectItem key={value} value={value}>
+                          <div className="flex items-center gap-2">
+                            <span className={cn('h-2 w-2 rounded-full', styles.dot)} />
+                            {label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-[12px] text-[#ff3b30]" />
               </FormItem>
             )}
           />
@@ -174,27 +202,37 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
             name="priority"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Priority</FormLabel>
+                <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Flag className="h-3.5 w-3.5" />
+                  Priority
+                </FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl border-border/50">
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    {Object.entries(TaskPriorityLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="rounded-xl">
+                    {Object.entries(ApplePriorityLabels).map(([value, label]) => {
+                      const styles = getPriorityStyles(value as TaskPriority);
+                      return (
+                        <SelectItem key={value} value={value}>
+                          <div className="flex items-center gap-2">
+                            <span className={cn('h-2 w-2 rounded-full', styles.dot)} />
+                            {label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
-                <FormMessage />
+                <FormMessage className="text-[12px] text-[#ff3b30]" />
               </FormItem>
             )}
           />
         </div>
 
+        {/* Deadline & Hours Row */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Deadline */}
           <FormField
@@ -202,27 +240,30 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
             name="deadline"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Deadline</FormLabel>
+                <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  Deadline
+                </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
                         variant="outline"
                         className={cn(
-                          'w-full pl-3 text-left font-normal',
+                          'w-full h-11 pl-3 text-left font-normal rounded-xl border-border/50',
                           !field.value && 'text-muted-foreground'
                         )}
                       >
                         {field.value ? (
                           format(field.value, 'dd/MM/yyyy', { locale: vi })
                         ) : (
-                          <span>Select date</span>
+                          <span>Pick a date</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 rounded-xl" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value ?? undefined}
@@ -231,7 +272,7 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
                     />
                   </PopoverContent>
                 </Popover>
-                <FormMessage />
+                <FormMessage className="text-[12px] text-[#ff3b30]" />
               </FormItem>
             )}
           />
@@ -242,13 +283,17 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
             name="estimatedHours"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Est. Hours</FormLabel>
+                <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Est. Hours
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     step="0.5"
                     min="0"
                     placeholder="0"
+                    className="h-11 rounded-xl border-border/50"
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) =>
@@ -256,7 +301,7 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
                     }
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-[12px] text-[#ff3b30]" />
               </FormItem>
             )}
           />
@@ -268,13 +313,17 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
               name="actualHours"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Actual Hours</FormLabel>
+                  <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    Actual Hours
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.5"
                       min="0"
                       placeholder="0"
+                      className="h-11 rounded-xl border-border/50"
                       {...field}
                       value={field.value ?? ''}
                       onChange={(e) =>
@@ -282,7 +331,7 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
                       }
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[12px] text-[#ff3b30]" />
                 </FormItem>
               )}
             />
@@ -290,10 +339,14 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-4 pt-4">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex items-center gap-3 pt-4">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-11 px-6 rounded-xl bg-[#007aff] hover:bg-[#007aff]/90"
+          >
             {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? 'Update' : 'Create Task'}
+            {isEditing ? 'Save Changes' : 'Create Task'}
           </Button>
         </div>
       </form>

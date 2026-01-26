@@ -1,0 +1,923 @@
+/* ============================================
+   BC Agency - Client Portal Design System
+   ============================================
+   A distinct, professional design for client-facing portal
+   Inspired by Apple Human Interface Guidelines
+
+   Design Philosophy:
+   - More whitespace than internal dashboard
+   - Larger text for readability
+   - Teal accent color (#30d158 / #34d058)
+   - Clean, reassuring, trustworthy feel
+   - Mobile-first approach
+   ============================================ */
+
+/* ============================================
+   Client Portal Color Variables
+   ============================================ */
+:root {
+  /* Client Portal Primary - Apple Green/Teal */
+  --client-primary: oklch(0.72 0.19 145);           /* #34c759 - Apple Green */
+  --client-primary-hover: oklch(0.75 0.21 145);
+  --client-primary-active: oklch(0.68 0.19 145);
+  --client-primary-light: oklch(0.72 0.19 145 / 12%);
+
+  /* Accent variations */
+  --client-teal: oklch(0.78 0.12 180);              /* Softer teal for accents */
+  --client-teal-light: oklch(0.78 0.12 180 / 10%);
+
+  /* Trust indicators */
+  --client-secure: oklch(0.55 0.19 250);            /* Blue for secure indicators */
+}
+
+.dark {
+  --client-primary: oklch(0.75 0.21 145);           /* #30d158 - Brighter in dark */
+  --client-primary-hover: oklch(0.78 0.21 145);
+  --client-primary-active: oklch(0.70 0.21 145);
+  --client-primary-light: oklch(0.75 0.21 145 / 15%);
+
+  --client-teal: oklch(0.80 0.14 180);
+  --client-teal-light: oklch(0.80 0.14 180 / 12%);
+}
+
+/* ============================================
+   Client Portal Layout System
+   ============================================ */
+
+/* Main container - More generous spacing */
+.client-container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .client-container {
+    padding: var(--space-8) var(--space-10);
+  }
+}
+
+@media (min-width: 1024px) {
+  .client-container {
+    padding: var(--space-10) var(--space-12);
+  }
+}
+
+/* ============================================
+   Client Portal Header/Navbar
+   ============================================ */
+
+.client-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--space-6);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .client-header {
+    height: 72px;
+    padding: 0 var(--space-10);
+  }
+}
+
+.client-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-callout);
+  font-weight: 600;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.client-logo-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--client-primary);
+}
+
+.client-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .client-nav {
+    gap: var(--space-4);
+  }
+}
+
+.client-nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--foreground-secondary);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+@media (min-width: 768px) {
+  .client-nav-link {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-callout);
+  }
+}
+
+.client-nav-link:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.client-nav-link[data-active="true"],
+.client-nav-link.active {
+  color: var(--client-primary);
+  background: var(--client-primary-light);
+}
+
+.client-nav-link[data-active="true"] .client-nav-icon,
+.client-nav-link.active .client-nav-icon {
+  color: var(--client-primary);
+}
+
+.client-nav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================
+   Client Portal Cards
+   ============================================ */
+
+.client-card {
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-normal) var(--ease-default);
+}
+
+.client-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.client-card-static {
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.client-card-content {
+  padding: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .client-card-content {
+    padding: var(--space-8);
+  }
+}
+
+/* Stat cards - Larger for clients */
+.client-stat-card {
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .client-stat-card {
+    padding: var(--space-8);
+  }
+}
+
+.client-stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+@media (min-width: 768px) {
+  .client-stat-value {
+    font-size: 48px;
+  }
+}
+
+.client-stat-label {
+  margin-top: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+}
+
+.client-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--client-primary-light);
+  color: var(--client-primary);
+}
+
+/* ============================================
+   Client Portal Typography
+   ============================================ */
+
+.client-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+@media (min-width: 768px) {
+  .client-page-title {
+    font-size: var(--text-title);
+  }
+}
+
+.client-page-subtitle {
+  margin-top: var(--space-2);
+  font-size: var(--text-callout);
+  color: var(--foreground-secondary);
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .client-page-subtitle {
+    font-size: var(--text-body);
+  }
+}
+
+.client-section-title {
+  font-size: var(--text-subheadline);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.client-text-large {
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .client-text-large {
+    font-size: 18px;
+  }
+}
+
+/* ============================================
+   Client Portal Project Cards
+   ============================================ */
+
+.client-project-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-default);
+  cursor: pointer;
+}
+
+.client-project-card:hover {
+  border-color: var(--client-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.client-project-card:active {
+  transform: translateY(0);
+}
+
+.client-project-header {
+  padding: var(--space-6);
+  padding-bottom: var(--space-4);
+}
+
+.client-project-title {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.client-project-description {
+  margin-top: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.client-project-body {
+  flex: 1;
+  padding: 0 var(--space-6) var(--space-6);
+}
+
+.client-project-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* ============================================
+   Client Portal Progress
+   ============================================ */
+
+.client-progress-container {
+  margin-top: var(--space-4);
+}
+
+.client-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.client-progress-label {
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+}
+
+.client-progress-value {
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  color: var(--client-primary);
+}
+
+.client-progress-bar {
+  height: 6px;
+  background: var(--surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.client-progress-fill {
+  height: 100%;
+  background: var(--client-primary);
+  border-radius: 3px;
+  transition: width var(--duration-slow) var(--ease-default);
+}
+
+/* Large progress for detail pages */
+.client-progress-lg .client-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.client-progress-lg .client-progress-fill {
+  border-radius: 4px;
+}
+
+/* ============================================
+   Client Portal Status Badges
+   ============================================ */
+
+.client-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+}
+
+.client-badge-todo {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.client-badge-in-progress {
+  background: oklch(0.55 0.19 250 / 12%);
+  color: oklch(0.55 0.19 250);
+}
+
+.dark .client-badge-in-progress {
+  background: oklch(0.60 0.21 255 / 15%);
+  color: oklch(0.60 0.21 255);
+}
+
+.client-badge-done {
+  background: var(--client-primary-light);
+  color: var(--client-primary);
+}
+
+.client-badge-on-hold {
+  background: oklch(0.78 0.19 75 / 12%);
+  color: oklch(0.72 0.19 75);
+}
+
+.dark .client-badge-on-hold {
+  background: oklch(0.88 0.19 95 / 15%);
+  color: oklch(0.80 0.19 85);
+}
+
+.client-badge-in-review {
+  background: oklch(0.60 0.22 310 / 12%);
+  color: oklch(0.60 0.22 310);
+}
+
+.dark .client-badge-in-review {
+  background: oklch(0.65 0.24 310 / 15%);
+  color: oklch(0.70 0.24 310);
+}
+
+/* ============================================
+   Client Portal Welcome Section
+   ============================================ */
+
+.client-welcome {
+  padding: var(--space-8) 0;
+}
+
+@media (min-width: 768px) {
+  .client-welcome {
+    padding: var(--space-12) 0;
+  }
+}
+
+.client-welcome-greeting {
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--client-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.client-welcome-title {
+  margin-top: var(--space-2);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+@media (min-width: 768px) {
+  .client-welcome-title {
+    font-size: 40px;
+  }
+}
+
+.client-welcome-message {
+  margin-top: var(--space-4);
+  font-size: var(--text-body);
+  color: var(--foreground-secondary);
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+/* ============================================
+   Client Portal Activity Feed
+   ============================================ */
+
+.client-activity-item {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.client-activity-item:last-child {
+  border-bottom: none;
+}
+
+.client-activity-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--foreground-secondary);
+}
+
+.client-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-activity-title {
+  font-size: var(--text-callout);
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.client-activity-description {
+  margin-top: var(--space-1);
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+}
+
+.client-activity-time {
+  font-size: var(--text-caption);
+  color: var(--foreground-tertiary);
+}
+
+/* ============================================
+   Client Portal Support Section
+   ============================================ */
+
+.client-support-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--client-primary-light);
+  border-radius: var(--radius-xl);
+  border: 1px solid oklch(from var(--client-primary) l c h / 20%);
+}
+
+@media (min-width: 768px) {
+  .client-support-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-8);
+  }
+}
+
+.client-support-content {
+  flex: 1;
+}
+
+.client-support-title {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.client-support-description {
+  margin-top: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+}
+
+.client-support-contact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  font-size: var(--text-footnote);
+  color: var(--client-primary);
+  font-weight: 500;
+}
+
+/* ============================================
+   Client Portal Buttons
+   ============================================ */
+
+.client-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-callout);
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+}
+
+.client-btn-primary {
+  background: var(--client-primary);
+  color: white;
+}
+
+.client-btn-primary:hover {
+  background: var(--client-primary-hover);
+}
+
+.client-btn-primary:active {
+  background: var(--client-primary-active);
+  transform: scale(0.98);
+}
+
+.client-btn-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.client-btn-secondary:hover {
+  background: var(--muted);
+}
+
+.client-btn-ghost {
+  background: transparent;
+  color: var(--foreground-secondary);
+}
+
+.client-btn-ghost:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* ============================================
+   Client Portal Task List
+   ============================================ */
+
+.client-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.client-task-item:hover {
+  background: var(--muted);
+}
+
+.client-task-status {
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+}
+
+.client-task-status-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.client-task-status-icon.done {
+  color: var(--client-primary);
+}
+
+.client-task-status-icon.in-progress {
+  color: var(--primary);
+}
+
+.client-task-status-icon.todo {
+  color: var(--foreground-tertiary);
+}
+
+.client-task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-task-title {
+  font-size: var(--text-callout);
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.client-task-assignee {
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
+  color: var(--foreground-secondary);
+}
+
+.client-task-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Client Portal File List
+   ============================================ */
+
+.client-file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.client-file-item:hover {
+  background: var(--muted);
+}
+
+.client-file-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--client-primary-light);
+  color: var(--client-primary);
+}
+
+.client-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-file-name {
+  font-size: var(--text-callout);
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-file-meta {
+  margin-top: var(--space-1);
+  font-size: var(--text-caption);
+  color: var(--foreground-secondary);
+}
+
+.client-file-action {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Client Portal Tabs
+   ============================================ */
+
+.client-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+}
+
+.client-tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--foreground-secondary);
+  text-align: center;
+  border-radius: calc(var(--radius-lg) - 4px);
+  transition: all var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+}
+
+.client-tab:hover {
+  color: var(--foreground);
+}
+
+.client-tab[data-active="true"],
+.client-tab.active {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================
+   Client Portal Empty State
+   ============================================ */
+
+.client-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  text-align: center;
+}
+
+.client-empty-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--foreground-tertiary);
+  margin-bottom: var(--space-4);
+}
+
+.client-empty-title {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.client-empty-description {
+  margin-top: var(--space-2);
+  font-size: var(--text-footnote);
+  color: var(--foreground-secondary);
+  max-width: 280px;
+}
+
+/* ============================================
+   Client Portal Secure Badge
+   ============================================ */
+
+.client-secure-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
+  color: var(--foreground-tertiary);
+}
+
+.client-secure-badge-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--client-secure);
+}
+
+/* ============================================
+   Client Portal Watermark
+   ============================================ */
+
+.client-watermark {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--foreground-tertiary);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ============================================
+   Client Portal Animations
+   ============================================ */
+
+@keyframes client-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.client-animate-in {
+  animation: client-fade-in 0.4s var(--ease-default) forwards;
+}
+
+.client-stagger-1 { animation-delay: 0.05s; }
+.client-stagger-2 { animation-delay: 0.1s; }
+.client-stagger-3 { animation-delay: 0.15s; }
+.client-stagger-4 { animation-delay: 0.2s; }
+.client-stagger-5 { animation-delay: 0.25s; }
+.client-stagger-6 { animation-delay: 0.3s; }
+
+/* ============================================
+   Reduced Motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .client-card,
+  .client-project-card,
+  .client-btn,
+  .client-tab,
+  .client-task-item,
+  .client-file-item {
+    transition: none;
+  }
+
+  .client-card:hover,
+  .client-project-card:hover {
+    transform: none;
+  }
+
+  .client-animate-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

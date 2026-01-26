@@ -6,26 +6,19 @@ import {
   Building2,
   Plus,
   Search,
-  MoreHorizontal,
   Pencil,
   Trash2,
-  Check,
-  X,
   FolderOpen,
-  Filter,
+  Mail,
+  Phone,
+  RefreshCw,
+  X,
+  Check,
+  Power,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,22 +30,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { toast } from 'sonner';
-import {
   useClients,
   useCreateClient,
   useUpdateClient,
@@ -62,8 +39,15 @@ import {
 import { AccessCodeDisplay } from '@/components/admin/access-code-display';
 import { ClientFormModal } from '@/components/admin/client-form-modal';
 import type { Client, CreateClientInput, UpdateClientInput } from '@/lib/api/admin';
+import { cn } from '@/lib/utils';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
+
+const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'Tat ca' },
+  { value: 'active', label: 'Hoat dong' },
+  { value: 'inactive', label: 'Vo hieu' },
+];
 
 export default function AdminClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +56,7 @@ export default function AdminClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const { data, isLoading } = useClients({
     search: searchQuery || undefined,
@@ -121,15 +106,43 @@ export default function AdminClientsPage() {
     }
   };
 
+  const getCompanyInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-64" />
+      <div className="space-y-8">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-64" />
+          </div>
           <Skeleton className="h-10 w-32" />
         </div>
-        <Skeleton className="h-96" />
+
+        {/* Search & Filter Skeleton */}
+        <div className="flex gap-3">
+          <Skeleton className="h-11 flex-1 max-w-md" />
+          <div className="flex gap-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-9 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* Card Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -139,213 +152,248 @@ export default function AdminClientsPage() {
   const activeClients = clients.filter((c) => c.isActive).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Quan ly Client</h1>
-          <p className="text-muted-foreground">
-            Tao va quan ly tai khoan client portal ({activeClients} hoat dong / {totalClients} tong)
+          <h1 className="text-2xl font-semibold tracking-tight">Clients</h1>
+          <p className="text-muted-foreground mt-1">
+            {activeClients} hoat dong / {totalClients} tong so
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button
+          onClick={() => setShowCreateDialog(true)}
+          className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Them Client
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Search & Filter Pills */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Tim theo ten, email hoac ma..."
+            placeholder="Tim kiem client..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-11 h-11 rounded-xl bg-surface border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
         </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Trang thai" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tat ca trang thai</SelectItem>
-            <SelectItem value="active">Dang hoat dong</SelectItem>
-            <SelectItem value="inactive">Vo hieu hoa</SelectItem>
-          </SelectContent>
-        </Select>
+
+        {/* Filter Pills */}
+        <div className="flex gap-2">
+          {FILTER_OPTIONS.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                statusFilter === filter.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-surface hover:bg-muted text-foreground/80'
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Clients Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cong ty</TableHead>
-                <TableHead>Lien he</TableHead>
-                <TableHead>Ma truy cap</TableHead>
-                <TableHead>Du an</TableHead>
-                <TableHead>Trang thai</TableHead>
-                <TableHead className="w-[70px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.length > 0 ? (
-                clients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <div className="font-medium">{client.companyName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(client.createdAt).toLocaleDateString('vi-VN')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {client.contactName && <div>{client.contactName}</div>}
-                      {client.contactEmail && (
-                        <div className="text-sm text-muted-foreground">
-                          {client.contactEmail}
-                        </div>
+      {/* Client Cards Grid */}
+      {clients.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {clients.map((client) => (
+            <div
+              key={client.id}
+              className="group relative bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-border"
+              onMouseEnter={() => setHoveredCard(client.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              {/* Card Content */}
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-start gap-4">
+                  {/* Company Avatar */}
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <span className="text-lg font-semibold text-primary">
+                        {getCompanyInitials(client.companyName)}
+                      </span>
+                    </div>
+                    {/* Status Indicator */}
+                    <div
+                      className={cn(
+                        'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card',
+                        client.isActive
+                          ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                          : 'bg-gray-400'
                       )}
-                      {client.contactPhone && (
-                        <div className="text-sm text-muted-foreground">
-                          {client.contactPhone}
-                        </div>
-                      )}
-                      {!client.contactName && !client.contactEmail && !client.contactPhone && (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <AccessCodeDisplay
-                        code={client.accessCode}
-                        onRegenerate={() => handleRegenerateCode(client.id)}
-                        isRegenerating={regeneratingId === client.id}
-                        showRegenerateButton={false}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {client.projectCount > 0 ? (
-                        <Link
-                          href={`/dashboard/projects?clientId=${client.id}`}
-                          className="inline-flex items-center gap-1.5 text-primary hover:underline"
-                        >
-                          <FolderOpen className="h-4 w-4" />
-                          <span>{client.projectCount} du an</span>
-                        </Link>
-                      ) : (
-                        <Badge variant="secondary">0 du an</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={client.isActive ? 'default' : 'secondary'}
-                        className={
-                          client.isActive
-                            ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                            : ''
-                        }
-                      >
-                        {client.isActive ? 'Hoat dong' : 'Vo hieu'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingClient(client)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Chinh sua
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleRegenerateCode(client.id)}
-                            disabled={regeneratingId === client.id}
-                          >
-                            <svg
-                              className={`h-4 w-4 mr-2 ${regeneratingId === client.id ? 'animate-spin' : ''}`}
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                            Doi ma truy cap
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleActive(client)}>
-                            {client.isActive ? (
-                              <>
-                                <X className="h-4 w-4 mr-2" />
-                                Vo hieu hoa
-                              </>
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-2" />
-                                Kich hoat
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          {client.projectCount > 0 && (
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/projects?clientId=${client.id}`}>
-                                <FolderOpen className="h-4 w-4 mr-2" />
-                                Xem du an
-                              </Link>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeletingClient(client)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Xoa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center">
-                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <p className="mt-2 text-muted-foreground">
-                      {searchQuery || statusFilter !== 'all'
-                        ? 'Khong tim thay client nao'
-                        : 'Chua co client nao'}
+                    />
+                  </div>
+
+                  {/* Company Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-lg truncate">{client.companyName}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {new Date(client.createdAt).toLocaleDateString('vi-VN')}
                     </p>
-                    {!searchQuery && statusFilter === 'all' && (
-                      <Button
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => setShowCreateDialog(true)}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Them client dau tien
-                      </Button>
+                  </div>
+
+                  {/* Projects Badge */}
+                  {client.projectCount > 0 && (
+                    <Link
+                      href={`/dashboard/projects?clientId=${client.id}`}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+                    >
+                      <FolderOpen className="h-3 w-3" />
+                      {client.projectCount}
+                    </Link>
+                  )}
+                </div>
+
+                {/* Contact Info */}
+                <div className="mt-5 space-y-2.5">
+                  {client.contactName && (
+                    <div className="flex items-center gap-2.5 text-sm">
+                      <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <span className="truncate">{client.contactName}</span>
+                    </div>
+                  )}
+                  {client.contactEmail && (
+                    <div className="flex items-center gap-2.5 text-sm">
+                      <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <span className="truncate text-muted-foreground">{client.contactEmail}</span>
+                    </div>
+                  )}
+                  {client.contactPhone && (
+                    <div className="flex items-center gap-2.5 text-sm">
+                      <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <span className="text-muted-foreground">{client.contactPhone}</span>
+                    </div>
+                  )}
+                  {!client.contactName && !client.contactEmail && !client.contactPhone && (
+                    <p className="text-sm text-muted-foreground italic">Chua co thong tin lien he</p>
+                  )}
+                </div>
+
+                {/* Access Code */}
+                <div className="mt-5 pt-4 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                      Ma truy cap
+                    </span>
+                    <AccessCodeDisplay
+                      code={client.accessCode}
+                      onRegenerate={() => handleRegenerateCode(client.id)}
+                      isRegenerating={regeneratingId === client.id}
+                      showRegenerateButton={false}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hover Overlay with Actions */}
+              <div
+                className={cn(
+                  'absolute inset-0 bg-gradient-to-t from-background/95 via-background/80 to-background/60 backdrop-blur-sm flex items-end justify-center p-5 transition-all duration-300',
+                  hoveredCard === client.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                )}
+              >
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingClient(client)}
+                    className="flex-1 rounded-xl h-10 bg-card/80 backdrop-blur-sm"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Sua
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRegenerateCode(client.id)}
+                    disabled={regeneratingId === client.id}
+                    className="h-10 w-10 rounded-xl p-0 bg-card/80 backdrop-blur-sm"
+                    title="Tao ma moi"
+                  >
+                    <RefreshCw
+                      className={cn('h-4 w-4', regeneratingId === client.id && 'animate-spin')}
+                    />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleActive(client)}
+                    className={cn(
+                      'h-10 w-10 rounded-xl p-0 bg-card/80 backdrop-blur-sm',
+                      client.isActive
+                        ? 'hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-600'
+                        : 'hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:text-emerald-600'
                     )}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    title={client.isActive ? 'Vo hieu hoa' : 'Kich hoat'}
+                  >
+                    {client.isActive ? <Power className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeletingClient(client)}
+                    disabled={client.projectCount > 0}
+                    className={cn(
+                      'h-10 w-10 rounded-xl p-0 bg-card/80 backdrop-blur-sm',
+                      client.projectCount > 0
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-600'
+                    )}
+                    title={client.projectCount > 0 ? 'Khong the xoa (co du an)' : 'Xoa'}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 px-4">
+          <div className="w-20 h-20 rounded-full bg-surface flex items-center justify-center mb-5">
+            <Building2 className="h-9 w-9 text-muted-foreground" />
+          </div>
+          <p className="text-xl font-medium text-foreground">Khong tim thay client</p>
+          <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
+            {searchQuery || statusFilter !== 'all'
+              ? 'Thu thay doi bo loc hoac tu khoa tim kiem'
+              : 'Bat dau bang cach tao client dau tien cho he thong'}
+          </p>
+          {!searchQuery && statusFilter === 'all' && (
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="mt-5 rounded-xl"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Them client dau tien
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Create Dialog */}
       <ClientFormModal
@@ -369,25 +417,23 @@ export default function AdminClientsPage() {
         open={!!deletingClient}
         onOpenChange={(open) => !open && setDeletingClient(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Xoa Client?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ban co chac muon xoa client &quot;{deletingClient?.companyName}&quot;?
-              Hanh dong nay khong the hoan tac.
+              Ban co chac muon xoa client &quot;{deletingClient?.companyName}&quot;? Hanh dong nay khong the hoan tac.
               {deletingClient && deletingClient.projectCount > 0 && (
-                <span className="block mt-2 text-destructive font-medium">
-                  Luu y: Client nay co {deletingClient.projectCount} du an. Khong the xoa
-                  client dang co du an. Vui long huy lien ket cac du an truoc.
+                <span className="block mt-3 p-3 rounded-xl bg-destructive/10 text-destructive font-medium">
+                  Khong the xoa client dang co {deletingClient.projectCount} du an. Vui long huy lien ket cac du an truoc.
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Huy</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">Huy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deletingClient ? deletingClient.projectCount > 0 : false}
             >
               Xoa

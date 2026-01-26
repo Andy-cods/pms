@@ -48,107 +48,129 @@ export function NotificationBell() {
     markAllAsRead.mutate();
   };
 
-  const getNotificationIcon = (type: Notification['type']) => {
-    // Different icons based on notification type could be added here
-    return null;
-  };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 rounded-lg hover:bg-accent/80"
+        >
+          <Bell className="h-[18px] w-[18px]" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -right-1 -top-1 h-5 min-w-5 rounded-full p-0 text-xs flex items-center justify-center"
+            <span
+              className={cn(
+                'absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center',
+                'rounded-full bg-[var(--apple-red)] px-1 text-[10px] font-medium text-white',
+                'animate-in zoom-in-50 duration-200'
+              )}
             >
               {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            </span>
           )}
-          <span className="sr-only">Thông báo</span>
+          <span className="sr-only">Thong bao</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-96">
-        <div className="flex items-center justify-between px-2">
-          <DropdownMenuLabel>Thông báo</DropdownMenuLabel>
+      <DropdownMenuContent
+        align="end"
+        className="w-80 rounded-xl p-0 overflow-hidden"
+        sideOffset={8}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+          <DropdownMenuLabel className="p-0 text-sm font-semibold">
+            Thong bao
+          </DropdownMenuLabel>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-lg"
               onClick={handleMarkAllAsRead}
               disabled={markAllAsRead.isPending}
             >
-              <CheckCheck className="mr-1 h-3 w-3" />
-              Đánh dấu tất cả đã đọc
+              <CheckCheck className="mr-1 h-3.5 w-3.5" />
+              Doc tat ca
             </Button>
           )}
         </div>
-        <DropdownMenuSeparator />
+
+        {/* Notification List */}
         <ScrollArea className="h-80">
           {isLoading ? (
-            <div className="space-y-2 p-2">
+            <div className="space-y-1 p-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex flex-col gap-1 p-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-1/4" />
+                <div key={i} className="flex flex-col gap-2 p-3 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                    <Skeleton className="h-2 w-2 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-full rounded" />
+                  <Skeleton className="h-3 w-1/4 rounded" />
                 </div>
               ))}
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <Bell className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">Không có thông báo</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 mb-3">
+                <Bell className="h-6 w-6 opacity-50" />
+              </div>
+              <p className="text-sm font-medium">Khong co thong bao</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">
+                Ban se nhan thong bao o day
+              </p>
             </div>
           ) : (
-            <div className="p-1">
+            <div className="p-1.5">
               {notifications.map((notification) => (
-                <DropdownMenuItem
+                <button
                   key={notification.id}
                   className={cn(
-                    'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                    !notification.isRead && 'bg-muted/50'
+                    'flex w-full flex-col items-start gap-1.5 p-3 rounded-xl text-left transition-colors',
+                    'hover:bg-accent/60',
+                    !notification.isRead && 'bg-accent/40'
                   )}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="flex items-start justify-between w-full gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs shrink-0">
-                          {NotificationTypeLabels[notification.type]}
-                        </Badge>
-                        {!notification.isRead && (
-                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-sm font-medium mt-1 line-clamp-1">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                        {notification.content}
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-2 w-full">
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 h-5 rounded-md font-medium"
+                    >
+                      {NotificationTypeLabels[notification.type]}
+                    </Badge>
+                    {!notification.isRead && (
+                      <span className="h-2 w-2 rounded-full bg-[var(--apple-blue)] shrink-0" />
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm font-medium leading-snug line-clamp-1">
+                    {notification.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    {notification.content}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                     {formatDistanceToNow(new Date(notification.createdAt), {
                       addSuffix: true,
                       locale: vi,
                     })}
                   </p>
-                </DropdownMenuItem>
+                </button>
               ))}
             </div>
           )}
         </ScrollArea>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="justify-center text-primary font-medium"
-          onClick={() => router.push('/dashboard/notifications')}
-        >
-          Xem tất cả thông báo
-        </DropdownMenuItem>
+
+        {/* Footer */}
+        <div className="border-t border-border/50">
+          <button
+            className="w-full py-3 text-sm font-medium text-primary hover:bg-accent/50 transition-colors"
+            onClick={() => router.push('/dashboard/notifications')}
+          >
+            Xem tat ca thong bao
+          </button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

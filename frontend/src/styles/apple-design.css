@@ -1,0 +1,545 @@
+/* ============================================
+   BC Agency PMS - Apple Design Utilities
+   ============================================
+   Additional utility classes for Apple-inspired design
+   Import after globals.css for extended functionality
+
+   Usage: @import "@/styles/apple-design.css";
+   ============================================ */
+
+/* ============================================
+   Advanced Glassmorphism Components
+   ============================================ */
+
+/* Frosted Glass - macOS style */
+.glass-frosted {
+  background: oklch(1 0 0 / 60%);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid oklch(1 0 0 / 30%);
+}
+
+.dark .glass-frosted {
+  background: oklch(0.14 0 0 / 60%);
+  border: 1px solid oklch(1 0 0 / 8%);
+}
+
+/* Ultra Glass - More transparent */
+.glass-ultra {
+  background: oklch(1 0 0 / 40%);
+  backdrop-filter: blur(60px) saturate(250%);
+  -webkit-backdrop-filter: blur(60px) saturate(250%);
+  border: 1px solid oklch(1 0 0 / 20%);
+}
+
+.dark .glass-ultra {
+  background: oklch(0.14 0 0 / 40%);
+  border: 1px solid oklch(1 0 0 / 5%);
+}
+
+/* Material Glass - Subtle depth */
+.glass-material {
+  background: oklch(0.98 0 0 / 85%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid oklch(0 0 0 / 4%);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 4%),
+    inset 0 1px 0 oklch(1 0 0 / 50%);
+}
+
+.dark .glass-material {
+  background: oklch(0.16 0 0 / 85%);
+  border: 1px solid oklch(1 0 0 / 6%);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 20%),
+    inset 0 1px 0 oklch(1 0 0 / 5%);
+}
+
+/* ============================================
+   Advanced Shadow System
+   ============================================ */
+
+/* Floating Shadow - For modals and dropdowns */
+.shadow-floating {
+  box-shadow:
+    0 0 0 1px oklch(0 0 0 / 4%),
+    0 4px 8px oklch(0 0 0 / 4%),
+    0 12px 24px oklch(0 0 0 / 8%),
+    0 24px 48px oklch(0 0 0 / 12%);
+}
+
+.dark .shadow-floating {
+  box-shadow:
+    0 0 0 1px oklch(1 0 0 / 6%),
+    0 4px 8px oklch(0 0 0 / 20%),
+    0 12px 24px oklch(0 0 0 / 30%),
+    0 24px 48px oklch(0 0 0 / 40%);
+}
+
+/* Inset Shadow - For inputs and wells */
+.shadow-inset {
+  box-shadow:
+    inset 0 1px 2px oklch(0 0 0 / 6%),
+    inset 0 0 0 1px oklch(0 0 0 / 4%);
+}
+
+.dark .shadow-inset {
+  box-shadow:
+    inset 0 1px 2px oklch(0 0 0 / 20%),
+    inset 0 0 0 1px oklch(0 0 0 / 10%);
+}
+
+/* Glow Shadow - For focus states */
+.shadow-glow-primary {
+  box-shadow:
+    0 0 0 2px oklch(1 0 0),
+    0 0 0 4px oklch(0.55 0.19 250 / 40%);
+}
+
+.dark .shadow-glow-primary {
+  box-shadow:
+    0 0 0 2px oklch(0 0 0),
+    0 0 0 4px oklch(0.60 0.21 255 / 50%);
+}
+
+.shadow-glow-success {
+  box-shadow:
+    0 0 0 2px oklch(1 0 0),
+    0 0 0 4px oklch(0.72 0.19 145 / 40%);
+}
+
+.shadow-glow-error {
+  box-shadow:
+    0 0 0 2px oklch(1 0 0),
+    0 0 0 4px oklch(0.63 0.26 25 / 40%);
+}
+
+/* ============================================
+   Advanced Typography
+   ============================================ */
+
+/* Display variants */
+.text-display-large {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.text-display-small {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* Emphasized text */
+.text-emphasis {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* Dimmed text */
+.text-dimmed {
+  color: var(--foreground-tertiary);
+}
+
+/* Mono text for code/data */
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-feature-settings: "tnum";
+}
+
+/* Tabular numbers */
+.tabular-nums {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Text Balance - Better line wrapping */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* ============================================
+   Micro-interactions
+   ============================================ */
+
+/* Pulse animation for notifications */
+@keyframes pulse-apple {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-apple {
+  animation: pulse-apple 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.95 0 0) 0%,
+    oklch(0.98 0 0) 50%,
+    oklch(0.95 0 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.18 0 0) 0%,
+    oklch(0.22 0 0) 50%,
+    oklch(0.18 0 0) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* Scale in animation */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Slide in from bottom */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ============================================
+   Interactive Components
+   ============================================ */
+
+/* Segmented Control */
+.segmented-control {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  gap: 2px;
+}
+
+.segmented-control-item {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  color: var(--foreground-secondary);
+  border-radius: calc(var(--radius-lg) - 2px);
+  transition: all var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+}
+
+.segmented-control-item:hover {
+  color: var(--foreground);
+}
+
+.segmented-control-item[data-active="true"],
+.segmented-control-item.active {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Toggle Switch */
+.toggle-apple {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  background: oklch(0.85 0 0);
+  border-radius: 16px;
+  transition: background var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+}
+
+.toggle-apple::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 4px oklch(0 0 0 / 15%);
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.toggle-apple[data-checked="true"],
+.toggle-apple.checked {
+  background: var(--success);
+}
+
+.toggle-apple[data-checked="true"]::after,
+.toggle-apple.checked::after {
+  transform: translateX(20px);
+}
+
+.dark .toggle-apple {
+  background: oklch(0.30 0 0);
+}
+
+/* Progress Bar */
+.progress-apple {
+  height: 4px;
+  background: var(--surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-apple-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width var(--duration-slow) var(--ease-default);
+}
+
+/* ============================================
+   Layout Utilities
+   ============================================ */
+
+/* Container with Apple-style max-width */
+.container-apple {
+  width: 100%;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+.container-apple-wide {
+  max-width: 1200px;
+}
+
+.container-apple-narrow {
+  max-width: 680px;
+}
+
+/* Section spacing */
+.section-apple {
+  padding-top: var(--space-16);
+  padding-bottom: var(--space-16);
+}
+
+.section-apple-compact {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+/* Grid gap utilities */
+.gap-apple-sm {
+  gap: var(--space-2);
+}
+
+.gap-apple {
+  gap: var(--space-4);
+}
+
+.gap-apple-md {
+  gap: var(--space-6);
+}
+
+.gap-apple-lg {
+  gap: var(--space-8);
+}
+
+/* ============================================
+   Status Indicators
+   ============================================ */
+
+/* Online indicator dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot-online {
+  background: var(--success);
+  box-shadow: 0 0 0 2px oklch(from var(--success) l c h / 20%);
+}
+
+.status-dot-offline {
+  background: var(--foreground-tertiary);
+}
+
+.status-dot-busy {
+  background: var(--error);
+  box-shadow: 0 0 0 2px oklch(from var(--error) l c h / 20%);
+}
+
+.status-dot-away {
+  background: var(--warning);
+  box-shadow: 0 0 0 2px oklch(from var(--warning) l c h / 20%);
+}
+
+/* ============================================
+   Dividers
+   ============================================ */
+
+.divider-apple {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: var(--space-4) 0;
+}
+
+.divider-apple-strong {
+  background: var(--border-strong);
+}
+
+.divider-apple-inset {
+  margin-left: var(--space-4);
+}
+
+/* ============================================
+   Scrolling Enhancements
+   ============================================ */
+
+/* Smooth scroll */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Snap scrolling */
+.snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-y {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* Fade edges for scroll containers */
+.scroll-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 16px,
+    black calc(100% - 16px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 16px,
+    black calc(100% - 16px),
+    transparent
+  );
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  z-index: 9999;
+  transition: top var(--duration-fast) var(--ease-default);
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+}
+
+/* Focus visible enhancement */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-apple,
+  .animate-shimmer,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-up {
+    animation: none;
+  }
+
+  .scroll-smooth {
+    scroll-behavior: auto;
+  }
+}

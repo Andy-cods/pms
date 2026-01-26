@@ -2,19 +2,15 @@
 
 import { useState } from 'react';
 import {
-  Users,
   Plus,
   Search,
-  MoreHorizontal,
   Pencil,
   KeyRound,
-  UserX,
-  Check,
-  X,
+  UserMinus,
+  UserCheck,
   Copy,
-  Filter,
+  X,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -28,13 +24,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -44,21 +33,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import {
@@ -71,13 +45,14 @@ import {
 import { UserFormModal } from '@/components/admin/user-form-modal';
 import type { AdminUser, CreateUserInput, UpdateUserInput, UserRole } from '@/lib/api/admin-users';
 import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Admin',
   TECHNICAL: 'Technical',
-  NVKD: 'NVKD (Sales)',
-  PM: 'Project Manager',
+  NVKD: 'NVKD',
+  PM: 'PM',
   PLANNER: 'Planner',
   ACCOUNT: 'Account',
   CONTENT: 'Content',
@@ -86,33 +61,53 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  SUPER_ADMIN: 'bg-purple-100 text-purple-800',
-  ADMIN: 'bg-red-100 text-red-800',
-  TECHNICAL: 'bg-blue-100 text-blue-800',
-  NVKD: 'bg-yellow-100 text-yellow-800',
-  PM: 'bg-green-100 text-green-800',
-  PLANNER: 'bg-cyan-100 text-cyan-800',
-  ACCOUNT: 'bg-orange-100 text-orange-800',
-  CONTENT: 'bg-pink-100 text-pink-800',
-  DESIGN: 'bg-indigo-100 text-indigo-800',
-  MEDIA: 'bg-teal-100 text-teal-800',
+  SUPER_ADMIN: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  ADMIN: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  TECHNICAL: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  NVKD: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  PM: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  PLANNER: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+  ACCOUNT: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  CONTENT: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
+  DESIGN: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+  MEDIA: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
 };
+
+type FilterType = 'all' | 'active' | 'inactive' | UserRole;
+
+const FILTER_OPTIONS: { value: FilterType; label: string }[] = [
+  { value: 'all', label: 'Tat ca' },
+  { value: 'active', label: 'Hoat dong' },
+  { value: 'inactive', label: 'Vo hieu' },
+];
+
+const ROLE_FILTERS: { value: UserRole; label: string }[] = [
+  { value: 'SUPER_ADMIN', label: 'Super Admin' },
+  { value: 'ADMIN', label: 'Admin' },
+  { value: 'PM', label: 'PM' },
+  { value: 'TECHNICAL', label: 'Technical' },
+  { value: 'DESIGN', label: 'Design' },
+  { value: 'CONTENT', label: 'Content' },
+];
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [deactivatingUser, setDeactivatingUser] = useState<AdminUser | null>(null);
   const [resettingPasswordUser, setResettingPasswordUser] = useState<AdminUser | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
+  // Determine role and status filters from activeFilter
+  const roleFilter = Object.keys(ROLE_LABELS).includes(activeFilter) ? activeFilter as UserRole : undefined;
+  const statusFilter = activeFilter === 'active' ? true : activeFilter === 'inactive' ? false : undefined;
+
   const { data, isLoading } = useAdminUsers({
     search: searchQuery || undefined,
-    role: roleFilter !== 'all' ? (roleFilter as UserRole) : undefined,
-    isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    role: roleFilter,
+    isActive: statusFilter,
   });
 
   const createMutation = useCreateAdminUser();
@@ -140,10 +135,8 @@ export default function AdminUsersPage() {
 
   const handleToggleActive = async (user: AdminUser) => {
     if (user.isActive) {
-      // If active, show deactivate confirmation
       setDeactivatingUser(user);
     } else {
-      // If inactive, directly activate
       await updateMutation.mutateAsync({
         id: user.id,
         input: { isActive: true },
@@ -178,183 +171,276 @@ export default function AdminUsersPage() {
       .slice(0, 2);
   };
 
+  const formatLastLogin = (date: string | null) => {
+    if (!date) return 'Chua dang nhap';
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Vua xong';
+    if (diffMins < 60) return `${diffMins} phut truoc`;
+    if (diffHours < 24) return `${diffHours} gio truoc`;
+    if (diffDays < 7) return `${diffDays} ngay truoc`;
+    return d.toLocaleDateString('vi-VN');
+  };
+
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-40" />
-          <Skeleton className="h-10 w-40" />
-          <Skeleton className="h-10 w-32" />
+      <div className="space-y-8">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-36" />
         </div>
-        <Skeleton className="h-96" />
+
+        {/* Search & Filter Skeleton */}
+        <div className="flex gap-3">
+          <Skeleton className="h-11 flex-1 max-w-md" />
+          <div className="flex gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-9 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 p-4 border-b border-border/30 last:border-0">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Quan ly nguoi dung</h1>
-          <p className="text-muted-foreground">Quan ly tai khoan nguoi dung trong he thong</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Nguoi dung</h1>
+          <p className="text-muted-foreground mt-1">
+            Quan ly {data?.total || 0} tai khoan trong he thong
+          </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Them nguoi dung
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* Search & Filter Pills */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Tim theo ten hoac email..."
+            placeholder="Tim kiem nguoi dung..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-11 h-11 rounded-xl bg-surface border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
         </div>
 
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Vai tro" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tat ca vai tro</SelectItem>
-            {Object.entries(ROLE_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Trang thai" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tat ca</SelectItem>
-            <SelectItem value="active">Hoat dong</SelectItem>
-            <SelectItem value="inactive">Vo hieu</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Filter Pills */}
+        <div className="flex flex-wrap gap-2">
+          {FILTER_OPTIONS.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveFilter(filter.value)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                activeFilter === filter.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-surface hover:bg-muted text-foreground/80'
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+          <div className="w-px h-8 bg-border/50 mx-1 self-center" />
+          {ROLE_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => setActiveFilter(activeFilter === filter.value ? 'all' : filter.value)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                activeFilter === filter.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-surface hover:bg-muted text-foreground/80'
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nguoi dung</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Vai tro</TableHead>
-                <TableHead>Trang thai</TableHead>
-                <TableHead>Dang nhap gan nhat</TableHead>
-                <TableHead className="w-[70px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.users && data.users.length > 0 ? (
-                data.users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatar || undefined} alt={user.name} />
-                          <AvatarFallback className="text-xs">
-                            {getInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(user.createdAt).toLocaleDateString('vi-VN')}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={ROLE_COLORS[user.role]}>
-                        {ROLE_LABELS[user.role]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={user.isActive ? 'default' : 'secondary'}
-                        className={user.isActive ? 'bg-green-100 text-green-800' : ''}
-                      >
-                        {user.isActive ? 'Hoat dong' : 'Vo hieu'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {user.lastLoginAt
-                        ? new Date(user.lastLoginAt).toLocaleString('vi-VN')
-                        : 'Chua dang nhap'}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingUser(user)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Chinh sua
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setResettingPasswordUser(user)}>
-                            <KeyRound className="h-4 w-4 mr-2" />
-                            Dat lai mat khau
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleToggleActive(user)}
-                            disabled={user.id === currentUser?.id}
-                          >
-                            {user.isActive ? (
-                              <>
-                                <UserX className="h-4 w-4 mr-2" />
-                                Vo hieu hoa
-                              </>
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-2" />
-                                Kich hoat
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <p className="mt-2 text-muted-foreground">
-                      {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                        ? 'Khong tim thay nguoi dung'
-                        : 'Chua co nguoi dung nao'}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Users Table - Apple Style */}
+      <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+        {/* Table Header */}
+        <div className="grid grid-cols-[1fr,1.2fr,auto,auto,auto] gap-4 px-5 py-3 bg-surface/50 border-b border-border/30 text-sm font-medium text-muted-foreground">
+          <span>Nguoi dung</span>
+          <span>Email</span>
+          <span className="text-center w-24">Vai tro</span>
+          <span className="text-center w-20">Trang thai</span>
+          <span className="w-24"></span>
+        </div>
 
-      {/* Total count */}
-      {data?.total !== undefined && (
-        <div className="text-sm text-muted-foreground">
-          Tong cong: {data.total} nguoi dung
+        {/* Table Body */}
+        {data?.users && data.users.length > 0 ? (
+          <div className="divide-y divide-border/30">
+            {data.users.map((user, index) => (
+              <div
+                key={user.id}
+                className={cn(
+                  'grid grid-cols-[1fr,1.2fr,auto,auto,auto] gap-4 px-5 py-4 items-center transition-colors hover:bg-surface/50',
+                  index % 2 === 1 && 'bg-surface/30'
+                )}
+              >
+                {/* User Info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-11 w-11 ring-2 ring-border/50">
+                    <AvatarImage src={user.avatar || undefined} alt={user.name} />
+                    <AvatarFallback className="text-sm font-medium bg-surface">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatLastLogin(user.lastLoginAt)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <span className="text-muted-foreground truncate">{user.email}</span>
+
+                {/* Role Badge */}
+                <div className="w-24 flex justify-center">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'font-medium text-xs px-2.5 py-0.5 rounded-full',
+                      ROLE_COLORS[user.role]
+                    )}
+                  >
+                    {ROLE_LABELS[user.role]}
+                  </Badge>
+                </div>
+
+                {/* Status Dot */}
+                <div className="w-20 flex justify-center">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        'h-2.5 w-2.5 rounded-full',
+                        user.isActive
+                          ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                          : 'bg-gray-400'
+                      )}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {user.isActive ? 'On' : 'Off'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="w-24 flex justify-end gap-1">
+                  <button
+                    onClick={() => setEditingUser(user)}
+                    className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    title="Chinh sua"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setResettingPasswordUser(user)}
+                    className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    title="Dat lai mat khau"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleActive(user)}
+                    disabled={user.id === currentUser?.id}
+                    className={cn(
+                      'p-2 rounded-lg transition-colors',
+                      user.id === currentUser?.id
+                        ? 'opacity-30 cursor-not-allowed'
+                        : user.isActive
+                          ? 'hover:bg-red-500/10 text-muted-foreground hover:text-red-600'
+                          : 'hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-600'
+                    )}
+                    title={user.isActive ? 'Vo hieu hoa' : 'Kich hoat'}
+                  >
+                    {user.isActive ? (
+                      <UserMinus className="h-4 w-4" />
+                    ) : (
+                      <UserCheck className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
+              <Search className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-medium text-foreground">Khong tim thay nguoi dung</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {searchQuery || activeFilter !== 'all'
+                ? 'Thu thay doi bo loc hoac tu khoa tim kiem'
+                : 'Chua co nguoi dung nao trong he thong'}
+            </p>
+            {!searchQuery && activeFilter === 'all' && (
+              <Button
+                variant="outline"
+                className="mt-4 rounded-xl"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Them nguoi dung dau tien
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer Stats */}
+      {data?.total !== undefined && data.total > 0 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>Hien thi {data.users?.length || 0} / {data.total} nguoi dung</span>
         </div>
       )}
 
@@ -382,19 +468,18 @@ export default function AdminUsersPage() {
         open={!!deactivatingUser}
         onOpenChange={(open) => !open && setDeactivatingUser(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Vo hieu hoa nguoi dung?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ban co chac muon vo hieu hoa nguoi dung &quot;{deactivatingUser?.name}&quot;?
-              Nguoi dung se khong the dang nhap vao he thong.
+              Nguoi dung &quot;{deactivatingUser?.name}&quot; se khong the dang nhap vao he thong sau khi bi vo hieu hoa.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Huy</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">Huy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeactivate}
-              className="bg-destructive text-destructive-foreground"
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Vo hieu hoa
             </AlertDialogAction>
@@ -402,58 +487,71 @@ export default function AdminUsersPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reset Password Confirmation/Result */}
+      {/* Reset Password Dialog */}
       <Dialog
         open={!!resettingPasswordUser}
         onOpenChange={(open) => !open && closeTempPasswordDialog()}
       >
-        <DialogContent>
+        <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               {tempPassword ? 'Mat khau tam thoi' : 'Dat lai mat khau?'}
             </DialogTitle>
             <DialogDescription>
               {tempPassword ? (
-                <>Mat khau moi cho nguoi dung &quot;{resettingPasswordUser?.name}&quot;:</>
+                <>Mat khau moi cho &quot;{resettingPasswordUser?.name}&quot;:</>
               ) : (
                 <>
-                  Ban co chac muon dat lai mat khau cho nguoi dung &quot;
-                  {resettingPasswordUser?.name}&quot;? Mat khau moi se duoc tao tu dong.
+                  Mat khau moi se duoc tao tu dong cho &quot;{resettingPasswordUser?.name}&quot;.
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
 
           {tempPassword && (
-            <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
-              <code className="flex-1 text-lg font-mono">{tempPassword}</code>
-              <Button variant="outline" size="icon" onClick={copyTempPassword}>
+            <div className="flex items-center gap-3 p-4 bg-surface rounded-xl border border-border/50">
+              <code className="flex-1 text-lg font-mono font-medium tracking-wider">
+                {tempPassword}
+              </code>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={copyTempPassword}
+                className="rounded-lg hover:bg-muted"
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
           )}
 
           {tempPassword && (
-            <p className="text-sm text-muted-foreground">
-              Vui long sao chep va gui mat khau nay cho nguoi dung. Mat khau se khong duoc hien thi lai.
+            <p className="text-sm text-muted-foreground bg-amber-500/10 text-amber-600 dark:text-amber-400 p-3 rounded-xl">
+              Luu y: Mat khau nay chi hien thi mot lan. Vui long copy va gui cho nguoi dung.
             </p>
           )}
 
           <DialogFooter>
             {tempPassword ? (
-              <Button onClick={closeTempPasswordDialog}>Dong</Button>
+              <Button onClick={closeTempPasswordDialog} className="rounded-xl w-full">
+                Dong
+              </Button>
             ) : (
-              <>
-                <Button variant="outline" onClick={closeTempPasswordDialog}>
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="outline"
+                  onClick={closeTempPasswordDialog}
+                  className="rounded-xl flex-1"
+                >
                   Huy
                 </Button>
                 <Button
                   onClick={handleResetPassword}
                   disabled={resetPasswordMutation.isPending}
+                  className="rounded-xl flex-1"
                 >
-                  {resetPasswordMutation.isPending ? 'Dang xu ly...' : 'Dat lai mat khau'}
+                  {resetPasswordMutation.isPending ? 'Dang xu ly...' : 'Dat lai'}
                 </Button>
-              </>
+              </div>
             )}
           </DialogFooter>
         </DialogContent>

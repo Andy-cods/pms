@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Copy, Eye, EyeOff, RefreshCw, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +42,7 @@ export function AccessCodeDisplay({
 
   const maskCode = (accessCode: string) => {
     if (accessCode.length <= 2) return accessCode;
-    return accessCode.slice(0, 2) + '*'.repeat(accessCode.length - 2);
+    return accessCode.slice(0, 2) + '\u2022'.repeat(Math.min(accessCode.length - 2, 6));
   };
 
   const handleCopy = async () => {
@@ -61,59 +60,77 @@ export function AccessCodeDisplay({
 
   return (
     <TooltipProvider>
-      <div className={cn('flex items-center gap-2', className)}>
-        <code className="bg-muted px-2 py-1 rounded text-sm font-mono min-w-[80px]">
+      <div className={cn('flex items-center gap-1.5', className)}>
+        {/* Code Display */}
+        <code
+          className={cn(
+            'px-2.5 py-1 rounded-lg text-sm font-mono min-w-[72px] text-center transition-all',
+            'bg-surface border border-border/50',
+            isRevealed ? 'tracking-wider' : 'tracking-widest'
+          )}
+        >
           {displayCode}
         </code>
 
+        {/* Toggle Visibility */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
+            <button
               onClick={() => setIsRevealed(!isRevealed)}
+              className={cn(
+                'p-1.5 rounded-lg transition-all',
+                'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
             >
               {isRevealed ? (
                 <EyeOff className="h-3.5 w-3.5" />
               ) : (
                 <Eye className="h-3.5 w-3.5" />
               )}
-            </Button>
+            </button>
           </TooltipTrigger>
-          <TooltipContent>
-            {isRevealed ? 'An ma' : 'Hien thi ma'}
+          <TooltipContent side="top" className="rounded-lg text-xs">
+            {isRevealed ? 'An ma' : 'Hien thi'}
           </TooltipContent>
         </Tooltip>
 
+        {/* Copy Button */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
+            <button
               onClick={handleCopy}
+              className={cn(
+                'p-1.5 rounded-lg transition-all',
+                justCopied
+                  ? 'text-emerald-500 bg-emerald-500/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
             >
               {justCopied ? (
-                <Check className="h-3.5 w-3.5 text-green-600" />
+                <Check className="h-3.5 w-3.5" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-            </Button>
+            </button>
           </TooltipTrigger>
-          <TooltipContent>Copy ma</TooltipContent>
+          <TooltipContent side="top" className="rounded-lg text-xs">
+            {justCopied ? 'Da copy!' : 'Copy ma'}
+          </TooltipContent>
         </Tooltip>
 
+        {/* Regenerate Button */}
         {showRegenerateButton && onRegenerate && (
           <AlertDialog>
             <Tooltip>
               <TooltipTrigger asChild>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
+                  <button
                     disabled={isRegenerating}
+                    className={cn(
+                      'p-1.5 rounded-lg transition-all',
+                      'text-muted-foreground hover:text-foreground hover:bg-muted',
+                      isRegenerating && 'opacity-50 cursor-not-allowed'
+                    )}
                   >
                     <RefreshCw
                       className={cn(
@@ -121,22 +138,28 @@ export function AccessCodeDisplay({
                         isRegenerating && 'animate-spin'
                       )}
                     />
-                  </Button>
+                  </button>
                 </AlertDialogTrigger>
               </TooltipTrigger>
-              <TooltipContent>Tao ma moi</TooltipContent>
+              <TooltipContent side="top" className="rounded-lg text-xs">
+                Tao ma moi
+              </TooltipContent>
             </Tooltip>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-2xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Tao ma truy cap moi?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Ma truy cap cu se bi vo hieu hoa ngay lap tuc. Client se khong
-                  the dang nhap bang ma cu nua. Ban co chac muon tiep tuc?
+                <AlertDialogDescription className="space-y-2">
+                  <p>
+                    Ma truy cap cu se bi vo hieu hoa ngay lap tuc. Client se khong the dang nhap bang ma cu.
+                  </p>
+                  <p className="text-amber-600 dark:text-amber-400 font-medium">
+                    Ban co chac muon tiep tuc?
+                  </p>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Huy</AlertDialogCancel>
-                <AlertDialogAction onClick={onRegenerate}>
+                <AlertDialogCancel className="rounded-xl">Huy</AlertDialogCancel>
+                <AlertDialogAction onClick={onRegenerate} className="rounded-xl">
                   Tao ma moi
                 </AlertDialogAction>
               </AlertDialogFooter>
