@@ -11,8 +11,26 @@ interface AppleInputProps extends React.ComponentProps<'input'> {
 }
 
 const AppleInput = React.forwardRef<HTMLInputElement, AppleInputProps>(
-  ({ className, type, label, error, showPasswordToggle, ...props }, ref) => {
+  ({ className, type, label, error, showPasswordToggle, autoFocus, ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false);
+    const localRef = React.useRef<HTMLInputElement | null>(null);
+
+    // merge refs to keep forwardRef working
+    const setRefs = (node: HTMLInputElement | null) => {
+      localRef.current = node;
+      if (!ref) return;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else {
+        ref.current = node;
+      }
+    };
+
+    React.useEffect(() => {
+      if (autoFocus && localRef.current) {
+        localRef.current.focus();
+      }
+    }, [autoFocus]);
 
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
@@ -30,7 +48,7 @@ const AppleInput = React.forwardRef<HTMLInputElement, AppleInputProps>(
         <div className="relative">
           <input
             type={inputType}
-            ref={ref}
+            ref={setRefs}
             className={cn(
               // Base styles - Apple pill shape
               'w-full h-12 px-4 rounded-xl text-base',
