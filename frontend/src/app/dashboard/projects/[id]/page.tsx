@@ -40,6 +40,9 @@ import {
 import type { UserRole } from '@/lib/api/admin-users';
 import { ProjectStageTimeline } from '@/components/project/project-stage-timeline';
 import { TeamMemberModal } from '@/components/project/team-member-modal';
+import { BudgetCard } from '@/components/project/budget-card';
+import { BudgetFormModal } from '@/components/project/budget-form-modal';
+import { useProjectBudget } from '@/hooks/use-project-budget';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -241,9 +244,11 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
 
   const { data: project, isLoading, error } = useProject(projectId);
   const { data: teamWithWorkload } = useProjectTeam(projectId);
+  const { data: budget } = useProjectBudget(projectId);
   const archiveMutation = useArchiveProject();
   const updateMutation = useUpdateProject();
   const updateTeamMember = useUpdateTeamMember();
@@ -481,6 +486,7 @@ export default function ProjectDetailPage() {
         items={[
           { value: 'overview', label: 'Tổng quan' },
           { value: 'team', label: 'Team', count: project.team.length },
+          { value: 'budget', label: 'Ngân sách' },
         ]}
       />
 
@@ -695,6 +701,13 @@ export default function ProjectDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Budget Preview */}
+            <BudgetCard
+              budget={budget ?? null}
+              onEdit={() => setShowBudgetForm(true)}
+              compact
+            />
           </div>
         </div>
       )}
@@ -911,6 +924,21 @@ export default function ProjectDetailPage() {
           />
         </>
       )}
+
+      {activeTab === 'budget' && (
+        <BudgetCard
+          budget={budget ?? null}
+          onEdit={() => setShowBudgetForm(true)}
+        />
+      )}
+
+      {/* Budget Form Modal */}
+      <BudgetFormModal
+        projectId={projectId}
+        budget={budget ?? null}
+        open={showBudgetForm}
+        onOpenChange={setShowBudgetForm}
+      />
     </div>
   );
 }
