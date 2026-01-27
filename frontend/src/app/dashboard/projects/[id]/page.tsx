@@ -20,10 +20,12 @@ import {
   UserPlus,
   Pencil,
   UserMinus,
+  AlertTriangle,
 } from 'lucide-react';
 
 import {
   useProject,
+  useProjectTeam,
   useArchiveProject,
   useUpdateProject,
   useUpdateTeamMember,
@@ -241,6 +243,7 @@ export default function ProjectDetailPage() {
   const [showAddMember, setShowAddMember] = useState(false);
 
   const { data: project, isLoading, error } = useProject(projectId);
+  const { data: teamWithWorkload } = useProjectTeam(projectId);
   const archiveMutation = useArchiveProject();
   const updateMutation = useUpdateProject();
   const updateTeamMember = useUpdateTeamMember();
@@ -720,123 +723,181 @@ export default function ProjectDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {project.team.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-surface/50 hover:bg-surface transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-11 w-11">
-                        {member.user.avatar && (
-                          <AvatarImage src={member.user.avatar} />
-                        )}
-                        <AvatarFallback className="text-sm font-medium bg-muted">
-                          {member.user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-callout font-medium">
-                            {member.user.name}
-                          </span>
-                          {member.isPrimary && (
-                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium">
-                              Primary
-                            </span>
+                {(teamWithWorkload || project.team).map((member) => {
+                  const workload = 'workload' in member ? member.workload : undefined;
+                  const taskCompletion = workload && workload.projectTasks > 0
+                    ? Math.round((workload.projectTasksDone / workload.projectTasks) * 100)
+                    : 0;
+
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-surface/50 hover:bg-surface transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Avatar with completion ring */}
+                        <div className="relative">
+                          <Avatar className="h-11 w-11">
+                            {member.user.avatar && (
+                              <AvatarImage src={member.user.avatar} />
+                            )}
+                            <AvatarFallback className="text-sm font-medium bg-muted">
+                              {member.user.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {workload && workload.projectTasksOverdue > 0 && (
+                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#ff3b30] dark:bg-[#ff453a] flex items-center justify-center">
+                              <span className="text-[8px] font-bold text-white">
+                                {workload.projectTasksOverdue}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="text-footnote text-muted-foreground">
-                          {member.user.email}
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-callout font-medium truncate">
+                              {member.user.name}
+                            </span>
+                            {member.isPrimary && (
+                              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium shrink-0">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Workload Stats */}
+                          {workload ? (
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <CheckSquare className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-footnote text-muted-foreground tabular-nums">
+                                  <span className="font-medium text-foreground">
+                                    {workload.projectTasksDone}
+                                  </span>
+                                  /{workload.projectTasks} tasks
+                                </span>
+                              </div>
+                              {workload.projectTasks > 0 && (
+                                <span className={cn(
+                                  'text-caption font-medium tabular-nums',
+                                  taskCompletion === 100
+                                    ? 'text-[#34c759] dark:text-[#30d158]'
+                                    : taskCompletion >= 50
+                                    ? 'text-[#0071e3] dark:text-[#0a84ff]'
+                                    : 'text-muted-foreground'
+                                )}>
+                                  {taskCompletion}%
+                                </span>
+                              )}
+                              {workload.projectTasksOverdue > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 text-[#ff3b30] dark:text-[#ff453a]" />
+                                  <span className="text-caption font-medium text-[#ff3b30] dark:text-[#ff453a] tabular-nums">
+                                    {workload.projectTasksOverdue} quá hạn
+                                  </span>
+                                </div>
+                              )}
+                              <span className="text-caption text-muted-foreground/60 tabular-nums">
+                                · {workload.totalTasks} tổng
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-footnote text-muted-foreground">
+                              {member.user.email}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* Role Selector */}
-                      <Select
-                        value={member.role}
-                        onValueChange={async (newRole: string) => {
-                          try {
-                            await updateTeamMember.mutateAsync({
-                              projectId,
-                              memberId: member.id,
-                              input: { role: newRole },
-                            });
-                            toast.success(`Đã cập nhật vai trò của ${member.user.name}`);
-                          } catch {
-                            toast.error('Không thể cập nhật vai trò');
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-[130px] h-8 rounded-lg text-footnote border-border/50">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {(['PM', 'ACCOUNT', 'CONTENT', 'DESIGN', 'MEDIA', 'PLANNER', 'TECHNICAL', 'NVKD'] as UserRole[]).map(
-                            (r) => (
-                              <SelectItem key={r} value={r} className="rounded-lg text-sm">
-                                {r === 'NVKD' ? 'Sales' : r.charAt(0) + r.slice(1).toLowerCase().replace('_', ' ')}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
 
-                      {/* Remove Button */}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-[#ff3b30]"
-                          >
-                            <UserMinus className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Xóa thành viên?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Bạn có chắc muốn xóa{' '}
-                              <span className="font-medium text-foreground">
-                                {member.user.name}
-                              </span>{' '}
-                              khỏi team dự án?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-full">
-                              Hủy
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              className="rounded-full bg-[#ff3b30] hover:bg-[#ff3b30]/90"
-                              onClick={async () => {
-                                try {
-                                  await removeTeamMember.mutateAsync({
-                                    projectId,
-                                    memberId: member.id,
-                                  });
-                                  toast.success(
-                                    `Đã xóa ${member.user.name} khỏi team`
-                                  );
-                                } catch (error: unknown) {
-                                  const err = error as {
-                                    response?: { data?: { message?: string } };
-                                  };
-                                  toast.error(
-                                    err?.response?.data?.message ||
-                                      'Không thể xóa thành viên'
-                                  );
-                                }
-                              }}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Role Selector */}
+                        <Select
+                          value={member.role}
+                          onValueChange={async (newRole: string) => {
+                            try {
+                              await updateTeamMember.mutateAsync({
+                                projectId,
+                                memberId: member.id,
+                                input: { role: newRole },
+                              });
+                              toast.success(`Đã cập nhật vai trò của ${member.user.name}`);
+                            } catch {
+                              toast.error('Không thể cập nhật vai trò');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 rounded-lg text-footnote border-border/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {(['PM', 'ACCOUNT', 'CONTENT', 'DESIGN', 'MEDIA', 'PLANNER', 'TECHNICAL', 'NVKD'] as UserRole[]).map(
+                              (r) => (
+                                <SelectItem key={r} value={r} className="rounded-lg text-sm">
+                                  {r === 'NVKD' ? 'Sales' : r.charAt(0) + r.slice(1).toLowerCase().replace('_', ' ')}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Remove Button */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-[#ff3b30]"
                             >
-                              Xóa
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <UserMinus className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Xóa thành viên?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Bạn có chắc muốn xóa{' '}
+                                <span className="font-medium text-foreground">
+                                  {member.user.name}
+                                </span>{' '}
+                                khỏi team dự án?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-full">
+                                Hủy
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                className="rounded-full bg-[#ff3b30] hover:bg-[#ff3b30]/90"
+                                onClick={async () => {
+                                  try {
+                                    await removeTeamMember.mutateAsync({
+                                      projectId,
+                                      memberId: member.id,
+                                    });
+                                    toast.success(
+                                      `Đã xóa ${member.user.name} khỏi team`
+                                    );
+                                  } catch (error: unknown) {
+                                    const err = error as {
+                                      response?: { data?: { message?: string } };
+                                    };
+                                    toast.error(
+                                      err?.response?.data?.message ||
+                                        'Không thể xóa thành viên'
+                                    );
+                                  }
+                                }}
+                              >
+                                Xóa
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

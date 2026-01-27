@@ -273,6 +273,24 @@ export class ProjectController {
   ): Promise<ProjectResponseDto> {
     await this.checkProjectAccess(id, req.user, true);
 
+    // Get current project state for stage history tracking
+    const currentProject = await this.prisma.project.findUnique({
+      where: { id },
+      select: { stage: true, stageProgress: true },
+    });
+
+    // Track stage change in history
+    const stageChanged = dto.stage && currentProject && dto.stage !== currentProject.stage;
+    const progressChanged = dto.stageProgress !== undefined &&
+      currentProject &&
+      dto.stageProgress !== currentProject.stageProgress;
+
+    // If stage changes, reset stageProgress to 0 unless explicitly provided
+    let newStageProgress = dto.stageProgress;
+    if (stageChanged && dto.stageProgress === undefined) {
+      newStageProgress = 0;
+    }
+
     const project = await this.prisma.project.update({
       where: { id },
       data: {
@@ -281,7 +299,7 @@ export class ProjectController {
         productType: dto.productType,
         status: dto.status,
         stage: dto.stage,
-        stageProgress: dto.stageProgress,
+        stageProgress: newStageProgress,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         clientId: dto.clientId,
@@ -301,6 +319,20 @@ export class ProjectController {
         _count: { select: { tasks: true } },
       },
     });
+
+    // Create stage history record if stage or progress changed
+    if ((stageChanged || progressChanged) && currentProject) {
+      await this.prisma.stageHistory.create({
+        data: {
+          projectId: id,
+          fromStage: currentProject.stage,
+          toStage: dto.stage || currentProject.stage,
+          fromProgress: currentProject.stageProgress,
+          toProgress: newStageProgress ?? currentProject.stageProgress,
+          changedById: req.user.sub,
+        },
+      });
+    }
 
     // Get task stats
     const taskStats = await this.prisma.task.groupBy({
@@ -340,12 +372,49 @@ export class ProjectController {
     });
   }
 
+  // Stage History
+  @Get(':id/stage-history')
+  async getStageHistory(
+    @Param('id') id: string,
+    @Req() req: { user: { sub: string; role: string } },
+  ) {
+    await this.checkProjectAccess(id, req.user);
+
+    const history = await this.prisma.stageHistory.findMany({
+      where: { projectId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    // Get user names for changedById
+    const userIds = [...new Set(history.map((h) => h.changedById))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u.name]));
+
+    return history.map((h) => ({
+      id: h.id,
+      fromStage: h.fromStage,
+      toStage: h.toStage,
+      fromProgress: h.fromProgress,
+      toProgress: h.toProgress,
+      changedBy: {
+        id: h.changedById,
+        name: userMap.get(h.changedById) || 'Unknown',
+      },
+      reason: h.reason,
+      createdAt: h.createdAt.toISOString(),
+    }));
+  }
+
   // Team Management
   @Get(':id/team')
   async getProjectTeam(
     @Param('id') id: string,
     @Req() req: { user: { sub: string; role: string } },
-  ): Promise<ProjectTeamMemberDto[]> {
+  ) {
     await this.checkProjectAccess(id, req.user);
 
     const team = await this.prisma.projectTeam.findMany({
@@ -355,13 +424,63 @@ export class ProjectController {
       },
     });
 
-    return team.map((m) => ({
-      id: m.id,
-      userId: m.userId,
-      role: m.role,
-      isPrimary: m.isPrimary,
-      user: m.user,
-    }));
+    // Get workload stats for each member
+    const memberStats = await Promise.all(
+      team.map(async (m) => {
+        const [projectTasks, totalTasks] = await Promise.all([
+          // Tasks in this project assigned to this user
+          this.prisma.taskAssignee.count({
+            where: {
+              userId: m.userId,
+              task: { projectId: id },
+            },
+          }),
+          // Total tasks across all projects assigned to this user
+          this.prisma.taskAssignee.count({
+            where: { userId: m.userId },
+          }),
+        ]);
+
+        // Tasks done in this project
+        const projectTasksDone = await this.prisma.taskAssignee.count({
+          where: {
+            userId: m.userId,
+            task: {
+              projectId: id,
+              status: 'DONE',
+            },
+          },
+        });
+
+        // Overdue tasks in this project
+        const projectTasksOverdue = await this.prisma.taskAssignee.count({
+          where: {
+            userId: m.userId,
+            task: {
+              projectId: id,
+              deadline: { lt: new Date() },
+              status: { notIn: ['DONE', 'CANCELLED'] },
+            },
+          },
+        });
+
+        return {
+          id: m.id,
+          userId: m.userId,
+          role: m.role,
+          isPrimary: m.isPrimary,
+          user: m.user,
+          workload: {
+            projectTasks,
+            projectTasksDone,
+            projectTasksOverdue,
+            totalTasks,
+          },
+        };
+      }),
+    );
+
+    return memberStats;
   }
 
   @Post(':id/team')

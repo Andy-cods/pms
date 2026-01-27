@@ -14,6 +14,13 @@ export type ProjectStage =
   | 'CLOSED';
 
 // Types
+export interface MemberWorkload {
+  projectTasks: number;
+  projectTasksDone: number;
+  projectTasksOverdue: number;
+  totalTasks: number;
+}
+
 export interface ProjectTeamMember {
   id: string;
   userId: string;
@@ -25,6 +32,7 @@ export interface ProjectTeamMember {
     email: string;
     avatar: string | null;
   };
+  workload?: MemberWorkload;
 }
 
 export interface Project {
