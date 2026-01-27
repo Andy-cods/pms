@@ -17,14 +17,28 @@ import {
   Users,
   Briefcase,
   TrendingUp,
+  UserPlus,
+  Pencil,
+  UserMinus,
 } from 'lucide-react';
 
-import { useProject, useArchiveProject } from '@/hooks/use-projects';
+import {
+  useProject,
+  useArchiveProject,
+  useUpdateProject,
+  useUpdateTeamMember,
+  useRemoveTeamMember,
+} from '@/hooks/use-projects';
 import {
   ProjectStatusLabels,
   ProjectStageLabels,
   ProjectStatusDotColors,
+  type ProjectStage,
 } from '@/lib/api/projects';
+import type { UserRole } from '@/lib/api/admin-users';
+import { ProjectStageTimeline } from '@/components/project/project-stage-timeline';
+import { TeamMemberModal } from '@/components/project/team-member-modal';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +62,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 // Apple-style thin progress bar
@@ -217,12 +238,35 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string;
   const [activeTab, setActiveTab] = useState('overview');
 
+  const [showAddMember, setShowAddMember] = useState(false);
+
   const { data: project, isLoading, error } = useProject(projectId);
   const archiveMutation = useArchiveProject();
+  const updateMutation = useUpdateProject();
+  const updateTeamMember = useUpdateTeamMember();
+  const removeTeamMember = useRemoveTeamMember();
 
   const handleArchive = async () => {
     await archiveMutation.mutateAsync(projectId);
     router.push('/dashboard/projects');
+  };
+
+  // Handler for stage change from timeline
+  const handleStageChange = async (newStage: ProjectStage) => {
+    if (!project) return;
+    await updateMutation.mutateAsync({
+      id: projectId,
+      input: { stage: newStage },
+    });
+  };
+
+  // Handler for progress change from timeline (debounced in component)
+  const handleProgressChange = async (newProgress: number) => {
+    if (!project) return;
+    await updateMutation.mutateAsync({
+      id: projectId,
+      input: { stageProgress: newProgress },
+    });
   };
 
   const formatDate = (date: string | null) => {
@@ -470,22 +514,23 @@ export default function ProjectDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Stage Progress */}
+                {/* Stage Timeline */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <span className="text-callout font-medium">
-                      Giai đoạn hiện tại
+                      Giai đoạn dự án
                     </span>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-surface text-footnote font-medium">
-                        {ProjectStageLabels[project.stage]}
-                      </span>
-                      <span className="text-callout font-semibold tabular-nums">
-                        {project.stageProgress}%
-                      </span>
-                    </div>
+                    <span className="text-footnote text-muted-foreground">
+                      {ProjectStageLabels[project.stage]} · {project.stageProgress}%
+                    </span>
                   </div>
-                  <ProgressBar value={project.stageProgress} size="lg" />
+                  <ProjectStageTimeline
+                    currentStage={project.stage as ProjectStage}
+                    stageProgress={project.stageProgress}
+                    isEditable={true}
+                    onStageChange={handleStageChange}
+                    onProgressChange={handleProgressChange}
+                  />
                 </div>
 
                 {/* Task Progress */}
@@ -652,65 +697,158 @@ export default function ProjectDetailPage() {
       )}
 
       {activeTab === 'team' && (
-        <Card className="rounded-2xl border-border/50 shadow-apple-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-subheadline font-semibold">
-                Team Members
-              </CardTitle>
-              <p className="text-footnote text-muted-foreground mt-1">
-                {project.team.length} thành viên
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full h-9 px-4"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Thêm thành viên
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {project.team.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-surface/50 hover:bg-surface transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-11 w-11">
-                      {member.user.avatar && (
-                        <AvatarImage src={member.user.avatar} />
-                      )}
-                      <AvatarFallback className="text-sm font-medium bg-muted">
-                        {member.user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-callout font-medium">
-                          {member.user.name}
-                        </span>
-                        {member.isPrimary && (
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium">
-                            Primary
-                          </span>
+        <>
+          <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-subheadline font-semibold">
+                  Team Members
+                </CardTitle>
+                <p className="text-footnote text-muted-foreground mt-1">
+                  {project.team.length} thành viên
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full h-9 px-4"
+                onClick={() => setShowAddMember(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Thêm thành viên
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {project.team.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-4 rounded-xl bg-surface/50 hover:bg-surface transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-11 w-11">
+                        {member.user.avatar && (
+                          <AvatarImage src={member.user.avatar} />
                         )}
-                      </div>
-                      <div className="text-footnote text-muted-foreground">
-                        {member.user.email}
+                        <AvatarFallback className="text-sm font-medium bg-muted">
+                          {member.user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-callout font-medium">
+                            {member.user.name}
+                          </span>
+                          {member.isPrimary && (
+                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-footnote text-muted-foreground">
+                          {member.user.email}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {/* Role Selector */}
+                      <Select
+                        value={member.role}
+                        onValueChange={async (newRole: string) => {
+                          try {
+                            await updateTeamMember.mutateAsync({
+                              projectId,
+                              memberId: member.id,
+                              input: { role: newRole },
+                            });
+                            toast.success(`Đã cập nhật vai trò của ${member.user.name}`);
+                          } catch {
+                            toast.error('Không thể cập nhật vai trò');
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-[130px] h-8 rounded-lg text-footnote border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {(['PM', 'ACCOUNT', 'CONTENT', 'DESIGN', 'MEDIA', 'PLANNER', 'TECHNICAL', 'NVKD'] as UserRole[]).map(
+                            (r) => (
+                              <SelectItem key={r} value={r} className="rounded-lg text-sm">
+                                {r === 'NVKD' ? 'Sales' : r.charAt(0) + r.slice(1).toLowerCase().replace('_', ' ')}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Remove Button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-[#ff3b30]"
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Xóa thành viên?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Bạn có chắc muốn xóa{' '}
+                              <span className="font-medium text-foreground">
+                                {member.user.name}
+                              </span>{' '}
+                              khỏi team dự án?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="rounded-full">
+                              Hủy
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              className="rounded-full bg-[#ff3b30] hover:bg-[#ff3b30]/90"
+                              onClick={async () => {
+                                try {
+                                  await removeTeamMember.mutateAsync({
+                                    projectId,
+                                    memberId: member.id,
+                                  });
+                                  toast.success(
+                                    `Đã xóa ${member.user.name} khỏi team`
+                                  );
+                                } catch (error: unknown) {
+                                  const err = error as {
+                                    response?: { data?: { message?: string } };
+                                  };
+                                  toast.error(
+                                    err?.response?.data?.message ||
+                                      'Không thể xóa thành viên'
+                                  );
+                                }
+                              }}
+                            >
+                              Xóa
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-surface text-footnote font-medium text-muted-foreground">
-                    {member.role}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Add Member Modal */}
+          <TeamMemberModal
+            projectId={projectId}
+            existingMemberIds={project.team.map((m) => m.userId)}
+            open={showAddMember}
+            onOpenChange={setShowAddMember}
+          />
+        </>
       )}
     </div>
   );
