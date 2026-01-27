@@ -42,6 +42,7 @@ import { ProjectStageTimeline } from '@/components/project/project-stage-timelin
 import { TeamMemberModal } from '@/components/project/team-member-modal';
 import { BudgetCard } from '@/components/project/budget-card';
 import { BudgetFormModal } from '@/components/project/budget-form-modal';
+import { KpiCard } from '@/components/project/kpi-card';
 import { useProjectBudget } from '@/hooks/use-project-budget';
 import { toast } from 'sonner';
 
@@ -487,6 +488,7 @@ export default function ProjectDetailPage() {
           { value: 'overview', label: 'Tổng quan' },
           { value: 'team', label: 'Team', count: project.team.length },
           { value: 'budget', label: 'Ngân sách' },
+          { value: 'kpi', label: 'KPIs' },
         ]}
       />
 
@@ -930,6 +932,10 @@ export default function ProjectDetailPage() {
           budget={budget ?? null}
           onEdit={() => setShowBudgetForm(true)}
         />
+      )}
+
+      {activeTab === 'kpi' && (
+        <KpiCard projectId={projectId} />
       )}
 
       {/* Budget Form Modal */}
