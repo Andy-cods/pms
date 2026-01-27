@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   List,
   ChevronRight,
+  Columns3,
 } from 'lucide-react';
 
 import { useProjects } from '@/hooks/use-projects';
@@ -156,21 +157,40 @@ function ProjectSkeleton({ viewMode }: { viewMode: 'table' | 'grid' }) {
   );
 }
 
+// Stage order for Kanban view
+const STAGE_ORDER: ProjectStage[] = [
+  'INTAKE',
+  'DISCOVERY',
+  'PLANNING',
+  'UNDER_REVIEW',
+  'PROPOSAL_PITCH',
+  'ONGOING',
+  'OPTIMIZATION',
+  'COMPLETED',
+  'CLOSED',
+];
+
 export default function ProjectsPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  // Stage filter - reserved for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_stageFilter, _setStageFilter] = useState<ProjectStage | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [stageFilter, setStageFilter] = useState<ProjectStage | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'stage'>('grid');
 
   const { data, isLoading } = useProjects({
     search: search || undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
-    stage: _stageFilter !== 'all' ? _stageFilter : undefined,
-    limit: 50,
+    stage: stageFilter !== 'all' ? stageFilter : undefined,
+    limit: 100, // Load more for stage view
   });
+
+  // Group projects by stage for Kanban view
+  const projectsByStage = data?.projects
+    ? STAGE_ORDER.reduce((acc, stage) => {
+        acc[stage] = data.projects.filter((p) => p.stage === stage);
+        return acc;
+      }, {} as Record<ProjectStage, typeof data.projects>)
+    : null;
 
   const formatDate = (date: string | null) => {
     if (!date) return '-';
@@ -246,6 +266,7 @@ export default function ProjectsPage() {
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
+            title="Grid view"
           >
             <LayoutGrid className="h-4 w-4" />
           </button>
@@ -257,15 +278,174 @@ export default function ProjectsPage() {
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
+            title="List view"
           >
             <List className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('stage');
+              setStageFilter('all'); // Reset stage filter for stage view
+            }}
+            className={cn(
+              'p-2 rounded-md transition-all duration-200',
+              viewMode === 'stage'
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Stage view"
+          >
+            <Columns3 className="h-4 w-4" />
           </button>
         </div>
       </div>
 
+      {/* Stage Filter Pills - only show when not in stage view */}
+      {viewMode !== 'stage' && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-footnote text-muted-foreground mr-1">Giai đoạn:</span>
+          <FilterPill
+            label="Tất cả"
+            active={stageFilter === 'all'}
+            onClick={() => setStageFilter('all')}
+          />
+          {STAGE_ORDER.slice(0, 6).map((stage) => (
+            <FilterPill
+              key={stage}
+              label={ProjectStageLabels[stage]}
+              active={stageFilter === stage}
+              onClick={() => setStageFilter(stage)}
+            />
+          ))}
+          {stageFilter !== 'all' && !STAGE_ORDER.slice(0, 6).includes(stageFilter) && (
+            <FilterPill
+              label={ProjectStageLabels[stageFilter]}
+              active={true}
+              onClick={() => setStageFilter('all')}
+            />
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="px-3 py-1.5 rounded-full text-footnote font-medium bg-surface text-muted-foreground hover:bg-muted transition-all duration-200">
+                Khác...
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="rounded-xl">
+              {STAGE_ORDER.slice(6).map((stage) => (
+                <DropdownMenuItem
+                  key={stage}
+                  onClick={() => setStageFilter(stage)}
+                  className="rounded-lg"
+                >
+                  {ProjectStageLabels[stage]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       {/* Content */}
       {isLoading ? (
-        <ProjectSkeleton viewMode={viewMode} />
+        <ProjectSkeleton viewMode={viewMode === 'stage' ? 'grid' : viewMode} />
+      ) : viewMode === 'stage' && projectsByStage ? (
+        // Stage View - Kanban style columns
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max">
+            {STAGE_ORDER.map((stage) => {
+              const stageProjects = projectsByStage[stage] || [];
+              const hasProjects = stageProjects.length > 0;
+
+              return (
+                <div
+                  key={stage}
+                  className={cn(
+                    'w-72 shrink-0 rounded-2xl p-3',
+                    hasProjects ? 'bg-surface/50' : 'bg-surface/30'
+                  )}
+                >
+                  {/* Stage Header */}
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-footnote font-semibold">
+                        {ProjectStageLabels[stage]}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-background text-caption font-medium text-muted-foreground">
+                        {stageProjects.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stage Projects */}
+                  <div className="space-y-2">
+                    {stageProjects.length > 0 ? (
+                      stageProjects.map((project) => (
+                        <div
+                          key={project.id}
+                          onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                          className="group bg-background rounded-xl p-3 cursor-pointer border border-border/50 hover:shadow-apple-sm hover:border-border transition-all duration-200"
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <FolderKanban className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-footnote font-medium truncate group-hover:text-primary transition-colors">
+                                {project.name}
+                              </h4>
+                              <p className="text-caption text-muted-foreground truncate">
+                                {project.code}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Progress */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <StatusBadge status={project.status} />
+                              <span className="text-caption font-medium tabular-nums">
+                                {project.stageProgress}%
+                              </span>
+                            </div>
+                            <ProgressBar value={project.stageProgress} />
+                          </div>
+
+                          {/* Team avatars */}
+                          {project.team.length > 0 && (
+                            <div className="flex -space-x-1.5 mt-2">
+                              {project.team.slice(0, 4).map((member) => (
+                                <Avatar
+                                  key={member.id}
+                                  className="h-6 w-6 border-2 border-background ring-0"
+                                >
+                                  {member.user.avatar && (
+                                    <AvatarImage src={member.user.avatar} />
+                                  )}
+                                  <AvatarFallback className="text-[9px] font-medium bg-muted">
+                                    {member.user.name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {project.team.length > 4 && (
+                                <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[9px] font-medium text-muted-foreground">
+                                  +{project.team.length - 4}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-caption text-muted-foreground">
+                        Không có dự án
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : data?.projects && data.projects.length > 0 ? (
         viewMode === 'grid' ? (
           // Grid View - Apple card style
