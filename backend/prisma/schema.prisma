@@ -29,6 +29,7 @@ model User {
   tasksAssigned     TaskAssignee[]
   tasksCreated      Task[]         @relation("TaskCreator")
   tasksReviewing    Task[]         @relation("TaskReviewer")
+  eventAttendees    EventAttendee[]
 
   @@index([email])
   @@index([role])
@@ -92,6 +93,7 @@ model Project {
   budget           ProjectBudget?
   kpis             ProjectKPI[]
   logs             ProjectLog[]
+  stageHistory     StageHistory[]
   team             ProjectTeam[]
   client           Client?        @relation(fields: [clientId], references: [id])
   tasks            Task[]
@@ -170,6 +172,23 @@ model ProjectLog {
   @@index([projectId])
   @@index([logDate])
   @@map("project_logs")
+}
+
+model StageHistory {
+  id            String       @id @default(cuid())
+  projectId     String
+  fromStage     ProjectStage?
+  toStage       ProjectStage
+  fromProgress  Int          @default(0)
+  toProgress    Int          @default(0)
+  changedById   String
+  reason        String?
+  createdAt     DateTime     @default(now())
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("stage_histories")
 }
 
 model Task {
@@ -338,8 +357,10 @@ model EventAttendee {
   name    String?
   status  String  @default("pending")
   event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([eventId])
+  @@index([userId])
   @@map("event_attendees")
 }
 
