@@ -44,6 +44,7 @@ import { BudgetCard } from '@/components/project/budget-card';
 import { BudgetFormModal } from '@/components/project/budget-form-modal';
 import { KpiCard } from '@/components/project/kpi-card';
 import { ActivityTimeline } from '@/components/project/activity-timeline';
+import { StageHistoryTimeline } from '@/components/project/stage-history-timeline';
 import { useProjectBudget } from '@/hooks/use-project-budget';
 import { toast } from 'sonner';
 
@@ -262,11 +263,11 @@ export default function ProjectDetailPage() {
   };
 
   // Handler for stage change from timeline
-  const handleStageChange = async (newStage: ProjectStage) => {
+  const handleStageChange = async (newStage: ProjectStage, reason?: string) => {
     if (!project) return;
     await updateMutation.mutateAsync({
       id: projectId,
-      input: { stage: newStage },
+      input: { stage: newStage, stageChangeReason: reason },
     });
   };
 
@@ -491,6 +492,7 @@ export default function ProjectDetailPage() {
           { value: 'budget', label: 'Ngân sách' },
           { value: 'kpi', label: 'KPIs' },
           { value: 'logs', label: 'Nhật ký' },
+          { value: 'history', label: 'Lịch sử' },
         ]}
       />
 
@@ -942,6 +944,10 @@ export default function ProjectDetailPage() {
 
       {activeTab === 'logs' && (
         <ActivityTimeline projectId={projectId} />
+      )}
+
+      {activeTab === 'history' && (
+        <StageHistoryTimeline projectId={projectId} />
       )}
 
       {/* Budget Form Modal */}

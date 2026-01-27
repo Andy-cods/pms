@@ -134,6 +134,11 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsString()
   trackingLink?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  stageChangeReason?: string;
 }
 
 // Query params for listing projects

@@ -330,6 +330,7 @@ export class ProjectController {
           fromProgress: currentProject.stageProgress,
           toProgress: newStageProgress ?? currentProject.stageProgress,
           changedById: req.user.sub,
+          reason: dto.stageChangeReason || null,
         },
       });
     }

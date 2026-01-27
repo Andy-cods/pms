@@ -114,6 +114,7 @@ export interface UpdateProjectInput {
   driveLink?: string;
   planLink?: string;
   trackingLink?: string;
+  stageChangeReason?: string;
 }
 
 export interface AddTeamMemberInput {
