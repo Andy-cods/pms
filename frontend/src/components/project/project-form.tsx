@@ -9,7 +9,8 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { useCreateProject, useUpdateProject } from '@/hooks/use-projects';
-import { type Project, ProjectStageLabels } from '@/lib/api/projects';
+import { type Project, type ProjectStage, ProjectStageLabels } from '@/lib/api/projects';
+import { StageProgressSlider } from '@/components/project/stage-progress-slider';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ const projectFormSchema = z.object({
       'CLOSED',
     ])
     .optional(),
+  stageProgress: z.number().min(0).max(100).optional(),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   driveLink: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
@@ -109,6 +111,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
       productType: project?.productType ?? '',
       status: project?.status ?? 'STABLE',
       stage: project?.stage ?? 'INTAKE',
+      stageProgress: project?.stageProgress ?? 0,
       startDate: project?.startDate ? new Date(project.startDate) : null,
       endDate: project?.endDate ? new Date(project.endDate) : null,
       driveLink: project?.driveLink ?? '',
@@ -317,6 +320,27 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
               )}
             />
           </div>
+
+          {/* Stage Progress - only show when editing */}
+          {isEditing && (
+            <FormField
+              control={form.control}
+              name="stageProgress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <StageProgressSlider
+                      stage={(form.watch('stage') ?? 'INTAKE') as ProjectStage}
+                      progress={field.value ?? 0}
+                      onChange={field.onChange}
+                      showLabel={true}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-caption text-[#ff3b30] dark:text-[#ff453a]" />
+                </FormItem>
+              )}
+            />
+          )}
         </FormSection>
 
         {/* Timeline Section */}
