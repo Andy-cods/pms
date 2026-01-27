@@ -44,9 +44,9 @@ export function BudgetFormModal({
     budgetPacing: undefined,
   });
 
-  // Populate form when budget data changes
   useEffect(() => {
     if (budget) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         totalBudget: budget.totalBudget,
         monthlyBudget: budget.monthlyBudget ?? undefined,

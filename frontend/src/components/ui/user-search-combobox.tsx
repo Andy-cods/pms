@@ -58,17 +58,13 @@ export function UserSearchCombobox({
     limit: 20,
   });
 
-  // Filter out excluded users
-  const filteredUsers = React.useMemo(() => {
-    if (!data?.users) return [];
-    return data.users.filter((user) => !excludeUserIds.includes(user.id));
-  }, [data?.users, excludeUserIds]);
+  // Filter and select without memoization to satisfy React Compiler lint rule
+  const filteredUsers = data?.users
+    ? data.users.filter((user) => !excludeUserIds.includes(user.id))
+    : [];
 
-  // Get selected user for display
-  const selectedUser = React.useMemo(() => {
-    if (!value || !data?.users) return null;
-    return data.users.find((user) => user.id === value);
-  }, [value, data?.users]);
+  const selectedUser =
+    value && data?.users ? data.users.find((user) => user.id === value) ?? null : null;
 
   const handleSelect = (user: AdminUser) => {
     onSelect(user);

@@ -21,6 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import { useTask } from '@/hooks/use-tasks';
 import { TaskPriorityBadge, TaskStatusBadge } from '@/components/common/status-badge';
 import { formatDate, formatDateTime } from '@/lib/utils';
+import { TaskPriority as UiTaskPriority, TaskStatus as UiTaskStatus } from '@/types';
 
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
@@ -101,8 +102,8 @@ export default function TaskDetailPage() {
           </Button>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-semibold tracking-tight">{task.title}</h1>
-            <TaskStatusBadge status={task.status} />
-            <TaskPriorityBadge priority={task.priority} />
+            <TaskStatusBadge status={task.status as UiTaskStatus} />
+            <TaskPriorityBadge priority={task.priority as UiTaskPriority} />
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-1.5">

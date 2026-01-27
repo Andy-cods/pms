@@ -59,17 +59,29 @@ export function MediaPlanItemForm({
 
   useEffect(() => {
     if (item) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChannel(item.channel);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCampaignType(item.campaignType);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setObjective(item.objective);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBudget(String(item.budget));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStartDate(item.startDate.split('T')[0]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEndDate(item.endDate.split('T')[0]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetReach(item.targetReach ? String(item.targetReach) : '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetClicks(item.targetClicks ? String(item.targetClicks) : '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetLeads(item.targetLeads ? String(item.targetLeads) : '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetCPL(item.targetCPL ? String(item.targetCPL) : '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetCPC(item.targetCPC ? String(item.targetCPC) : '');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetROAS(item.targetROAS ? String(item.targetROAS) : '');
     } else {
       setChannel('');

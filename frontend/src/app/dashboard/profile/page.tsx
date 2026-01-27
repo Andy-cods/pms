@@ -81,8 +81,10 @@ export default function ProfilePage() {
                 icon={<Sparkles className="h-4 w-4 text-primary" />}
                 label="Ngày tham gia"
                 value={
-                  user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString('vi-VN')
+                  user && 'createdAt' in user && (user as { createdAt?: string }).createdAt
+                    ? new Date(
+                        (user as { createdAt?: string }).createdAt as string
+                      ).toLocaleDateString('vi-VN')
                     : '—'
                 }
               />
