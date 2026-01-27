@@ -107,6 +107,7 @@ export enum ApprovalType {
   CONTENT = 'CONTENT',
   BUDGET = 'BUDGET',
   FILE = 'FILE',
+  MEDIA_PLAN = 'MEDIA_PLAN',
 }
 
 export enum ApprovalStatus {

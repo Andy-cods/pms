@@ -30,6 +30,7 @@ model User {
   tasksCreated      Task[]         @relation("TaskCreator")
   tasksReviewing    Task[]         @relation("TaskReviewer")
   eventAttendees    EventAttendee[]
+  mediaPlansCreated MediaPlan[]    @relation("MediaPlanCreator")
 
   @@index([email])
   @@index([role])
@@ -97,6 +98,7 @@ model Project {
   team             ProjectTeam[]
   client           Client?        @relation(fields: [clientId], references: [id])
   tasks            Task[]
+  mediaPlans       MediaPlan[]
 
   @@index([code])
   @@index([status])
@@ -484,6 +486,7 @@ enum ApprovalType {
   CONTENT
   BUDGET
   FILE
+  MEDIA_PLAN
 }
 
 enum ApprovalStatus {
@@ -509,4 +512,62 @@ enum FileCategory {
   RAW_DATA
   CONTRACT
   OTHER
+}
+
+enum MediaPlanStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model MediaPlan {
+  id          String          @id @default(cuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  month       Int
+  year        Int
+  version     Int             @default(1)
+  status      MediaPlanStatus @default(DRAFT)
+  totalBudget Decimal         @db.Decimal(15, 2)
+  startDate   DateTime
+  endDate     DateTime
+  notes       String?
+  createdById String
+  createdBy   User            @relation("MediaPlanCreator", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  items       MediaPlanItem[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("media_plans")
+}
+
+model MediaPlanItem {
+  id           String    @id @default(cuid())
+  mediaPlanId  String
+  mediaPlan    MediaPlan @relation(fields: [mediaPlanId], references: [id], onDelete: Cascade)
+  channel      String
+  campaignType String
+  objective    String
+  budget       Decimal   @db.Decimal(15, 2)
+  startDate    DateTime
+  endDate      DateTime
+  targetReach  Int?
+  targetClicks Int?
+  targetLeads  Int?
+  targetCPL    Decimal?  @db.Decimal(10, 2)
+  targetCPC    Decimal?  @db.Decimal(10, 2)
+  targetROAS   Decimal?  @db.Decimal(5, 2)
+  status       String    @default("planned")
+  orderIndex   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([mediaPlanId])
+  @@map("media_plan_items")
 }

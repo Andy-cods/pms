@@ -21,6 +21,7 @@ import {
   Pencil,
   UserMinus,
   AlertTriangle,
+  BarChart3,
 } from 'lucide-react';
 
 import {
@@ -458,6 +459,11 @@ export default function ProjectDetailPage() {
           icon={Files}
           label="Files"
           onClick={() => router.push(`/dashboard/projects/${projectId}/files`)}
+        />
+        <ActionPill
+          icon={BarChart3}
+          label="Media Plans"
+          onClick={() => router.push(`/dashboard/projects/${projectId}/media-plans`)}
         />
         {project.driveLink && (
           <ActionPill
