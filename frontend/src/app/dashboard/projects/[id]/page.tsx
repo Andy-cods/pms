@@ -58,6 +58,10 @@ import {
 } from '@/lib/api/budget-events';
 import { BudgetDonutChart } from '@/components/project/budget-donut-chart';
 import { SpendingTicketModal } from '@/components/project/spending-ticket-modal';
+import { AdsKpiCards } from '@/components/project/ads-kpi-cards';
+import { AdsTrendChart } from '@/components/project/ads-trend-chart';
+import { AdsReportTable } from '@/components/project/ads-report-table';
+import { AdsReportModal } from '@/components/project/ads-report-modal';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -460,10 +464,11 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history' | 'ads'>('overview');
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [showAdsModal, setShowAdsModal] = useState(false);
   const [filterCategory, setFilterCategory] = useState<BudgetEventCategory | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<BudgetEventStatus | 'ALL'>('ALL');
 
@@ -726,6 +731,7 @@ export default function ProjectDetailPage() {
           { value: 'team', label: 'Team', count: project.team.length },
           { value: 'budget', label: 'Ngân sách' },
           { value: 'kpi', label: 'KPIs' },
+          { value: 'ads', label: 'Báo cáo Ads' },
           { value: 'logs', label: 'Nhật ký' },
           { value: 'history', label: 'Lịch sử' },
         ]}
@@ -1197,6 +1203,30 @@ export default function ProjectDetailPage() {
 
       {activeTab === 'history' && (
         <StageHistoryTimeline projectId={projectId} />
+      )}
+
+      {activeTab === 'ads' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-subheadline font-semibold">Báo cáo Quảng cáo</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setShowAdsModal(true)}
+            >
+              + Thêm báo cáo
+            </Button>
+          </div>
+          <AdsKpiCards projectId={projectId} />
+          <AdsTrendChart projectId={projectId} />
+          <AdsReportTable projectId={projectId} />
+          <AdsReportModal
+            projectId={projectId}
+            open={showAdsModal}
+            onOpenChange={setShowAdsModal}
+          />
+        </div>
       )}
 
       {/* Budget Form Modal */}

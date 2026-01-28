@@ -1,0 +1,110 @@
+import { IsNumber, IsOptional, IsString, IsIn, IsDateString, Min } from 'class-validator';
+
+export const AdsReportPeriods = ['DAILY', 'WEEKLY', 'MONTHLY'] as const;
+export type AdsReportPeriod = (typeof AdsReportPeriods)[number];
+
+export const AdsPlatforms = ['FACEBOOK', 'GOOGLE', 'TIKTOK', 'OTHER'] as const;
+export type AdsPlatform = (typeof AdsPlatforms)[number];
+
+export const AdsReportSources = ['MANUAL', 'ZAPIER'] as const;
+export type AdsReportSource = (typeof AdsReportSources)[number];
+
+export class CreateAdsReportDto {
+  @IsIn(AdsReportPeriods)
+  period!: AdsReportPeriod;
+
+  @IsDateString()
+  reportDate!: string;
+
+  @IsNumber()
+  @Min(0)
+  impressions!: number;
+
+  @IsNumber()
+  @Min(0)
+  clicks!: number;
+
+  @IsNumber()
+  @Min(0)
+  ctr!: number;
+
+  @IsNumber()
+  @Min(0)
+  cpc!: number;
+
+  @IsNumber()
+  @Min(0)
+  cpm!: number;
+
+  @IsNumber()
+  @Min(0)
+  cpa!: number;
+
+  @IsNumber()
+  @Min(0)
+  conversions!: number;
+
+  @IsNumber()
+  @Min(0)
+  roas!: number;
+
+  @IsNumber()
+  @Min(0)
+  adSpend!: number;
+
+  @IsIn(AdsPlatforms)
+  platform!: AdsPlatform;
+
+  @IsOptional()
+  @IsString()
+  campaignName?: string;
+}
+
+export class AdsReportQueryDto {
+  @IsOptional()
+  @IsIn(AdsPlatforms)
+  platform?: AdsPlatform;
+
+  @IsOptional()
+  @IsIn(AdsReportPeriods)
+  period?: AdsReportPeriod;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+}
+
+export interface AdsReportResponse {
+  id: string;
+  projectId: string;
+  period: AdsReportPeriod;
+  reportDate: Date;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  cpa: number;
+  conversions: number;
+  roas: number;
+  adSpend: number;
+  platform: AdsPlatform;
+  campaignName?: string | null;
+  source: AdsReportSource;
+  createdBy: { id: string; name: string };
+  createdAt: Date;
+}
+
+export interface AdsReportSummary {
+  totalImpressions: number;
+  totalClicks: number;
+  avgCtr: number;
+  avgCpc: number;
+  totalConversions: number;
+  avgRoas: number;
+  totalAdSpend: number;
+}

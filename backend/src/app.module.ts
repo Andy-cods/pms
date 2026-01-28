@@ -20,6 +20,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { ReportModule } from './modules/report/report.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MediaPlanModule } from './modules/media-plan/media-plan.module';
+import { AdsReportModule } from './modules/ads-report/ads-report.module';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 
 @Module({
@@ -52,6 +53,7 @@ import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
     ReportModule,
     MetricsModule,
     MediaPlanModule,
+    AdsReportModule,
   ],
   controllers: [AppController],
   providers: [

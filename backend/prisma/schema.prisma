@@ -32,6 +32,7 @@ model User {
   eventAttendees    EventAttendee[]
   mediaPlansCreated MediaPlan[]    @relation("MediaPlanCreator")
   budgetEvents      BudgetEvent[]  @relation("BudgetEventCreator")
+  adsReportsCreated AdsReport[]    @relation("AdsReportCreator")
 
   @@index([email])
   @@index([role])
@@ -101,6 +102,7 @@ model Project {
   tasks            Task[]
   mediaPlans       MediaPlan[]
   budgetEvents     BudgetEvent[]
+  adsReports       AdsReport[]
 
   @@index([code])
   @@index([status])
@@ -569,6 +571,53 @@ enum BudgetEventStatus {
   APPROVED
   REJECTED
   PAID
+}
+
+model AdsReport {
+  id           String          @id @default(cuid())
+  projectId    String
+  period       AdsReportPeriod
+  reportDate   DateTime
+  impressions  Int             @default(0)
+  clicks       Int             @default(0)
+  ctr          Float           @default(0)
+  cpc          Decimal         @default(0) @db.Decimal(10, 2)
+  cpm          Decimal         @default(0) @db.Decimal(10, 2)
+  cpa          Decimal         @default(0) @db.Decimal(10, 2)
+  conversions  Int             @default(0)
+  roas         Float           @default(0)
+  adSpend      Decimal         @default(0) @db.Decimal(15, 2)
+  platform     AdsPlatform
+  campaignName String?
+  source       AdsReportSource @default(MANUAL)
+  createdById  String
+  createdAt    DateTime        @default(now())
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("AdsReportCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([reportDate])
+  @@index([platform])
+  @@index([period])
+  @@map("ads_reports")
+}
+
+enum AdsReportPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum AdsPlatform {
+  FACEBOOK
+  GOOGLE
+  TIKTOK
+  OTHER
+}
+
+enum AdsReportSource {
+  MANUAL
+  ZAPIER
 }
 
 model MediaPlan {
