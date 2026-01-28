@@ -23,6 +23,7 @@ import { MediaPlanModule } from './modules/media-plan/media-plan.module';
 import { AdsReportModule } from './modules/ads-report/ads-report.module';
 import { SalesPipelineModule } from './modules/sales-pipeline/sales-pipeline.module';
 import { StrategicBriefModule } from './modules/strategic-brief/strategic-brief.module';
+import { ProjectPhaseModule } from './modules/project-phase/project-phase.module';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 
 @Module({
@@ -58,6 +59,7 @@ import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
     AdsReportModule,
     SalesPipelineModule,
     StrategicBriefModule,
+    ProjectPhaseModule,
   ],
   controllers: [AppController],
   providers: [

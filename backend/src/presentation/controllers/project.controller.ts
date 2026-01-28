@@ -18,6 +18,7 @@ import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
 import { UserRole, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
+import { ProjectPhaseService } from '../../modules/project-phase/project-phase.service.js';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -40,7 +41,10 @@ function generateProjectCode(): string {
 @Controller('projects')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProjectController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private phaseService: ProjectPhaseService,
+  ) {}
 
   @Get()
   async listProjects(
@@ -256,6 +260,13 @@ export class ProjectController {
         _count: { select: { tasks: true } },
       },
     });
+
+    // Auto-create 4 default phases with items
+    try {
+      await this.phaseService.createDefaultPhases(project.id);
+    } catch {
+      // Phase creation failure should not block project creation
+    }
 
     return this.mapToResponse(project, {
       total: 0,

@@ -8,9 +8,10 @@ import { LogController } from '../../presentation/controllers/log.controller';
 import { BudgetEventController } from '../../presentation/controllers/budget-event.controller.js';
 import { BudgetEventService } from './budget-event.service.js';
 import { IntegrationController } from '../../presentation/controllers/integration.controller.js';
+import { ProjectPhaseModule } from '../project-phase/project-phase.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, ProjectPhaseModule],
   controllers: [
     ProjectController,
     BudgetController,
