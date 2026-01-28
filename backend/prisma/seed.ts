@@ -236,7 +236,7 @@ async function main() {
   });
 
   // P5: FoodPanda VN - EVALUATION (PM evaluating)
-  const p5 = await prisma.project.create({
+  await prisma.project.create({
     data: {
       dealCode: 'DEAL-0005',
       name: 'FoodPanda VN - Tet Campaign 2027',
@@ -258,7 +258,7 @@ async function main() {
   });
 
   // P6: Green Coffee - QUALIFIED (early stage)
-  const p6 = await prisma.project.create({
+  await prisma.project.create({
     data: {
       dealCode: 'DEAL-0006',
       name: 'Green Coffee - Brand Refresh',
@@ -1140,7 +1140,7 @@ async function main() {
   ];
 
   // Brief 1: For project 1 (APPROVED - mostly filled)
-  const brief1 = await prisma.strategicBrief.create({
+  await prisma.strategicBrief.create({
     data: {
       projectId: p1.id,
       status: BriefStatus.APPROVED,
@@ -1170,7 +1170,7 @@ async function main() {
   });
 
   // Brief 2: For project 2 (DRAFT - partially filled)
-  const brief2 = await prisma.strategicBrief.create({
+  await prisma.strategicBrief.create({
     data: {
       projectId: p2.id,
       status: BriefStatus.DRAFT,
@@ -1194,7 +1194,7 @@ async function main() {
   });
 
   // Brief 3: For project 4 (NEGOTIATION, empty brief for demo)
-  const brief3 = await prisma.strategicBrief.create({
+  await prisma.strategicBrief.create({
     data: {
       projectId: p4.id,
       status: BriefStatus.DRAFT,
