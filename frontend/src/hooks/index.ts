@@ -12,3 +12,4 @@ export * from './use-notifications';
 export * from './use-comments';
 export * from './use-reports';
 export * from './use-sales-pipeline';
+export * from './use-strategic-brief';
