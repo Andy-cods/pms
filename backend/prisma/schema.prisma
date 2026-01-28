@@ -33,6 +33,9 @@ model User {
   mediaPlansCreated MediaPlan[]    @relation("MediaPlanCreator")
   budgetEvents      BudgetEvent[]  @relation("BudgetEventCreator")
   adsReportsCreated AdsReport[]    @relation("AdsReportCreator")
+  pipelinesAsNVKD    SalesPipeline[] @relation("PipelineNVKD")
+  pipelinesAsPM      SalesPipeline[] @relation("PipelinePM")
+  pipelinesAsPlanner SalesPipeline[] @relation("PipelinePlanner")
 
   @@index([email])
   @@index([role])
@@ -103,6 +106,9 @@ model Project {
   mediaPlans       MediaPlan[]
   budgetEvents     BudgetEvent[]
   adsReports       AdsReport[]
+  salesPipeline    SalesPipeline?
+  strategicBrief   StrategicBrief?
+  phases           ProjectPhase[]
 
   @@index([code])
   @@index([status])
@@ -249,6 +255,7 @@ model Task {
   subtasks       Task[]           @relation("TaskHierarchy")
   project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   reviewer       User?            @relation("TaskReviewer", fields: [reviewerId], references: [id])
+  phaseItem      ProjectPhaseItem?
 
   @@index([projectId])
   @@index([parentId])
@@ -579,6 +586,46 @@ enum BudgetEventStatus {
   PAID
 }
 
+// ============================================
+// SALES PIPELINE & WORKFLOW ENUMS
+// ============================================
+
+enum PipelineStage {
+  LEAD
+  QUALIFIED
+  EVALUATION
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum PipelineDecision {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum BriefStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REVISION_REQUESTED
+}
+
+enum ClientTier {
+  A
+  B
+  C
+  D
+}
+
+enum ProjectPhaseType {
+  KHOI_TAO_PLAN
+  SETUP_CHUAN_BI
+  VAN_HANH_TOI_UU
+  TONG_KET
+}
+
 model AdsReport {
   id           String          @id @default(cuid())
   projectId    String
@@ -676,4 +723,171 @@ model MediaPlanItem {
 
   @@index([mediaPlanId])
   @@map("media_plan_items")
+}
+
+// ============================================
+// SALES PIPELINE (Bước 1)
+// ============================================
+
+model SalesPipeline {
+  id                String            @id @default(cuid())
+
+  // Basic Info (Sale điền)
+  projectName       String
+  status            PipelineStage     @default(LEAD)
+  currentStage      ProjectStage      @default(INTAKE)
+  nvkdId            String
+  nvkd              User              @relation("PipelineNVKD", fields: [nvkdId], references: [id])
+
+  // Client Info
+  clientType        String?
+  productType       String?
+  licenseLink       String?
+  campaignObjective String?
+  initialGoal       String?
+
+  // Budget & Fees
+  totalBudget       Decimal?          @db.Decimal(15, 2)
+  monthlyBudget     Decimal?          @db.Decimal(15, 2)
+  spentAmount       Decimal?          @default(0) @db.Decimal(15, 2)
+  fixedAdFee        Decimal?          @db.Decimal(15, 2)
+  adServiceFee      Decimal?          @db.Decimal(15, 2)
+  contentFee        Decimal?          @db.Decimal(15, 2)
+  designFee         Decimal?          @db.Decimal(15, 2)
+  mediaFee          Decimal?          @db.Decimal(15, 2)
+  otherFee          Decimal?          @db.Decimal(15, 2)
+  upsellOpportunity String?
+
+  // PM Evaluation (PM điền)
+  pmId              String?
+  pm                User?             @relation("PipelinePM", fields: [pmId], references: [id])
+  plannerId         String?
+  planner           User?             @relation("PipelinePlanner", fields: [plannerId], references: [id])
+  costNSQC          Decimal?          @db.Decimal(15, 2)
+  costDesign        Decimal?          @db.Decimal(15, 2)
+  costMedia         Decimal?          @db.Decimal(15, 2)
+  costKOL           Decimal?          @db.Decimal(15, 2)
+  costOther         Decimal?          @db.Decimal(15, 2)
+
+  // Calculated (auto)
+  cogs              Decimal?          @db.Decimal(15, 2)
+  grossProfit       Decimal?          @db.Decimal(15, 2)
+  profitMargin      Float?
+
+  // Client Evaluation
+  clientTier        ClientTier?
+  marketSize        String?
+  competitionLevel  String?
+  productUSP        String?
+  averageScore      Float?
+  audienceSize      String?
+  productLifecycle  String?
+  scalePotential    String?
+
+  // Weekly Notes (JSONB)
+  weeklyNotes       Json?
+
+  // Decision
+  decision          PipelineDecision  @default(PENDING)
+  decisionDate      DateTime?
+  decisionNote      String?
+
+  // Relations
+  projectId         String?           @unique
+  project           Project?          @relation(fields: [projectId], references: [id])
+  strategicBrief    StrategicBrief?
+
+  // Audit
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([status])
+  @@index([nvkdId])
+  @@index([pmId])
+  @@index([decision])
+  @@index([currentStage])
+  @@map("sales_pipelines")
+}
+
+// ============================================
+// STRATEGIC BRIEF (Bước 2)
+// ============================================
+
+model StrategicBrief {
+  id              String         @id @default(cuid())
+  pipelineId      String         @unique
+  pipeline        SalesPipeline  @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  projectId       String?        @unique
+  project         Project?       @relation(fields: [projectId], references: [id])
+  status          BriefStatus    @default(DRAFT)
+  completionPct   Int            @default(0)
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  approvedById    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  sections        BriefSection[]
+
+  @@index([status])
+  @@index([pipelineId])
+  @@map("strategic_briefs")
+}
+
+model BriefSection {
+  id          String         @id @default(cuid())
+  briefId     String
+  brief       StrategicBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  sectionNum  Int
+  sectionKey  String
+  title       String
+  data        Json?
+  isComplete  Boolean        @default(false)
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([briefId, sectionNum])
+  @@index([briefId])
+  @@map("brief_sections")
+}
+
+// ============================================
+// PROJECT PHASES (Bước 4)
+// ============================================
+
+model ProjectPhase {
+  id            String           @id @default(cuid())
+  projectId     String
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phaseType     ProjectPhaseType
+  name          String
+  weight        Int
+  progress      Int              @default(0)
+  orderIndex    Int
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  items         ProjectPhaseItem[]
+
+  @@unique([projectId, phaseType])
+  @@index([projectId])
+  @@map("project_phases")
+}
+
+model ProjectPhaseItem {
+  id          String        @id @default(cuid())
+  phaseId     String
+  phase       ProjectPhase  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  weight      Int           @default(0)
+  isComplete  Boolean       @default(false)
+  taskId      String?       @unique
+  task        Task?         @relation(fields: [taskId], references: [id])
+  orderIndex  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([phaseId])
+  @@index([taskId])
+  @@map("project_phase_items")
 }
