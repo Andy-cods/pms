@@ -451,3 +451,91 @@ export enum BudgetEventStatus {
   REJECTED = 'REJECTED',
   PAID = 'PAID',
 }
+
+// ============================================
+// SALES PIPELINE
+// ============================================
+
+export enum PipelineStage {
+  LEAD = 'LEAD',
+  QUALIFIED = 'QUALIFIED',
+  EVALUATION = 'EVALUATION',
+  NEGOTIATION = 'NEGOTIATION',
+  WON = 'WON',
+  LOST = 'LOST',
+}
+
+export const PipelineStageLabels: Record<PipelineStage, string> = {
+  [PipelineStage.LEAD]: 'Lead',
+  [PipelineStage.QUALIFIED]: 'Qualified',
+  [PipelineStage.EVALUATION]: 'Evaluation',
+  [PipelineStage.NEGOTIATION]: 'Negotiation',
+  [PipelineStage.WON]: 'Won',
+  [PipelineStage.LOST]: 'Lost',
+};
+
+export enum PipelineDecision {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+}
+
+export interface WeeklyNote {
+  week: number;
+  date: string;
+  note: string;
+  authorId: string;
+}
+
+export interface SalesPipeline {
+  id: string;
+  projectName: string;
+  status: PipelineStage;
+  currentStage: ProjectStage;
+  nvkdId: string;
+  nvkd: { id: string; name: string; email: string; avatar: string | null };
+  clientType: string | null;
+  productType: string | null;
+  licenseLink: string | null;
+  campaignObjective: string | null;
+  initialGoal: string | null;
+  totalBudget: number | null;
+  monthlyBudget: number | null;
+  spentAmount: number | null;
+  fixedAdFee: number | null;
+  adServiceFee: number | null;
+  contentFee: number | null;
+  designFee: number | null;
+  mediaFee: number | null;
+  otherFee: number | null;
+  upsellOpportunity: string | null;
+  pmId: string | null;
+  pm: { id: string; name: string; email: string; avatar: string | null } | null;
+  plannerId: string | null;
+  planner: { id: string; name: string } | null;
+  costNSQC: number | null;
+  costDesign: number | null;
+  costMedia: number | null;
+  costKOL: number | null;
+  costOther: number | null;
+  cogs: number | null;
+  grossProfit: number | null;
+  profitMargin: number | null;
+  clientTier: string | null;
+  marketSize: string | null;
+  competitionLevel: string | null;
+  productUSP: string | null;
+  averageScore: number | null;
+  audienceSize: string | null;
+  productLifecycle: string | null;
+  scalePotential: string | null;
+  weeklyNotes: WeeklyNote[] | null;
+  decision: PipelineDecision;
+  decisionDate: string | null;
+  decisionNote: string | null;
+  projectId: string | null;
+  project: { id: string; code: string; name: string } | null;
+  strategicBrief: { id: string; status: string; completionPct: number } | null;
+  createdAt: string;
+  updatedAt: string;
+}

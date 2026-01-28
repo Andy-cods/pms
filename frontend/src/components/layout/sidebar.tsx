@@ -19,6 +19,7 @@ import {
   History,
   Building2,
   LogOut,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,12 @@ const navItems: NavItem[] = [
     title: 'Tổng quan',
     href: '/dashboard',
     icon: LayoutDashboard,
+  },
+  {
+    title: 'Sales Pipeline',
+    href: '/dashboard/sales-pipeline',
+    icon: TrendingUp,
+    roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.NVKD, UserRole.PM],
   },
   {
     title: 'Dự án',
