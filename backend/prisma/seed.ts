@@ -1,8 +1,8 @@
 import {
   PrismaClient,
   UserRole,
-  ProjectStatus,
-  ProjectStage,
+  ProjectLifecycle,
+  HealthStatus,
   TaskStatus,
   TaskPriority,
   BudgetEventType,
@@ -16,7 +16,6 @@ import {
   AdsReportPeriod,
   AdsPlatform,
   AdsReportSource,
-  PipelineStage,
   PipelineDecision,
   BriefStatus,
   ClientTier,
@@ -46,7 +45,6 @@ async function main() {
   await prisma.strategicBrief.deleteMany();
   await prisma.projectPhaseItem.deleteMany();
   await prisma.projectPhase.deleteMany();
-  await prisma.salesPipeline.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.eventAttendee.deleteMany();
@@ -65,7 +63,6 @@ async function main() {
   await prisma.budgetEvent.deleteMany();
   await prisma.mediaPlanItem.deleteMany();
   await prisma.mediaPlan.deleteMany();
-  await prisma.projectBudget.deleteMany();
   await prisma.projectTeam.deleteMany();
   await prisma.project.deleteMany();
   await prisma.client.deleteMany();
@@ -106,33 +103,200 @@ async function main() {
   console.log('Created 3 clients');
 
   // ═══════════════════════════════════════════════════════
-  // PROJECTS
+  // UNIFIED PROJECTS (merged: Project + SalesPipeline + ProjectBudget)
   // ═══════════════════════════════════════════════════════
+
+  // P1: ABC Corp - WON → ONGOING (was pipe1 + project p1 + budget)
   const p1 = await prisma.project.create({
     data: {
-      code: 'ABC-Q1', name: 'ABC Corp - Q1 Digital Marketing', description: 'Chien dich marketing so Q1/2026 cho ABC Corporation. Tap trung quang cao Facebook, Google va content marketing.',
-      productType: 'Digital Marketing', status: ProjectStatus.STABLE, stage: ProjectStage.ONGOING, stageProgress: 65,
+      dealCode: 'DEAL-0001', projectCode: 'PRJ-0001',
+      name: 'ABC Corp - Q1 Digital Marketing', description: 'Chien dich marketing so Q1/2026 cho ABC Corporation. Tap trung quang cao Facebook, Google va content marketing.',
+      lifecycle: ProjectLifecycle.ONGOING, healthStatus: HealthStatus.STABLE, stageProgress: 65,
       startDate: d('2026-01-01'), endDate: d('2026-03-31'), timelineProgress: 30, clientId: client1.id,
+      nvkdId: nvkd.id, pmId: pm.id, plannerId: planner.id,
+      // Sales data
+      clientType: 'Enterprise', productType: 'Digital Marketing',
+      campaignObjective: 'Brand awareness & lead generation cho Q1/2026',
+      initialGoal: 'Tang 30% brand awareness, 500 leads/thang',
+      upsellOpportunity: 'Co the mo rong sang TikTok Ads Q2',
+      // Budget & Fees
+      totalBudget: 500000000, monthlyBudget: 166666667, spentAmount: 152000000,
+      fixedAdFee: 40000000, adServiceFee: 50000000, contentFee: 30000000, designFee: 18000000, mediaFee: 14000000, budgetPacing: 30.4,
+      // Pipeline-era fees (from NVKD original quote)
+      otherFee: 1500000,
+      // PM Evaluation
+      costNSQC: 15000000, costDesign: 10000000, costMedia: 8000000, costKOL: 12000000, costOther: 4000000,
+      cogs: 49000000, grossProfit: 31000000, profitMargin: 38.75,
+      // Client Evaluation
+      clientTier: ClientTier.A, marketSize: 'Lon - thi truong FMCG', competitionLevel: 'Cao',
+      productUSP: 'Brand uy tin 20 nam, san pham da dang', averageScore: 8.5,
+      audienceSize: '5 trieu nguoi 25-45 tuoi', productLifecycle: 'Mature', scalePotential: 'Cao - co the scale len 120tr/thang',
+      // Decision
+      decision: PipelineDecision.ACCEPTED, decisionDate: d('2026-01-03'), decisionNote: 'Margin on, khach hang tier A, accept.',
+      // Weekly Notes
+      weeklyNotes: [
+        { week: 1, date: '2025-12-20T00:00:00.000Z', note: 'Khach hang da gui brief. NVKD gap PM de ban giao.', authorId: nvkd.id },
+        { week: 2, date: '2025-12-27T00:00:00.000Z', note: 'PM da danh gia xong. Cost structure hop ly, margin on dinh.', authorId: pm.id },
+        { week: 3, date: '2026-01-03T00:00:00.000Z', note: 'Da accept pipeline. Bat dau setup project.', authorId: pm.id },
+      ],
+      // Links
       driveLink: 'https://drive.google.com/drive/folders/abc-q1', planLink: 'https://docs.google.com/spreadsheets/abc-q1',
     },
   });
+
+  // P2: XYZ Tech - WON → PLANNING (was pipe2 + project p2 + budget)
   const p2 = await prisma.project.create({
     data: {
-      code: 'XYZ-LAUNCH', name: 'XYZ Tech - Product Launch SaaS', description: 'Ra mat san pham SaaS moi cua XYZ Tech. Bao gom landing page, ads va PR campaign.',
-      productType: 'Product Launch', status: ProjectStatus.WARNING, stage: ProjectStage.PLANNING, stageProgress: 40,
+      dealCode: 'DEAL-0002', projectCode: 'PRJ-0002',
+      name: 'XYZ Tech - Product Launch SaaS', description: 'Ra mat san pham SaaS moi cua XYZ Tech. Bao gom landing page, ads va PR campaign.',
+      lifecycle: ProjectLifecycle.PLANNING, healthStatus: HealthStatus.WARNING, stageProgress: 40,
       startDate: d('2026-01-15'), endDate: d('2026-04-30'), timelineProgress: 12, clientId: client2.id,
+      nvkdId: nvkd.id, pmId: pm.id,
+      // Sales data
+      clientType: 'Startup', productType: 'Product Launch',
+      campaignObjective: 'Ra mat san pham SaaS moi, target 1000 signups',
+      initialGoal: '1000 signups trong 3 thang dau',
+      // Budget & Fees
+      totalBudget: 300000000, monthlyBudget: 85714286, spentAmount: 0,
+      fixedAdFee: 5000000, adServiceFee: 30000000, contentFee: 20000000, designFee: 15000000, mediaFee: 1500000,
+      budgetPacing: 0,
+      // PM Evaluation
+      costNSQC: 12000000, costDesign: 7000000, costMedia: 5000000, costKOL: 0, costOther: 3000000,
+      cogs: 27000000, grossProfit: 15000000, profitMargin: 35.71,
+      // Client Evaluation
+      clientTier: ClientTier.B, marketSize: 'Trung binh - SaaS B2B', competitionLevel: 'Trung binh',
+      productUSP: 'AI-powered, gia canh tranh', averageScore: 7.0,
+      // Decision
+      decision: PipelineDecision.ACCEPTED, decisionDate: d('2026-01-18'), decisionNote: 'Accept, margin du tot du budget nho. Co the upsell sau.',
+      weeklyNotes: [
+        { week: 1, date: '2026-01-10T00:00:00.000Z', note: 'Startup moi, budget han che nhung co tiem nang.', authorId: nvkd.id },
+        { week: 2, date: '2026-01-17T00:00:00.000Z', note: 'PM danh gia: margin du, accept de chay pilot.', authorId: pm.id },
+      ],
+      // Links
       driveLink: 'https://drive.google.com/drive/folders/xyz-launch',
     },
   });
+
+  // P3: MNO F&B - CLOSED (completed project, full lifecycle done)
   const p3 = await prisma.project.create({
     data: {
-      code: 'MNO-OPEN', name: 'MNO F&B - Grand Opening Campaign', description: 'Chien dich khai truong 3 chi nhanh moi cua MNO F&B tai TP.HCM. Da hoan thanh thang 12/2025.',
-      productType: 'Event & Activation', status: ProjectStatus.STABLE, stage: ProjectStage.COMPLETED, stageProgress: 100,
+      dealCode: 'DEAL-0003', projectCode: 'PRJ-0003',
+      name: 'MNO F&B - Grand Opening Campaign', description: 'Chien dich khai truong 3 chi nhanh moi cua MNO F&B tai TP.HCM. Da hoan thanh thang 12/2025.',
+      lifecycle: ProjectLifecycle.CLOSED, healthStatus: HealthStatus.STABLE, stageProgress: 100,
       startDate: d('2025-11-01'), endDate: d('2025-12-31'), timelineProgress: 100, clientId: client3.id,
+      nvkdId: nvkd.id, pmId: pm.id, plannerId: planner.id,
+      // Sales data
+      clientType: 'Corporate', productType: 'Event & Activation',
+      campaignObjective: 'Khai truong 3 chi nhanh moi tai TP.HCM',
+      initialGoal: '5000 luot ghe tham trong tuan dau',
+      // Budget & Fees
+      totalBudget: 200000000, monthlyBudget: 100000000, spentAmount: 185000000,
+      fixedAdFee: 60000000, adServiceFee: 40000000, contentFee: 35000000, designFee: 25000000, mediaFee: 15000000, otherFee: 10000000,
+      budgetPacing: 92.5,
+      // PM Evaluation
+      costNSQC: 18000000, costDesign: 12000000, costMedia: 10000000, costKOL: 8000000, costOther: 5000000,
+      cogs: 53000000, grossProfit: 147000000, profitMargin: 73.5,
+      // Client Evaluation
+      clientTier: ClientTier.A, marketSize: 'Lon - F&B', competitionLevel: 'Cao',
+      productUSP: 'Chuoi F&B dang mo rong nhanh', averageScore: 8.0,
+      // Decision
+      decision: PipelineDecision.ACCEPTED, decisionDate: d('2025-10-25'), decisionNote: 'Margin cao, client tier A, accept ngay.',
+      weeklyNotes: [
+        { week: 1, date: '2025-10-20T00:00:00.000Z', note: 'Client can chay chien dich khai truong gap.', authorId: nvkd.id },
+        { week: 2, date: '2025-10-25T00:00:00.000Z', note: 'PM accept. Bat dau setup ngay.', authorId: pm.id },
+      ],
+      // Links
       driveLink: 'https://drive.google.com/drive/folders/mno-open', planLink: 'https://docs.google.com/spreadsheets/mno-open', trackingLink: 'https://datastudio.google.com/mno-report',
     },
   });
-  console.log('Created 3 projects');
+
+  // P4: Sunshine Group - NEGOTIATION (pre-WON deal, pending decision)
+  const p4 = await prisma.project.create({
+    data: {
+      dealCode: 'DEAL-0004',
+      name: 'Sunshine Group - Social Media Q2',
+      lifecycle: ProjectLifecycle.NEGOTIATION, healthStatus: HealthStatus.STABLE,
+      nvkdId: nvkd.id, pmId: pm.id, plannerId: planner.id,
+      clientType: 'Corporate', productType: 'Social Media Management',
+      campaignObjective: 'Quan ly Social Media 3 kenh: Facebook, Instagram, TikTok',
+      initialGoal: 'Tang followers 50%, engagement rate 5%',
+      totalBudget: 95000000, monthlyBudget: 32000000,
+      fixedAdFee: 10000000, adServiceFee: 5000000, contentFee: 8000000, designFee: 6000000, mediaFee: 3500000, otherFee: 2500000,
+      costNSQC: 18000000, costDesign: 12000000, costMedia: 8000000, costKOL: 15000000, costOther: 5000000,
+      cogs: 58000000, grossProfit: 37000000, profitMargin: 38.95,
+      clientTier: ClientTier.A, marketSize: 'Lon - bat dong san', competitionLevel: 'Rat cao',
+      productUSP: 'Top 5 bat dong san VN', averageScore: 8.0,
+      audienceSize: '10 trieu nguoi 25-55 tuoi', productLifecycle: 'Growth', scalePotential: 'Cao - nhieu du an con',
+      weeklyNotes: [
+        { week: 1, date: '2026-01-20T00:00:00.000Z', note: 'Khach hang lon, dang thuong luong chi tiet scope va budget.', authorId: nvkd.id },
+        { week: 2, date: '2026-01-27T00:00:00.000Z', note: 'PM da danh gia cost. Cho khach hang xac nhan budget cuoi cung.', authorId: pm.id },
+      ],
+      decision: PipelineDecision.PENDING,
+    },
+  });
+
+  // P5: FoodPanda VN - EVALUATION (PM evaluating)
+  const p5 = await prisma.project.create({
+    data: {
+      dealCode: 'DEAL-0005',
+      name: 'FoodPanda VN - Tet Campaign 2027',
+      lifecycle: ProjectLifecycle.EVALUATION, healthStatus: HealthStatus.STABLE,
+      nvkdId: nvkd.id, pmId: pm.id,
+      clientType: 'MNC', productType: 'Seasonal Campaign',
+      campaignObjective: 'Chien dich Tet 2027: tang don hang 40%',
+      initialGoal: '40% tang don hang, 2 trieu impressions',
+      totalBudget: 120000000, monthlyBudget: 40000000,
+      fixedAdFee: 12000000, contentFee: 10000000, designFee: 7000000, mediaFee: 5000000,
+      costNSQC: 22000000, costDesign: 15000000, costMedia: 10000000, costKOL: 18000000, costOther: 7000000,
+      cogs: 72000000, grossProfit: 48000000, profitMargin: 40.0,
+      clientTier: ClientTier.A,
+      weeklyNotes: [
+        { week: 1, date: '2026-01-25T00:00:00.000Z', note: 'Khach hang MNC, PM dang evaluate cost va scope.', authorId: nvkd.id },
+      ],
+      decision: PipelineDecision.PENDING,
+    },
+  });
+
+  // P6: Green Coffee - QUALIFIED (early stage)
+  const p6 = await prisma.project.create({
+    data: {
+      dealCode: 'DEAL-0006',
+      name: 'Green Coffee - Brand Refresh',
+      lifecycle: ProjectLifecycle.QUALIFIED, healthStatus: HealthStatus.STABLE,
+      nvkdId: nvkd.id,
+      clientType: 'SME', productType: 'Branding',
+      campaignObjective: 'Lam moi thuong hieu, redesign logo va brand guidelines',
+      initialGoal: 'Brand kit moi trong 2 thang',
+      totalBudget: 28000000, monthlyBudget: 14000000,
+      contentFee: 3000000, designFee: 8000000,
+      decision: PipelineDecision.PENDING,
+    },
+  });
+
+  // P7: QuickShop - LOST (declined)
+  const p7 = await prisma.project.create({
+    data: {
+      dealCode: 'DEAL-0007',
+      name: 'QuickShop - Flash Sale App',
+      lifecycle: ProjectLifecycle.LOST, healthStatus: HealthStatus.STABLE,
+      nvkdId: nvkd.id, pmId: pm.id,
+      clientType: 'Startup', productType: 'Performance Marketing',
+      campaignObjective: 'Chay ads cho app thuong mai dien tu moi',
+      totalBudget: 15000000, monthlyBudget: 5000000,
+      fixedAdFee: 2000000,
+      costNSQC: 4500000, costDesign: 3000000, costMedia: 2000000,
+      cogs: 9500000, grossProfit: 5500000, profitMargin: 36.67,
+      clientTier: ClientTier.D, averageScore: 4.0,
+      weeklyNotes: [
+        { week: 1, date: '2026-01-15T00:00:00.000Z', note: 'Budget qua thap, khach hang chua ro muc tieu.', authorId: nvkd.id },
+        { week: 2, date: '2026-01-22T00:00:00.000Z', note: 'PM tu choi: margin mong, risk cao.', authorId: pm.id },
+      ],
+      decision: PipelineDecision.DECLINED, decisionDate: d('2026-01-22'),
+      decisionNote: 'Budget 15tr qua thap, client tier D, risk khong dang.',
+    },
+  });
+
+  console.log('Created 7 unified projects (3 post-WON, 4 pre-WON/LOST)');
 
   // ═══════════════════════════════════════════════════════
   // PROJECT TEAMS
@@ -165,31 +329,7 @@ async function main() {
   console.log('Assigned teams');
 
   // ═══════════════════════════════════════════════════════
-  // PROJECT BUDGETS
-  // ═══════════════════════════════════════════════════════
-  // P1: 500M, spent ~150M (APPROVED SPEND events below)
-  await prisma.projectBudget.create({
-    data: {
-      projectId: p1.id, totalBudget: 500000000, monthlyBudget: 166666667, spentAmount: 152000000,
-      fixedAdFee: 40000000, adServiceFee: 50000000, contentFee: 30000000, designFee: 18000000, mediaFee: 14000000, budgetPacing: 30.4,
-    },
-  });
-  // P2: 300M, no spending yet
-  await prisma.projectBudget.create({
-    data: {
-      projectId: p2.id, totalBudget: 300000000, monthlyBudget: 85714286, spentAmount: 0,
-      adServiceFee: 30000000, contentFee: 20000000, designFee: 15000000, budgetPacing: 0,
-    },
-  });
-  // P3: 200M, spent 185M (completed)
-  await prisma.projectBudget.create({
-    data: {
-      projectId: p3.id, totalBudget: 200000000, monthlyBudget: 100000000, spentAmount: 185000000,
-      fixedAdFee: 60000000, adServiceFee: 40000000, contentFee: 35000000, designFee: 25000000, mediaFee: 15000000, otherFee: 10000000, budgetPacing: 92.5,
-    },
-  });
-  console.log('Created project budgets');
-
+  // (Budget data now embedded in Project model - no separate ProjectBudget)
   // ═══════════════════════════════════════════════════════
   // MEDIA PLANS
   // ═══════════════════════════════════════════════════════
@@ -734,27 +874,46 @@ async function main() {
   console.log('Created project logs');
 
   // ═══════════════════════════════════════════════════════
-  // STAGE HISTORY
+  // STAGE HISTORY (using ProjectLifecycle)
   // ═══════════════════════════════════════════════════════
   await prisma.stageHistory.createMany({
     data: [
-      // P1
-      { projectId: p1.id, fromStage: null, toStage: ProjectStage.INTAKE, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Du an moi tu client ABC', createdAt: d('2025-12-15') },
-      { projectId: p1.id, fromStage: ProjectStage.INTAKE, toStage: ProjectStage.DISCOVERY, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Da nhan brief, bat dau tim hieu', createdAt: d('2025-12-18') },
-      { projectId: p1.id, fromStage: ProjectStage.DISCOVERY, toStage: ProjectStage.PLANNING, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Hoan thanh discovery, bat dau lap ke hoach', createdAt: d('2025-12-22') },
-      { projectId: p1.id, fromStage: ProjectStage.PLANNING, toStage: ProjectStage.UNDER_REVIEW, fromProgress: 0, toProgress: 100, changedById: planner.id, reason: 'Ke hoach hoan tat, cho client duyet', createdAt: d('2025-12-26') },
-      { projectId: p1.id, fromStage: ProjectStage.UNDER_REVIEW, toStage: ProjectStage.ONGOING, fromProgress: 0, toProgress: 65, changedById: pm.id, reason: 'Client da duyet, bat dau trien khai', createdAt: d('2026-01-02') },
-      // P2
-      { projectId: p2.id, fromStage: null, toStage: ProjectStage.INTAKE, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Du an moi tu XYZ Tech', createdAt: d('2026-01-10') },
-      { projectId: p2.id, fromStage: ProjectStage.INTAKE, toStage: ProjectStage.DISCOVERY, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Da nhan brief san pham SaaS', createdAt: d('2026-01-13') },
-      { projectId: p2.id, fromStage: ProjectStage.DISCOVERY, toStage: ProjectStage.PLANNING, fromProgress: 0, toProgress: 40, changedById: pm.id, reason: 'Bat dau lap ke hoach, dang lam brand', createdAt: d('2026-01-20') },
-      // P3 - full journey
-      { projectId: p3.id, fromStage: null, toStage: ProjectStage.INTAKE, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Nhan du an khai truong MNO', createdAt: d('2025-10-20') },
-      { projectId: p3.id, fromStage: ProjectStage.INTAKE, toStage: ProjectStage.DISCOVERY, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2025-10-25') },
-      { projectId: p3.id, fromStage: ProjectStage.DISCOVERY, toStage: ProjectStage.PLANNING, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2025-11-01') },
-      { projectId: p3.id, fromStage: ProjectStage.PLANNING, toStage: ProjectStage.PROPOSAL_PITCH, fromProgress: 0, toProgress: 100, changedById: planner.id, createdAt: d('2025-11-08') },
-      { projectId: p3.id, fromStage: ProjectStage.PROPOSAL_PITCH, toStage: ProjectStage.ONGOING, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Client duyet proposal, bat dau!', createdAt: d('2025-11-15') },
-      { projectId: p3.id, fromStage: ProjectStage.ONGOING, toStage: ProjectStage.COMPLETED, fromProgress: 100, toProgress: 100, changedById: pm.id, reason: 'Chien dich hoan tat. Bao cao da gui.', createdAt: d('2026-01-05') },
+      // P1: LEAD → ... → ONGOING
+      { projectId: p1.id, fromStage: null, toStage: ProjectLifecycle.LEAD, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Deal moi tu client ABC', createdAt: d('2025-12-15') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.LEAD, toStage: ProjectLifecycle.QUALIFIED, fromProgress: 0, toProgress: 100, changedById: nvkd.id, reason: 'Da qualify, chuyen PM', createdAt: d('2025-12-18') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.QUALIFIED, toStage: ProjectLifecycle.EVALUATION, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'PM bat dau evaluate', createdAt: d('2025-12-22') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.EVALUATION, toStage: ProjectLifecycle.NEGOTIATION, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Evaluation xong, cho decision', createdAt: d('2025-12-26') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.NEGOTIATION, toStage: ProjectLifecycle.WON, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Accepted - margin on, tier A', createdAt: d('2026-01-03') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.WON, toStage: ProjectLifecycle.PLANNING, fromProgress: 0, toProgress: 0, changedById: pm.id, reason: 'Bat dau setup project', createdAt: d('2026-01-03') },
+      { projectId: p1.id, fromStage: ProjectLifecycle.PLANNING, toStage: ProjectLifecycle.ONGOING, fromProgress: 0, toProgress: 65, changedById: pm.id, reason: 'Client da duyet, bat dau trien khai', createdAt: d('2026-01-05') },
+      // P2: LEAD → ... → PLANNING
+      { projectId: p2.id, fromStage: null, toStage: ProjectLifecycle.LEAD, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Deal moi tu XYZ Tech', createdAt: d('2026-01-10') },
+      { projectId: p2.id, fromStage: ProjectLifecycle.LEAD, toStage: ProjectLifecycle.QUALIFIED, fromProgress: 0, toProgress: 100, changedById: nvkd.id, reason: 'Qualified', createdAt: d('2026-01-12') },
+      { projectId: p2.id, fromStage: ProjectLifecycle.QUALIFIED, toStage: ProjectLifecycle.EVALUATION, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'PM evaluate', createdAt: d('2026-01-14') },
+      { projectId: p2.id, fromStage: ProjectLifecycle.EVALUATION, toStage: ProjectLifecycle.NEGOTIATION, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Cho decision', createdAt: d('2026-01-16') },
+      { projectId: p2.id, fromStage: ProjectLifecycle.NEGOTIATION, toStage: ProjectLifecycle.WON, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Accepted', createdAt: d('2026-01-18') },
+      { projectId: p2.id, fromStage: ProjectLifecycle.WON, toStage: ProjectLifecycle.PLANNING, fromProgress: 0, toProgress: 40, changedById: pm.id, reason: 'Bat dau planning', createdAt: d('2026-01-18') },
+      // P3: Full lifecycle → CLOSED
+      { projectId: p3.id, fromStage: null, toStage: ProjectLifecycle.LEAD, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Deal khai truong MNO', createdAt: d('2025-10-20') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.LEAD, toStage: ProjectLifecycle.QUALIFIED, fromProgress: 0, toProgress: 100, changedById: nvkd.id, createdAt: d('2025-10-21') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.QUALIFIED, toStage: ProjectLifecycle.EVALUATION, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2025-10-22') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.EVALUATION, toStage: ProjectLifecycle.NEGOTIATION, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2025-10-23') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.NEGOTIATION, toStage: ProjectLifecycle.WON, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Accept ngay - gap', createdAt: d('2025-10-25') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.WON, toStage: ProjectLifecycle.PLANNING, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2025-10-25') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.PLANNING, toStage: ProjectLifecycle.ONGOING, fromProgress: 0, toProgress: 100, changedById: pm.id, reason: 'Bat dau chien dich', createdAt: d('2025-11-01') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.ONGOING, toStage: ProjectLifecycle.OPTIMIZING, fromProgress: 100, toProgress: 100, changedById: pm.id, reason: 'Toi uu chien dich', createdAt: d('2025-12-15') },
+      { projectId: p3.id, fromStage: ProjectLifecycle.OPTIMIZING, toStage: ProjectLifecycle.CLOSED, fromProgress: 100, toProgress: 100, changedById: pm.id, reason: 'Chien dich hoan tat. Bao cao da gui.', createdAt: d('2026-01-05') },
+      // P4: LEAD → NEGOTIATION
+      { projectId: p4.id, fromStage: null, toStage: ProjectLifecycle.LEAD, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Deal moi Sunshine Group', createdAt: d('2026-01-15') },
+      { projectId: p4.id, fromStage: ProjectLifecycle.LEAD, toStage: ProjectLifecycle.QUALIFIED, fromProgress: 0, toProgress: 100, changedById: nvkd.id, createdAt: d('2026-01-17') },
+      { projectId: p4.id, fromStage: ProjectLifecycle.QUALIFIED, toStage: ProjectLifecycle.EVALUATION, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2026-01-19') },
+      { projectId: p4.id, fromStage: ProjectLifecycle.EVALUATION, toStage: ProjectLifecycle.NEGOTIATION, fromProgress: 0, toProgress: 0, changedById: pm.id, reason: 'Cho khach xac nhan budget', createdAt: d('2026-01-22') },
+      // P7: LEAD → LOST
+      { projectId: p7.id, fromStage: null, toStage: ProjectLifecycle.LEAD, fromProgress: 0, toProgress: 0, changedById: nvkd.id, reason: 'Deal moi QuickShop', createdAt: d('2026-01-10') },
+      { projectId: p7.id, fromStage: ProjectLifecycle.LEAD, toStage: ProjectLifecycle.QUALIFIED, fromProgress: 0, toProgress: 100, changedById: nvkd.id, createdAt: d('2026-01-12') },
+      { projectId: p7.id, fromStage: ProjectLifecycle.QUALIFIED, toStage: ProjectLifecycle.EVALUATION, fromProgress: 0, toProgress: 100, changedById: pm.id, createdAt: d('2026-01-15') },
+      { projectId: p7.id, fromStage: ProjectLifecycle.EVALUATION, toStage: ProjectLifecycle.NEGOTIATION, fromProgress: 0, toProgress: 0, changedById: pm.id, createdAt: d('2026-01-18') },
+      { projectId: p7.id, fromStage: ProjectLifecycle.NEGOTIATION, toStage: ProjectLifecycle.LOST, fromProgress: 0, toProgress: 0, changedById: pm.id, reason: 'Declined - budget thap, risk cao', createdAt: d('2026-01-22') },
     ],
   });
   console.log('Created stage history');
@@ -955,233 +1114,8 @@ async function main() {
   console.log('Created system settings');
 
   // ═══════════════════════════════════════════════════════
-  // SALES PIPELINE - 6 pipelines at various stages
+  // (Sales pipeline data now embedded in unified Project model above)
   // ═══════════════════════════════════════════════════════
-
-  // Pipeline 1: ACCEPTED - already converted to project p1
-  const pipe1 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'ABC Corp - Q1 Digital Marketing',
-      status: PipelineStage.WON,
-      currentStage: ProjectStage.ONGOING,
-      nvkdId: nvkd.id,
-      pmId: pm.id,
-      plannerId: planner.id,
-      clientType: 'Enterprise',
-      productType: 'Digital Marketing',
-      campaignObjective: 'Brand awareness & lead generation cho Q1/2026',
-      initialGoal: 'Tang 30% brand awareness, 500 leads/thang',
-      totalBudget: 80000000,
-      monthlyBudget: 27000000,
-      spentAmount: 0,
-      fixedAdFee: 8000000,
-      adServiceFee: 4000000,
-      contentFee: 6000000,
-      designFee: 4000000,
-      mediaFee: 2500000,
-      otherFee: 1500000,
-      upsellOpportunity: 'Co the mo rong sang TikTok Ads Q2',
-      costNSQC: 15000000,
-      costDesign: 10000000,
-      costMedia: 8000000,
-      costKOL: 12000000,
-      costOther: 4000000,
-      cogs: 49000000,
-      grossProfit: 31000000,
-      profitMargin: 38.75,
-      clientTier: ClientTier.A,
-      marketSize: 'Lon - thi truong FMCG',
-      competitionLevel: 'Cao',
-      productUSP: 'Brand uy tin 20 nam, san pham da dang',
-      averageScore: 8.5,
-      audienceSize: '5 trieu nguoi 25-45 tuoi',
-      productLifecycle: 'Mature',
-      scalePotential: 'Cao - co the scale len 120tr/thang',
-      weeklyNotes: [
-        { week: 1, date: '2025-12-20T00:00:00.000Z', note: 'Khach hang da gui brief. NVKD gap PM de ban giao.', authorId: nvkd.id },
-        { week: 2, date: '2025-12-27T00:00:00.000Z', note: 'PM da danh gia xong. Cost structure hop ly, margin on dinh.', authorId: pm.id },
-        { week: 3, date: '2026-01-03T00:00:00.000Z', note: 'Da accept pipeline. Bat dau setup project.', authorId: pm.id },
-      ],
-      decision: PipelineDecision.ACCEPTED,
-      decisionDate: d('2026-01-03'),
-      decisionNote: 'Margin on, khach hang tier A, accept.',
-      projectId: p1.id,
-    },
-  });
-
-  // Pipeline 2: ACCEPTED - converted to project p2
-  const pipe2 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'XYZ Tech - Product Launch SaaS',
-      status: PipelineStage.WON,
-      currentStage: ProjectStage.PLANNING,
-      nvkdId: nvkd.id,
-      pmId: pm.id,
-      clientType: 'Startup',
-      productType: 'Product Launch',
-      campaignObjective: 'Ra mat san pham SaaS moi, target 1000 signups',
-      initialGoal: '1000 signups trong 3 thang dau',
-      totalBudget: 42000000,
-      monthlyBudget: 14000000,
-      fixedAdFee: 5000000,
-      adServiceFee: 2500000,
-      contentFee: 3500000,
-      designFee: 3000000,
-      mediaFee: 1500000,
-      costNSQC: 12000000,
-      costDesign: 7000000,
-      costMedia: 5000000,
-      costKOL: 0,
-      costOther: 3000000,
-      cogs: 27000000,
-      grossProfit: 15000000,
-      profitMargin: 35.71,
-      clientTier: ClientTier.B,
-      marketSize: 'Trung binh - SaaS B2B',
-      competitionLevel: 'Trung binh',
-      productUSP: 'AI-powered, gia canh tranh',
-      averageScore: 7.0,
-      weeklyNotes: [
-        { week: 1, date: '2026-01-10T00:00:00.000Z', note: 'Startup moi, budget han che nhung co tiem nang.', authorId: nvkd.id },
-        { week: 2, date: '2026-01-17T00:00:00.000Z', note: 'PM danh gia: margin du, accept de chay pilot.', authorId: pm.id },
-      ],
-      decision: PipelineDecision.ACCEPTED,
-      decisionDate: d('2026-01-18'),
-      decisionNote: 'Accept, margin du tot du budget nho. Co the upsell sau.',
-      projectId: p2.id,
-    },
-  });
-
-  // Pipeline 3: NEGOTIATION stage - pending decision
-  const pipe3 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'Sunshine Group - Social Media Q2',
-      status: PipelineStage.NEGOTIATION,
-      currentStage: ProjectStage.INTAKE,
-      nvkdId: nvkd.id,
-      pmId: pm.id,
-      plannerId: planner.id,
-      clientType: 'Corporate',
-      productType: 'Social Media Management',
-      campaignObjective: 'Quan ly Social Media 3 kenh: Facebook, Instagram, TikTok',
-      initialGoal: 'Tang followers 50%, engagement rate 5%',
-      totalBudget: 95000000,
-      monthlyBudget: 32000000,
-      fixedAdFee: 10000000,
-      adServiceFee: 5000000,
-      contentFee: 8000000,
-      designFee: 6000000,
-      mediaFee: 3500000,
-      otherFee: 2500000,
-      costNSQC: 18000000,
-      costDesign: 12000000,
-      costMedia: 8000000,
-      costKOL: 15000000,
-      costOther: 5000000,
-      cogs: 58000000,
-      grossProfit: 37000000,
-      profitMargin: 38.95,
-      clientTier: ClientTier.A,
-      marketSize: 'Lon - bat dong san',
-      competitionLevel: 'Rat cao',
-      productUSP: 'Top 5 bat dong san VN',
-      averageScore: 8.0,
-      audienceSize: '10 trieu nguoi 25-55 tuoi',
-      productLifecycle: 'Growth',
-      scalePotential: 'Cao - nhieu du an con',
-      weeklyNotes: [
-        { week: 1, date: '2026-01-20T00:00:00.000Z', note: 'Khach hang lon, dang thuong luong chi tiet scope va budget.', authorId: nvkd.id },
-        { week: 2, date: '2026-01-27T00:00:00.000Z', note: 'PM da danh gia cost. Cho khach hang xac nhan budget cuoi cung.', authorId: pm.id },
-      ],
-      decision: PipelineDecision.PENDING,
-    },
-  });
-
-  // Pipeline 4: EVALUATION stage
-  const pipe4 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'FoodPanda VN - Tet Campaign 2027',
-      status: PipelineStage.EVALUATION,
-      currentStage: ProjectStage.INTAKE,
-      nvkdId: nvkd.id,
-      pmId: pm.id,
-      clientType: 'MNC',
-      productType: 'Seasonal Campaign',
-      campaignObjective: 'Chien dich Tet 2027: tang don hang 40%',
-      initialGoal: '40% tang don hang, 2 trieu impressions',
-      totalBudget: 120000000,
-      monthlyBudget: 40000000,
-      fixedAdFee: 12000000,
-      contentFee: 10000000,
-      designFee: 7000000,
-      mediaFee: 5000000,
-      costNSQC: 22000000,
-      costDesign: 15000000,
-      costMedia: 10000000,
-      costKOL: 18000000,
-      costOther: 7000000,
-      cogs: 72000000,
-      grossProfit: 48000000,
-      profitMargin: 40.0,
-      clientTier: ClientTier.A,
-      weeklyNotes: [
-        { week: 1, date: '2026-01-25T00:00:00.000Z', note: 'Khach hang MNC, PM dang evaluate cost va scope.', authorId: nvkd.id },
-      ],
-      decision: PipelineDecision.PENDING,
-    },
-  });
-
-  // Pipeline 5: QUALIFIED stage (early)
-  const pipe5 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'Green Coffee - Brand Refresh',
-      status: PipelineStage.QUALIFIED,
-      currentStage: ProjectStage.INTAKE,
-      nvkdId: nvkd.id,
-      clientType: 'SME',
-      productType: 'Branding',
-      campaignObjective: 'Lam moi thuong hieu, redesign logo va brand guidelines',
-      initialGoal: 'Brand kit moi trong 2 thang',
-      totalBudget: 28000000,
-      monthlyBudget: 14000000,
-      contentFee: 3000000,
-      designFee: 8000000,
-      decision: PipelineDecision.PENDING,
-    },
-  });
-
-  // Pipeline 6: DECLINED
-  const pipe6 = await prisma.salesPipeline.create({
-    data: {
-      projectName: 'QuickShop - Flash Sale App',
-      status: PipelineStage.LOST,
-      currentStage: ProjectStage.INTAKE,
-      nvkdId: nvkd.id,
-      pmId: pm.id,
-      clientType: 'Startup',
-      productType: 'Performance Marketing',
-      campaignObjective: 'Chay ads cho app thuong mai dien tu moi',
-      totalBudget: 15000000,
-      monthlyBudget: 5000000,
-      fixedAdFee: 2000000,
-      costNSQC: 4500000,
-      costDesign: 3000000,
-      costMedia: 2000000,
-      cogs: 9500000,
-      grossProfit: 5500000,
-      profitMargin: 36.67,
-      clientTier: ClientTier.D,
-      averageScore: 4.0,
-      weeklyNotes: [
-        { week: 1, date: '2026-01-15T00:00:00.000Z', note: 'Budget qua thap, khach hang chua ro muc tieu.', authorId: nvkd.id },
-        { week: 2, date: '2026-01-22T00:00:00.000Z', note: 'PM tu choi: margin mong, risk cao.', authorId: pm.id },
-      ],
-      decision: PipelineDecision.DECLINED,
-      decisionDate: d('2026-01-22'),
-      decisionNote: 'Budget 15tr qua thap, client tier D, risk khong dang.',
-    },
-  });
-  console.log('Created 6 sales pipelines');
 
   // ═══════════════════════════════════════════════════════
   // STRATEGIC BRIEFS - for accepted pipelines
@@ -1205,10 +1139,9 @@ async function main() {
     { num: 16, key: 'additional_notes', title: 'Ghi chú bổ sung' },
   ];
 
-  // Brief 1: For pipeline 1 (APPROVED - mostly filled)
+  // Brief 1: For project 1 (APPROVED - mostly filled)
   const brief1 = await prisma.strategicBrief.create({
     data: {
-      pipelineId: pipe1.id,
       projectId: p1.id,
       status: BriefStatus.APPROVED,
       completionPct: 100,
@@ -1236,10 +1169,9 @@ async function main() {
     },
   });
 
-  // Brief 2: For pipeline 2 (DRAFT - partially filled)
+  // Brief 2: For project 2 (DRAFT - partially filled)
   const brief2 = await prisma.strategicBrief.create({
     data: {
-      pipelineId: pipe2.id,
       projectId: p2.id,
       status: BriefStatus.DRAFT,
       completionPct: 38,
@@ -1261,10 +1193,10 @@ async function main() {
     },
   });
 
-  // Brief 3: For pipeline 3 (pending pipeline, no brief yet but create empty one for demo)
+  // Brief 3: For project 4 (NEGOTIATION, empty brief for demo)
   const brief3 = await prisma.strategicBrief.create({
     data: {
-      pipelineId: pipe3.id,
+      projectId: p4.id,
       status: BriefStatus.DRAFT,
       completionPct: 0,
       sections: {
@@ -1405,7 +1337,7 @@ async function main() {
   console.log('Data Summary:');
   console.log('  Users: 10 (all roles)');
   console.log('  Clients: 3');
-  console.log('  Projects: 3 (ONGOING / PLANNING / COMPLETED)');
+  console.log('  Projects: 7 (unified: ONGOING, PLANNING, CLOSED, NEGOTIATION, EVALUATION, QUALIFIED, LOST)');
   console.log(`  Ads Reports: ${adsReports.length}`);
   console.log('  Budget Events: 22');
   console.log('  Media Plans: 15 (3 ADS + 6 DESIGN + 6 CONTENT, with detailed items)');
@@ -1414,7 +1346,6 @@ async function main() {
   console.log('  Events: 5 (with attendees)');
   console.log('  Comments: 8 (with replies)');
   console.log('  Notifications: 10');
-  console.log('  Sales Pipelines: 6 (WON x2, NEGOTIATION, EVALUATION, QUALIFIED, LOST)');
   console.log('  Strategic Briefs: 3 (APPROVED, DRAFT, empty DRAFT)');
   console.log('  Project Phases: 12 (4 phases x 3 projects, 27 items)');
   console.log('');
