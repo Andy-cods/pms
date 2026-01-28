@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsDateString, IsInt, Min, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsDateString,
+  IsInt,
+  Min,
+  IsArray,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { sanitizeInput } from '@shared/utils/sanitize.util';
 

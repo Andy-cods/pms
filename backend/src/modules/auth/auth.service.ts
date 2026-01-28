@@ -139,7 +139,7 @@ export class AuthService {
     // Blacklist the token
     try {
       // Decode token to get expiry time
-      const decoded = this.jwtService.decode(token) as { exp?: number } | null;
+      const decoded = this.jwtService.decode(token);
       if (decoded?.exp) {
         // Calculate remaining TTL
         const now = Math.floor(Date.now() / 1000);
@@ -147,7 +147,9 @@ export class AuthService {
 
         if (remainingTtl > 0) {
           await this.tokenBlacklistService.blacklist(token, remainingTtl);
-          this.logger.debug(`Token blacklisted for user ${userId} with TTL ${remainingTtl}s`);
+          this.logger.debug(
+            `Token blacklisted for user ${userId} with TTL ${remainingTtl}s`,
+          );
         }
       }
     } catch (error) {

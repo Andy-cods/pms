@@ -1,7 +1,7 @@
 import { api } from './index';
 
 // Types
-export type ReportType = 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
+export type ReportType = 'WEEKLY' | 'WEEKLY_PER_PROJECT' | 'MONTHLY' | 'CUSTOM';
 export type ReportFormat = 'PDF' | 'EXCEL';
 
 export interface GenerateReportInput {
@@ -14,7 +14,8 @@ export interface GenerateReportInput {
 
 // Labels for UI
 export const ReportTypeLabels: Record<ReportType, string> = {
-  WEEKLY: 'Báo cáo tuần',
+  WEEKLY: 'Báo cáo tuần (tổng hợp)',
+  WEEKLY_PER_PROJECT: 'Báo cáo tuần theo dự án',
   MONTHLY: 'Báo cáo tháng',
   CUSTOM: 'Tùy chỉnh',
 };

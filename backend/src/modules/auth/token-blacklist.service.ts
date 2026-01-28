@@ -28,15 +28,21 @@ export class TokenBlacklistService implements OnModuleDestroy {
         });
 
         this.redis.connect().catch((err) => {
-          this.logger.warn(`Failed to connect to Redis: ${err.message}. Token blacklist will use in-memory fallback.`);
+          this.logger.warn(
+            `Failed to connect to Redis: ${err.message}. Token blacklist will use in-memory fallback.`,
+          );
           this.redis = null;
         });
       } catch (error) {
-        this.logger.warn(`Redis initialization failed: ${error}. Using in-memory fallback.`);
+        this.logger.warn(
+          `Redis initialization failed: ${error}. Using in-memory fallback.`,
+        );
         this.redis = null;
       }
     } else {
-      this.logger.warn('REDIS_URL not configured. Token blacklist will use in-memory storage (not suitable for production).');
+      this.logger.warn(
+        'REDIS_URL not configured. Token blacklist will use in-memory storage (not suitable for production).',
+      );
     }
   }
 

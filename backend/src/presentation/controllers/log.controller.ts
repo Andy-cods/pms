@@ -155,7 +155,6 @@ export class LogController {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapToResponse(log: any): LogResponseDto {
     return {
       id: log.id,

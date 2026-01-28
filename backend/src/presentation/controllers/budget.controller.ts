@@ -16,7 +16,10 @@ import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
-import { UpsertBudgetDto, type BudgetResponseDto } from '../../application/dto/budget/budget.dto.js';
+import {
+  UpsertBudgetDto,
+  type BudgetResponseDto,
+} from '../../application/dto/budget/budget.dto.js';
 
 @Controller('projects/:projectId/budget')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -175,7 +178,6 @@ export class BudgetController {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapToResponse(budget: any): BudgetResponseDto {
     return {
       id: budget.id,

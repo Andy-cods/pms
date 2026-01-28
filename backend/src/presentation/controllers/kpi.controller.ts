@@ -59,7 +59,9 @@ export class KpiController {
         targetValue: dto.targetValue ?? null,
         actualValue: dto.actualValue ?? null,
         unit: dto.unit ?? null,
-        metadata: dto.metadata ? (dto.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+        metadata: dto.metadata
+          ? (dto.metadata as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       },
     });
 
@@ -90,7 +92,9 @@ export class KpiController {
         targetValue: dto.targetValue,
         actualValue: dto.actualValue,
         unit: dto.unit,
-        metadata: dto.metadata ? (dto.metadata as Prisma.InputJsonValue) : undefined,
+        metadata: dto.metadata
+          ? (dto.metadata as Prisma.InputJsonValue)
+          : undefined,
       },
     });
 
@@ -149,7 +153,6 @@ export class KpiController {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapToResponse(kpi: any): KpiResponseDto {
     return {
       id: kpi.id,

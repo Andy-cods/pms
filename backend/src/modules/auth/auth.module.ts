@@ -23,7 +23,13 @@ import { TokenBlacklistService } from './token-blacklist.service.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, TokenBlacklistService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    TokenBlacklistService,
+  ],
   exports: [AuthService, JwtAuthGuard, RolesGuard, TokenBlacklistService],
 })
 export class AuthModule {}

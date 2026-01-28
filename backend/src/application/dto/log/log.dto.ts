@@ -1,8 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsDateString,
-} from 'class-validator';
+import { IsString, IsOptional, IsDateString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { sanitizeRichText } from '@shared/utils/sanitize.util';
 

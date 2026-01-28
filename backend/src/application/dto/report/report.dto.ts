@@ -3,6 +3,7 @@ import { IsEnum, IsOptional, IsString, IsDateString } from 'class-validator';
 // Report Types
 export enum ReportType {
   WEEKLY = 'WEEKLY',
+  WEEKLY_PER_PROJECT = 'WEEKLY_PER_PROJECT',
   MONTHLY = 'MONTHLY',
   CUSTOM = 'CUSTOM',
 }

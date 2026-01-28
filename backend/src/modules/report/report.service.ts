@@ -58,6 +58,7 @@ export class ReportService {
 
     switch (dto.type) {
       case ReportType.WEEKLY:
+      case ReportType.WEEKLY_PER_PROJECT:
         // Start of current week (Monday)
         startDate = new Date(now);
         startDate.setDate(now.getDate() - now.getDay() + 1);
@@ -714,6 +715,7 @@ export class ReportService {
   private getReportTypeVietnamese(type: ReportType): string {
     const map: Record<ReportType, string> = {
       [ReportType.WEEKLY]: 'Bao cao tuan',
+      [ReportType.WEEKLY_PER_PROJECT]: 'Bao cao tuan theo du an',
       [ReportType.MONTHLY]: 'Bao cao thang',
       [ReportType.CUSTOM]: 'Bao cao tuy chinh',
     };

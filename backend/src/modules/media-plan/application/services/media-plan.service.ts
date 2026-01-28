@@ -15,7 +15,11 @@ import {
 import type { CreateMediaPlanDto } from '../dto/create-media-plan.dto';
 import type { UpdateMediaPlanDto } from '../dto/update-media-plan.dto';
 import type { MediaPlanListQueryDto } from '../dto/media-plan-query.dto';
-import type { CreateMediaPlanItemDto, UpdateMediaPlanItemDto, ReorderMediaPlanItemsDto } from '../dto/media-plan-item.dto';
+import type {
+  CreateMediaPlanItemDto,
+  UpdateMediaPlanItemDto,
+  ReorderMediaPlanItemsDto,
+} from '../dto/media-plan-item.dto';
 import type {
   MediaPlanResponseDto,
   MediaPlanListResponseDto,
@@ -95,6 +99,18 @@ export class MediaPlanService {
       createdById: user.sub,
     });
 
+    // Log budget allocation event
+    await this.prisma.budgetEvent.create({
+      data: {
+        projectId,
+        mediaPlanId: plan.id,
+        amount: dto.totalBudget,
+        type: 'ALLOC',
+        note: 'Khởi tạo kế hoạch media',
+        createdById: user.sub,
+      },
+    });
+
     return this.mapToResponse(plan);
   }
 
@@ -127,6 +143,19 @@ export class MediaPlanService {
       notes: dto.notes,
       status: dto.status,
     });
+
+    if (dto.totalBudget !== undefined) {
+      await this.prisma.budgetEvent.create({
+        data: {
+          projectId,
+          mediaPlanId: id,
+          amount: dto.totalBudget,
+          type: 'ADJUST',
+          note: 'Điều chỉnh ngân sách kế hoạch media',
+          createdById: user.sub,
+        },
+      });
+    }
 
     return this.mapToResponse(plan);
   }

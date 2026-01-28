@@ -76,6 +76,10 @@ export class ReportController {
         }
       }
 
+      if (dto.type === ReportType.WEEKLY_PER_PROJECT && !dto.projectId) {
+        throw new BadRequestException('Bao cao tuan theo du an can projectId');
+      }
+
       const buffer = await this.reportService.generateReport(
         dto,
         req.user.sub,

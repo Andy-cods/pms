@@ -280,8 +280,10 @@ export class ProjectController {
     });
 
     // Track stage change in history
-    const stageChanged = dto.stage && currentProject && dto.stage !== currentProject.stage;
-    const progressChanged = dto.stageProgress !== undefined &&
+    const stageChanged =
+      dto.stage && currentProject && dto.stage !== currentProject.stage;
+    const progressChanged =
+      dto.stageProgress !== undefined &&
       currentProject &&
       dto.stageProgress !== currentProject.stageProgress;
 

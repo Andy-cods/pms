@@ -22,7 +22,17 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: MediaPlanQueryParams): Promise<MediaPlanListResult> {
-    const { projectId, status, month, year, search, page, limit, sortBy, sortOrder } = params;
+    const {
+      projectId,
+      status,
+      month,
+      year,
+      search,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = params;
 
     const where: Record<string, unknown> = { projectId };
     if (status) where.status = status;
@@ -46,7 +56,10 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
     return { data: data as MediaPlanWithItems[], total };
   }
 
-  async findById(id: string, projectId: string): Promise<MediaPlanWithItems | null> {
+  async findById(
+    id: string,
+    projectId: string,
+  ): Promise<MediaPlanWithItems | null> {
     const plan = await this.prisma.mediaPlan.findFirst({
       where: { id, projectId },
       include: INCLUDE_ITEMS_AND_CREATOR,
@@ -72,7 +85,10 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
     return plan as MediaPlanWithItems;
   }
 
-  async update(id: string, data: UpdateMediaPlanData): Promise<MediaPlanWithItems> {
+  async update(
+    id: string,
+    data: UpdateMediaPlanData,
+  ): Promise<MediaPlanWithItems> {
     const plan = await this.prisma.mediaPlan.update({
       where: { id },
       data,
@@ -98,7 +114,10 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
     return this.prisma.mediaPlanItem.create({ data });
   }
 
-  async updateItem(id: string, data: UpdateMediaPlanItemData): Promise<MediaPlanItem> {
+  async updateItem(
+    id: string,
+    data: UpdateMediaPlanItemData,
+  ): Promise<MediaPlanItem> {
     return this.prisma.mediaPlanItem.update({
       where: { id },
       data,

@@ -78,7 +78,11 @@ export class AuthController {
     const result = await this.authService.login(dto);
 
     // Set httpOnly cookies for tokens
-    this.setTokenCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+    this.setTokenCookies(
+      res,
+      result.tokens.accessToken,
+      result.tokens.refreshToken,
+    );
 
     // Return user info (tokens are now in cookies)
     return {
@@ -97,7 +101,11 @@ export class AuthController {
     const result = await this.authService.clientLogin(dto);
 
     // Set httpOnly cookies for tokens
-    this.setTokenCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+    this.setTokenCookies(
+      res,
+      result.tokens.accessToken,
+      result.tokens.refreshToken,
+    );
 
     // Return client info (tokens are now in cookies)
     return {

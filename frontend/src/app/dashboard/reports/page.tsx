@@ -56,8 +56,10 @@ export default function ReportsPage() {
   };
 
   const isDateRangeRequired = reportType === 'CUSTOM';
+  const isProjectRequired = reportType === 'WEEKLY_PER_PROJECT';
   const isFormValid =
-    !isDateRangeRequired || (dateRange?.from !== undefined && dateRange?.to !== undefined);
+    (!isDateRangeRequired || (dateRange?.from && dateRange?.to)) &&
+    (!isProjectRequired || selectedProjectId !== 'all');
 
   return (
     <div className="space-y-6">
@@ -99,6 +101,8 @@ export default function ReportsPage() {
             </Select>
             <p className="text-sm text-muted-foreground">
               {reportType === 'WEEKLY' && 'Báo cáo tổng hợp theo tuần (7 ngày gần nhất).'}
+              {reportType === 'WEEKLY_PER_PROJECT' &&
+                'Báo cáo tuần dành riêng cho một dự án (bắt buộc chọn dự án).'}
               {reportType === 'MONTHLY' && 'Báo cáo tổng hợp theo tháng (30 ngày gần nhất).'}
               {reportType === 'CUSTOM' && 'Báo cáo theo khoảng thời gian tùy chọn.'}
             </p>
@@ -133,7 +137,7 @@ export default function ReportsPage() {
 
           {/* Project Selector */}
           <div className="space-y-2">
-            <Label htmlFor="project">Dự án (tùy chọn)</Label>
+            <Label htmlFor="project">Dự án {reportType === 'WEEKLY_PER_PROJECT' ? '(bắt buộc)' : '(tùy chọn)'}</Label>
             <Select
               value={selectedProjectId}
               onValueChange={setSelectedProjectId}
@@ -160,7 +164,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Date Range (for Custom type) */}
-          {reportType === 'CUSTOM' && (
+          {(reportType === 'CUSTOM' || reportType === 'WEEKLY_PER_PROJECT') && (
             <div className="space-y-2">
               <Label>Khoảng thời gian</Label>
               <Popover>
@@ -199,12 +203,15 @@ export default function ReportsPage() {
                   />
                 </PopoverContent>
               </Popover>
-              {!isFormValid && (
+              {!isFormValid && reportType === 'CUSTOM' && (
                 <p className="text-sm text-destructive">
                   Vui lòng chọn khoảng thời gian cho báo cáo tùy chọn.
                 </p>
               )}
             </div>
+          )}
+          {reportType === 'WEEKLY_PER_PROJECT' && selectedProjectId === 'all' && (
+            <p className="text-sm text-destructive">Hãy chọn dự án để tạo báo cáo tuần.</p>
           )}
 
           {/* Generate Button */}

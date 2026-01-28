@@ -1,4 +1,8 @@
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '@prisma/client';
@@ -48,7 +52,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const token = authHeader.substring(7);
 
       // Check if token is blacklisted
-      const isBlacklisted = await this.tokenBlacklistService.isBlacklisted(token);
+      const isBlacklisted =
+        await this.tokenBlacklistService.isBlacklisted(token);
       if (isBlacklisted) {
         throw new UnauthorizedException('Token has been revoked');
       }

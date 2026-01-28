@@ -48,7 +48,13 @@ export class MediaPlanController {
   }
 
   @Post()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async create(
     @Param('projectId') projectId: string,
     @Body() dto: CreateMediaPlanDto,
@@ -58,7 +64,13 @@ export class MediaPlanController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async update(
     @Param('projectId') projectId: string,
     @Param('id') id: string,
@@ -79,7 +91,13 @@ export class MediaPlanController {
   }
 
   @Post(':id/items')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async addItem(
     @Param('projectId') projectId: string,
     @Param('id') mediaPlanId: string,
@@ -90,7 +108,13 @@ export class MediaPlanController {
   }
 
   @Patch(':id/items/:itemId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async updateItem(
     @Param('projectId') projectId: string,
     @Param('id') mediaPlanId: string,
@@ -98,28 +122,56 @@ export class MediaPlanController {
     @Body() dto: UpdateMediaPlanItemDto,
     @Req() req: { user: { sub: string; role: string } },
   ) {
-    return this.mediaPlanService.updateItem(projectId, mediaPlanId, itemId, dto, req.user);
+    return this.mediaPlanService.updateItem(
+      projectId,
+      mediaPlanId,
+      itemId,
+      dto,
+      req.user,
+    );
   }
 
   @Delete(':id/items/:itemId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async deleteItem(
     @Param('projectId') projectId: string,
     @Param('id') mediaPlanId: string,
     @Param('itemId') itemId: string,
     @Req() req: { user: { sub: string; role: string } },
   ) {
-    return this.mediaPlanService.deleteItem(projectId, mediaPlanId, itemId, req.user);
+    return this.mediaPlanService.deleteItem(
+      projectId,
+      mediaPlanId,
+      itemId,
+      req.user,
+    );
   }
 
   @Patch(':id/items/reorder')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM, UserRole.MEDIA, UserRole.PLANNER)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.PM,
+    UserRole.MEDIA,
+    UserRole.PLANNER,
+  )
   async reorderItems(
     @Param('projectId') projectId: string,
     @Param('id') mediaPlanId: string,
     @Body() dto: ReorderMediaPlanItemsDto,
     @Req() req: { user: { sub: string; role: string } },
   ) {
-    return this.mediaPlanService.reorderItems(projectId, mediaPlanId, dto, req.user);
+    return this.mediaPlanService.reorderItems(
+      projectId,
+      mediaPlanId,
+      dto,
+      req.user,
+    );
   }
 }

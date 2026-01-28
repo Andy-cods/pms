@@ -41,16 +41,18 @@ export class CsrfMiddleware implements NestMiddleware {
     // Skip CSRF for excluded paths (auth endpoints don't need CSRF protection)
     // Use startsWith to handle paths with or without trailing query params
     const isExcluded = Array.from(this.excludedPaths).some(
-      (path) => req.path === path || req.path.startsWith(path + '/')
+      (path) => req.path === path || req.path.startsWith(path + '/'),
     );
     if (isExcluded) {
       return next();
     }
 
     // Also skip auth paths regardless of prefix
-    if (req.path.includes('/auth/login') ||
-        req.path.includes('/auth/client-login') ||
-        req.path.includes('/auth/refresh')) {
+    if (
+      req.path.includes('/auth/login') ||
+      req.path.includes('/auth/client-login') ||
+      req.path.includes('/auth/refresh')
+    ) {
       return next();
     }
 

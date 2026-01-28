@@ -1,8 +1,4 @@
-import {
-  IsOptional,
-  IsNumber,
-  Min,
-} from 'class-validator';
+import { IsOptional, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Create/Update Budget DTO
