@@ -50,6 +50,80 @@ function generateTempPassword(): string {
 export class AdminUserController {
   constructor(private prisma: PrismaService) {}
 
+  @Get('workload')
+  async getUsersWorkload(): Promise<
+    Array<{
+      id: string;
+      email: string;
+      name: string;
+      avatar: string | null;
+      role: string;
+      isActive: boolean;
+      lastLoginAt: string | null;
+      workload: {
+        totalTasks: number;
+        doneTasks: number;
+        overdueTasks: number;
+        completionPercent: number;
+        projectCount: number;
+      };
+    }>
+  > {
+    const users = await this.prisma.user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        tasksAssigned: {
+          select: {
+            task: { select: { status: true, deadline: true } },
+          },
+        },
+        projectTeams: {
+          select: { projectId: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    const now = new Date();
+    return users.map((u) => {
+      const tasks = u.tasksAssigned.map((a) => a.task);
+      const total = tasks.length;
+      const done = tasks.filter((t) => t.status === 'DONE').length;
+      const overdue = tasks.filter(
+        (t) =>
+          t.deadline &&
+          new Date(t.deadline) < now &&
+          t.status !== 'DONE' &&
+          t.status !== 'CANCELLED',
+      ).length;
+      const uniqueProjects = new Set(u.projectTeams.map((pt) => pt.projectId));
+
+      return {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        avatar: u.avatar,
+        role: u.role,
+        isActive: u.isActive,
+        lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
+        workload: {
+          totalTasks: total,
+          doneTasks: done,
+          overdueTasks: overdue,
+          completionPercent: total > 0 ? Math.round((done / total) * 100) : 0,
+          projectCount: uniqueProjects.size,
+        },
+      };
+    });
+  }
+
   @Get()
   async listUsers(
     @Query('search') search?: string,
