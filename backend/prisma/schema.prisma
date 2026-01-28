@@ -7,19 +7,19 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(cuid())
-  email             String         @unique
+  id                String          @id @default(cuid())
+  email             String          @unique
   password          String
   name              String
   avatar            String?
   role              UserRole
-  isActive          Boolean        @default(true)
+  isActive          Boolean         @default(true)
   lastLoginAt       DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   notificationPrefs Json?
-  approvalApproved  Approval[]     @relation("ApprovalApprover")
-  approvalSubmitted Approval[]     @relation("ApprovalSubmitter")
+  approvalApproved  Approval[]      @relation("ApprovalApprover")
+  approvalSubmitted Approval[]      @relation("ApprovalSubmitter")
   auditLogs         AuditLog[]
   comments          Comment[]
   eventsCreated     Event[]
@@ -27,15 +27,15 @@ model User {
   notifications     Notification[]
   projectTeams      ProjectTeam[]
   tasksAssigned     TaskAssignee[]
-  tasksCreated      Task[]         @relation("TaskCreator")
-  tasksReviewing    Task[]         @relation("TaskReviewer")
+  tasksCreated      Task[]          @relation("TaskCreator")
+  tasksReviewing    Task[]          @relation("TaskReviewer")
   eventAttendees    EventAttendee[]
-  mediaPlansCreated MediaPlan[]    @relation("MediaPlanCreator")
-  budgetEvents      BudgetEvent[]  @relation("BudgetEventCreator")
-  adsReportsCreated AdsReport[]    @relation("AdsReportCreator")
-  pipelinesAsNVKD    SalesPipeline[] @relation("PipelineNVKD")
-  pipelinesAsPM      SalesPipeline[] @relation("PipelinePM")
-  pipelinesAsPlanner SalesPipeline[] @relation("PipelinePlanner")
+  mediaPlansCreated MediaPlan[]     @relation("MediaPlanCreator")
+  budgetEvents      BudgetEvent[]   @relation("BudgetEventCreator")
+  adsReportsCreated AdsReport[]     @relation("AdsReportCreator")
+  projectsAsNVKD    Project[]       @relation("ProjectNVKD")
+  projectsAsPM      Project[]       @relation("ProjectPM")
+  projectsAsPlanner Project[]       @relation("ProjectPlanner")
 
   @@index([email])
   @@index([role])
@@ -72,47 +72,122 @@ model Client {
   @@map("clients")
 }
 
+// ============================================
+// UNIFIED PROJECT MODEL
+// Merges: Project + SalesPipeline + ProjectBudget
+// ============================================
+
 model Project {
-  id               String         @id @default(cuid())
-  code             String         @unique
-  name             String
-  description      String?
-  productType      String?
-  status           ProjectStatus  @default(STABLE)
-  stage            ProjectStage   @default(INTAKE)
-  stageProgress    Int            @default(0)
+  id String @id @default(cuid())
+
+  // Identity & Codes
+  dealCode    String  @unique
+  projectCode String? @unique
+  name        String
+  description String?
+
+  // Lifecycle
+  lifecycle     ProjectLifecycle @default(LEAD)
+  healthStatus  HealthStatus     @default(STABLE)
+  stageProgress Int              @default(0)
+
+  // Timeline
   startDate        DateTime?
   endDate          DateTime?
-  timelineProgress Int            @default(0)
-  clientId         String?
-  driveLink        String?
-  planLink         String?
-  trackingLink     String?
-  metadata         Json?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  archivedAt       DateTime?
-  approvals        Approval[]
-  comments         Comment[]
-  events           Event[]
-  files            File[]
-  budget           ProjectBudget?
-  kpis             ProjectKPI[]
-  logs             ProjectLog[]
-  stageHistory     StageHistory[]
-  team             ProjectTeam[]
-  client           Client?        @relation(fields: [clientId], references: [id])
-  tasks            Task[]
-  mediaPlans       MediaPlan[]
-  budgetEvents     BudgetEvent[]
-  adsReports       AdsReport[]
-  salesPipeline    SalesPipeline?
-  strategicBrief   StrategicBrief?
-  phases           ProjectPhase[]
+  timelineProgress Int       @default(0)
 
-  @@index([code])
-  @@index([status])
-  @@index([stage])
+  // Team refs
+  nvkdId    String
+  nvkd      User    @relation("ProjectNVKD", fields: [nvkdId], references: [id])
+  pmId      String?
+  pm        User?   @relation("ProjectPM", fields: [pmId], references: [id])
+  plannerId String?
+  planner   User?   @relation("ProjectPlanner", fields: [plannerId], references: [id])
+  clientId  String?
+  client    Client? @relation(fields: [clientId], references: [id])
+
+  // Sales Data (NVKD fills)
+  clientType        String?
+  productType       String?
+  licenseLink       String?
+  campaignObjective String?
+  initialGoal       String?
+  upsellOpportunity String?
+
+  // Budget & Fees (single source of truth)
+  totalBudget   Decimal? @db.Decimal(15, 2)
+  monthlyBudget Decimal? @db.Decimal(15, 2)
+  spentAmount   Decimal? @default(0) @db.Decimal(15, 2)
+  fixedAdFee    Decimal? @db.Decimal(15, 2)
+  adServiceFee  Decimal? @db.Decimal(15, 2)
+  contentFee    Decimal? @db.Decimal(15, 2)
+  designFee     Decimal? @db.Decimal(15, 2)
+  mediaFee      Decimal? @db.Decimal(15, 2)
+  otherFee      Decimal? @db.Decimal(15, 2)
+  budgetPacing  Float?
+
+  // PM Evaluation
+  costNSQC     Decimal? @db.Decimal(15, 2)
+  costDesign   Decimal? @db.Decimal(15, 2)
+  costMedia    Decimal? @db.Decimal(15, 2)
+  costKOL      Decimal? @db.Decimal(15, 2)
+  costOther    Decimal? @db.Decimal(15, 2)
+  cogs         Decimal? @db.Decimal(15, 2)
+  grossProfit  Decimal? @db.Decimal(15, 2)
+  profitMargin Float?
+
+  // Client Evaluation
+  clientTier       ClientTier?
+  marketSize       String?
+  competitionLevel String?
+  productUSP       String?
+  averageScore     Float?
+  audienceSize     String?
+  productLifecycle String?
+  scalePotential   String?
+
+  // Decision
+  decision     PipelineDecision @default(PENDING)
+  decisionDate DateTime?
+  decisionNote String?
+
+  // Weekly Notes (JSONB)
+  weeklyNotes Json?
+
+  // Project links
+  driveLink    String?
+  planLink     String?
+  trackingLink String?
+  metadata     Json?
+
+  // Audit
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+
+  // Relations (ALL combined)
+  team           ProjectTeam[]
+  phases         ProjectPhase[]
+  tasks          Task[]
+  budgetEvents   BudgetEvent[]
+  kpis           ProjectKPI[]
+  logs           ProjectLog[]
+  stageHistory   StageHistory[]
+  mediaPlans     MediaPlan[]
+  adsReports     AdsReport[]
+  strategicBrief StrategicBrief?
+  approvals      Approval[]
+  comments       Comment[]
+  events         Event[]
+  files          File[]
+
+  @@index([dealCode])
+  @@index([projectCode])
+  @@index([lifecycle])
+  @@index([healthStatus])
+  @@index([nvkdId])
+  @@index([pmId])
+  @@index([decision])
   @@index([clientId])
   @@map("projects")
 }
@@ -133,41 +208,21 @@ model ProjectTeam {
   @@map("project_teams")
 }
 
-model ProjectBudget {
-  id            String   @id @default(cuid())
-  projectId     String   @unique
-  totalBudget   Decimal  @db.Decimal(15, 2)
-  monthlyBudget Decimal? @db.Decimal(15, 2)
-  spentAmount   Decimal  @default(0) @db.Decimal(15, 2)
-  fixedAdFee    Decimal? @db.Decimal(15, 2)
-  adServiceFee  Decimal? @db.Decimal(15, 2)
-  contentFee    Decimal? @db.Decimal(15, 2)
-  designFee     Decimal? @db.Decimal(15, 2)
-  mediaFee      Decimal? @db.Decimal(15, 2)
-  otherFee      Decimal? @db.Decimal(15, 2)
-  budgetPacing  Float?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@map("project_budgets")
-}
-
 model BudgetEvent {
-  id           String              @id @default(cuid())
-  projectId    String
-  mediaPlanId  String?
-  stage        String?
-  amount       Decimal             @db.Decimal(15, 2)
-  type         BudgetEventType
-  category     BudgetEventCategory @default(OTHER)
-  status       BudgetEventStatus   @default(PENDING)
-  note         String?
-  createdById  String
-  createdAt    DateTime            @default(now())
-  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  mediaPlan    MediaPlan?          @relation(fields: [mediaPlanId], references: [id])
-  createdBy    User                @relation("BudgetEventCreator", fields: [createdById], references: [id])
+  id          String              @id @default(cuid())
+  projectId   String
+  mediaPlanId String?
+  stage       String?
+  amount      Decimal             @db.Decimal(15, 2)
+  type        BudgetEventType
+  category    BudgetEventCategory @default(OTHER)
+  status      BudgetEventStatus   @default(PENDING)
+  note        String?
+  createdById String
+  createdAt   DateTime            @default(now())
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mediaPlan   MediaPlan?          @relation(fields: [mediaPlanId], references: [id])
+  createdBy   User                @relation("BudgetEventCreator", fields: [createdById], references: [id])
 
   @@index([projectId])
   @@index([mediaPlanId])
@@ -211,16 +266,16 @@ model ProjectLog {
 }
 
 model StageHistory {
-  id            String       @id @default(cuid())
-  projectId     String
-  fromStage     ProjectStage?
-  toStage       ProjectStage
-  fromProgress  Int          @default(0)
-  toProgress    Int          @default(0)
-  changedById   String
-  reason        String?
-  createdAt     DateTime     @default(now())
-  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id           String            @id @default(cuid())
+  projectId    String
+  fromStage    ProjectLifecycle?
+  toStage      ProjectLifecycle
+  fromProgress Int               @default(0)
+  toProgress   Int               @default(0)
+  changedById  String
+  reason       String?
+  createdAt    DateTime          @default(now())
+  project      Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([createdAt])
@@ -228,13 +283,13 @@ model StageHistory {
 }
 
 model Task {
-  id             String           @id @default(cuid())
+  id             String            @id @default(cuid())
   projectId      String
   parentId       String?
   title          String
   description    String?
-  status         TaskStatus       @default(TODO)
-  priority       TaskPriority     @default(MEDIUM)
+  status         TaskStatus        @default(TODO)
+  priority       TaskPriority      @default(MEDIUM)
   estimatedHours Float?
   actualHours    Float?
   deadline       DateTime?
@@ -242,19 +297,19 @@ model Task {
   completedAt    DateTime?
   reviewerId     String?
   createdById    String
-  orderIndex     Int              @default(0)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  orderIndex     Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   comments       Comment[]
   files          File[]
   assignees      TaskAssignee[]
-  dependents     TaskDependency[] @relation("DependsOnTask")
-  dependencies   TaskDependency[] @relation("DependentTask")
-  createdBy      User             @relation("TaskCreator", fields: [createdById], references: [id])
-  parent         Task?            @relation("TaskHierarchy", fields: [parentId], references: [id])
-  subtasks       Task[]           @relation("TaskHierarchy")
-  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  reviewer       User?            @relation("TaskReviewer", fields: [reviewerId], references: [id])
+  dependents     TaskDependency[]  @relation("DependsOnTask")
+  dependencies   TaskDependency[]  @relation("DependentTask")
+  createdBy      User              @relation("TaskCreator", fields: [createdById], references: [id])
+  parent         Task?             @relation("TaskHierarchy", fields: [parentId], references: [id])
+  subtasks       Task[]            @relation("TaskHierarchy")
+  project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewer       User?             @relation("TaskReviewer", fields: [reviewerId], references: [id])
   phaseItem      ProjectPhaseItem?
 
   @@index([projectId])
@@ -469,6 +524,10 @@ model SystemSetting {
   @@map("system_settings")
 }
 
+// ============================================
+// ENUMS
+// ============================================
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -482,22 +541,38 @@ enum UserRole {
   MEDIA
 }
 
-enum ProjectStatus {
+// Replaces PipelineStage + ProjectStage
+enum ProjectLifecycle {
+  LEAD
+  QUALIFIED
+  EVALUATION
+  NEGOTIATION
+  WON
+  LOST
+  PLANNING
+  ONGOING
+  OPTIMIZING
+  CLOSED
+}
+
+// Replaces ProjectStatus
+enum HealthStatus {
   STABLE
   WARNING
   CRITICAL
 }
 
-enum ProjectStage {
-  INTAKE
-  DISCOVERY
-  PLANNING
-  UNDER_REVIEW
-  PROPOSAL_PITCH
-  ONGOING
-  OPTIMIZATION
-  COMPLETED
-  CLOSED
+enum PipelineDecision {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum ClientTier {
+  A
+  B
+  C
+  D
 }
 
 enum TaskStatus {
@@ -586,37 +661,11 @@ enum BudgetEventStatus {
   PAID
 }
 
-// ============================================
-// SALES PIPELINE & WORKFLOW ENUMS
-// ============================================
-
-enum PipelineStage {
-  LEAD
-  QUALIFIED
-  EVALUATION
-  NEGOTIATION
-  WON
-  LOST
-}
-
-enum PipelineDecision {
-  PENDING
-  ACCEPTED
-  DECLINED
-}
-
 enum BriefStatus {
   DRAFT
   SUBMITTED
   APPROVED
   REVISION_REQUESTED
-}
-
-enum ClientTier {
-  A
-  B
-  C
-  D
 }
 
 enum ProjectPhaseType {
@@ -625,6 +674,28 @@ enum ProjectPhaseType {
   VAN_HANH_TOI_UU
   TONG_KET
 }
+
+enum AdsReportPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum AdsPlatform {
+  FACEBOOK
+  GOOGLE
+  TIKTOK
+  OTHER
+}
+
+enum AdsReportSource {
+  MANUAL
+  ZAPIER
+}
+
+// ============================================
+// ADS REPORTS
+// ============================================
 
 model AdsReport {
   id           String          @id @default(cuid())
@@ -655,43 +726,29 @@ model AdsReport {
   @@map("ads_reports")
 }
 
-enum AdsReportPeriod {
-  DAILY
-  WEEKLY
-  MONTHLY
-}
-
-enum AdsPlatform {
-  FACEBOOK
-  GOOGLE
-  TIKTOK
-  OTHER
-}
-
-enum AdsReportSource {
-  MANUAL
-  ZAPIER
-}
+// ============================================
+// MEDIA PLANS
+// ============================================
 
 model MediaPlan {
-  id          String          @id @default(cuid())
-  projectId   String
-  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String
-  type        MediaPlanType   @default(ADS)
-  month       Int
-  year        Int
-  version     Int             @default(1)
-  status      MediaPlanStatus @default(DRAFT)
-  totalBudget Decimal         @db.Decimal(15, 2)
-  startDate   DateTime
-  endDate     DateTime
-  notes       String?
-  createdById String
-  createdBy   User            @relation("MediaPlanCreator", fields: [createdById], references: [id])
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  items       MediaPlanItem[]
+  id           String          @id @default(cuid())
+  projectId    String
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name         String
+  type         MediaPlanType   @default(ADS)
+  month        Int
+  year         Int
+  version      Int             @default(1)
+  status       MediaPlanStatus @default(DRAFT)
+  totalBudget  Decimal         @db.Decimal(15, 2)
+  startDate    DateTime
+  endDate      DateTime
+  notes        String?
+  createdById  String
+  createdBy    User            @relation("MediaPlanCreator", fields: [createdById], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  items        MediaPlanItem[]
   budgetEvents BudgetEvent[]
 
   @@index([projectId])
@@ -726,123 +783,37 @@ model MediaPlanItem {
 }
 
 // ============================================
-// SALES PIPELINE (Bước 1)
-// ============================================
-
-model SalesPipeline {
-  id                String            @id @default(cuid())
-
-  // Basic Info (Sale điền)
-  projectName       String
-  status            PipelineStage     @default(LEAD)
-  currentStage      ProjectStage      @default(INTAKE)
-  nvkdId            String
-  nvkd              User              @relation("PipelineNVKD", fields: [nvkdId], references: [id])
-
-  // Client Info
-  clientType        String?
-  productType       String?
-  licenseLink       String?
-  campaignObjective String?
-  initialGoal       String?
-
-  // Budget & Fees
-  totalBudget       Decimal?          @db.Decimal(15, 2)
-  monthlyBudget     Decimal?          @db.Decimal(15, 2)
-  spentAmount       Decimal?          @default(0) @db.Decimal(15, 2)
-  fixedAdFee        Decimal?          @db.Decimal(15, 2)
-  adServiceFee      Decimal?          @db.Decimal(15, 2)
-  contentFee        Decimal?          @db.Decimal(15, 2)
-  designFee         Decimal?          @db.Decimal(15, 2)
-  mediaFee          Decimal?          @db.Decimal(15, 2)
-  otherFee          Decimal?          @db.Decimal(15, 2)
-  upsellOpportunity String?
-
-  // PM Evaluation (PM điền)
-  pmId              String?
-  pm                User?             @relation("PipelinePM", fields: [pmId], references: [id])
-  plannerId         String?
-  planner           User?             @relation("PipelinePlanner", fields: [plannerId], references: [id])
-  costNSQC          Decimal?          @db.Decimal(15, 2)
-  costDesign        Decimal?          @db.Decimal(15, 2)
-  costMedia         Decimal?          @db.Decimal(15, 2)
-  costKOL           Decimal?          @db.Decimal(15, 2)
-  costOther         Decimal?          @db.Decimal(15, 2)
-
-  // Calculated (auto)
-  cogs              Decimal?          @db.Decimal(15, 2)
-  grossProfit       Decimal?          @db.Decimal(15, 2)
-  profitMargin      Float?
-
-  // Client Evaluation
-  clientTier        ClientTier?
-  marketSize        String?
-  competitionLevel  String?
-  productUSP        String?
-  averageScore      Float?
-  audienceSize      String?
-  productLifecycle  String?
-  scalePotential    String?
-
-  // Weekly Notes (JSONB)
-  weeklyNotes       Json?
-
-  // Decision
-  decision          PipelineDecision  @default(PENDING)
-  decisionDate      DateTime?
-  decisionNote      String?
-
-  // Relations
-  projectId         String?           @unique
-  project           Project?          @relation(fields: [projectId], references: [id])
-  strategicBrief    StrategicBrief?
-
-  // Audit
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  @@index([status])
-  @@index([nvkdId])
-  @@index([pmId])
-  @@index([decision])
-  @@index([currentStage])
-  @@map("sales_pipelines")
-}
-
-// ============================================
-// STRATEGIC BRIEF (Bước 2)
+// STRATEGIC BRIEF
 // ============================================
 
 model StrategicBrief {
-  id              String         @id @default(cuid())
-  pipelineId      String         @unique
-  pipeline        SalesPipeline  @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  projectId       String?        @unique
-  project         Project?       @relation(fields: [projectId], references: [id])
-  status          BriefStatus    @default(DRAFT)
-  completionPct   Int            @default(0)
-  submittedAt     DateTime?
-  approvedAt      DateTime?
-  approvedById    String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  sections        BriefSection[]
+  id            String         @id @default(cuid())
+  projectId     String         @unique
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status        BriefStatus    @default(DRAFT)
+  completionPct Int            @default(0)
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+  approvedById  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sections      BriefSection[]
 
   @@index([status])
-  @@index([pipelineId])
+  @@index([projectId])
   @@map("strategic_briefs")
 }
 
 model BriefSection {
-  id          String         @id @default(cuid())
-  briefId     String
-  brief       StrategicBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
-  sectionNum  Int
-  sectionKey  String
-  title       String
-  data        Json?
-  isComplete  Boolean        @default(false)
-  updatedAt   DateTime       @updatedAt
+  id         String         @id @default(cuid())
+  briefId    String
+  brief      StrategicBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  sectionNum Int
+  sectionKey String
+  title      String
+  data       Json?
+  isComplete Boolean        @default(false)
+  updatedAt  DateTime       @updatedAt
 
   @@unique([briefId, sectionNum])
   @@index([briefId])
@@ -850,23 +821,23 @@ model BriefSection {
 }
 
 // ============================================
-// PROJECT PHASES (Bước 4)
+// PROJECT PHASES
 // ============================================
 
 model ProjectPhase {
-  id            String           @id @default(cuid())
-  projectId     String
-  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phaseType     ProjectPhaseType
-  name          String
-  weight        Int
-  progress      Int              @default(0)
-  orderIndex    Int
-  startDate     DateTime?
-  endDate       DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  items         ProjectPhaseItem[]
+  id         String             @id @default(cuid())
+  projectId  String
+  project    Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phaseType  ProjectPhaseType
+  name       String
+  weight     Int
+  progress   Int                @default(0)
+  orderIndex Int
+  startDate  DateTime?
+  endDate    DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  items      ProjectPhaseItem[]
 
   @@unique([projectId, phaseType])
   @@index([projectId])
@@ -874,18 +845,18 @@ model ProjectPhase {
 }
 
 model ProjectPhaseItem {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   phaseId     String
-  phase       ProjectPhase  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  phase       ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   name        String
   description String?
-  weight      Int           @default(0)
-  isComplete  Boolean       @default(false)
-  taskId      String?       @unique
-  task        Task?         @relation(fields: [taskId], references: [id])
-  orderIndex  Int           @default(0)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  weight      Int          @default(0)
+  isComplete  Boolean      @default(false)
+  taskId      String?      @unique
+  task        Task?        @relation(fields: [taskId], references: [id])
+  orderIndex  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([phaseId])
   @@index([taskId])
