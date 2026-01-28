@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, BarChart3, Search } from 'lucide-react';
+import { ArrowLeft, Plus, BarChart3, Search, Megaphone, Palette, FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useProject } from '@/hooks/use-projects';
@@ -33,6 +33,38 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   ...Object.entries(MediaPlanStatusLabels).map(([value, label]) => ({ value, label })),
 ];
 
+// Enhanced tab config with icons and colors
+const TYPE_TABS: {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+  activeColor?: string;
+  badgeColor?: string;
+}[] = [
+  { value: 'ALL', label: 'Tất cả' },
+  {
+    value: 'ADS',
+    label: 'Ads',
+    icon: <Megaphone className="h-3.5 w-3.5" />,
+    activeColor: 'text-[#007aff] dark:text-[#0a84ff]',
+    badgeColor: 'bg-[#007aff]/10 text-[#007aff] dark:bg-[#0a84ff]/15 dark:text-[#0a84ff]',
+  },
+  {
+    value: 'DESIGN',
+    label: 'Design',
+    icon: <Palette className="h-3.5 w-3.5" />,
+    activeColor: 'text-[#af52de] dark:text-[#bf5af2]',
+    badgeColor: 'bg-[#af52de]/10 text-[#af52de] dark:bg-[#bf5af2]/15 dark:text-[#bf5af2]',
+  },
+  {
+    value: 'CONTENT',
+    label: 'Content',
+    icon: <FileText className="h-3.5 w-3.5" />,
+    activeColor: 'text-[#ff9f0a] dark:text-[#ffd60a]',
+    badgeColor: 'bg-[#ff9f0a]/10 text-[#ff9f0a] dark:bg-[#ff9f0a]/15 dark:text-[#ffd60a]',
+  },
+];
+
 export default function MediaPlansListPage() {
   const params = useParams();
   const router = useRouter();
@@ -56,6 +88,25 @@ export default function MediaPlansListPage() {
 
   const isLoading = projectLoading || plansLoading;
   const plans = plansData?.data ?? [];
+
+  // We also fetch ALL plans (no type filter) for counting badges
+  // Use current plans for badge counts when "ALL" is selected, otherwise need separate query
+  const { data: allPlansData } = useMediaPlans(projectId, {
+    search: search || undefined,
+    status: statusFilter !== 'ALL' ? (statusFilter as MediaPlanStatus) : undefined,
+    month: monthFilter !== 'ALL' ? Number(monthFilter) : undefined,
+    limit: 50,
+  });
+
+  const typeCounts = useMemo(() => {
+    const allPlans = allPlansData?.data ?? [];
+    return {
+      ALL: allPlans.length,
+      ADS: allPlans.filter((p) => p.type === 'ADS').length,
+      DESIGN: allPlans.filter((p) => p.type === 'DESIGN').length,
+      CONTENT: allPlans.filter((p) => p.type === 'CONTENT').length,
+    };
+  }, [allPlansData]);
 
   if (isLoading) {
     return <MediaPlansListSkeleton />;
@@ -93,27 +144,39 @@ export default function MediaPlansListPage() {
         </Button>
       </div>
 
-      {/* Type Tabs */}
+      {/* Enhanced Type Tabs */}
       <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-xl w-fit">
-        {[
-          { value: 'ALL', label: 'Tất cả' },
-          { value: 'ADS', label: 'Ads' },
-          { value: 'DESIGN', label: 'Design' },
-          { value: 'CONTENT', label: 'Content' },
-        ].map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setTypeFilter(tab.value)}
-            className={cn(
-              'px-4 py-1.5 rounded-lg text-sm font-medium transition-all',
-              typeFilter === tab.value
-                ? 'bg-background shadow-sm text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TYPE_TABS.map((tab) => {
+          const isActive = typeFilter === tab.value;
+          const count = typeCounts[tab.value as keyof typeof typeCounts] ?? 0;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setTypeFilter(tab.value)}
+              className={cn(
+                'px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5',
+                isActive
+                  ? cn('bg-background shadow-sm', tab.activeColor ?? 'text-foreground')
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+              {count > 0 && (
+                <span
+                  className={cn(
+                    'ml-0.5 px-1.5 py-0 rounded-full text-[10px] font-semibold tabular-nums',
+                    isActive && tab.badgeColor
+                      ? tab.badgeColor
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters */}
@@ -207,6 +270,11 @@ function MediaPlansListSkeleton() {
           </div>
         </div>
         <Skeleton className="h-10 w-32 rounded-xl" />
+      </div>
+      <div className="flex gap-1 p-1 bg-secondary/50 rounded-xl w-fit">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-8 w-24 rounded-lg" />
+        ))}
       </div>
       <div className="flex gap-3">
         <Skeleton className="h-10 w-64 rounded-xl" />
