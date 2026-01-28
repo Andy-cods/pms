@@ -63,6 +63,7 @@ import { AdsTrendChart } from '@/components/project/ads-trend-chart';
 import { AdsReportTable } from '@/components/project/ads-report-table';
 import { AdsReportModal } from '@/components/project/ads-report-modal';
 import { useProjectPhases } from '@/hooks/use-project-phases';
+import { useTasks } from '@/hooks/use-tasks';
 import { PhaseProgressBar } from '@/components/project-phase/phase-progress-bar';
 import { PhaseCard } from '@/components/project-phase/phase-card';
 
@@ -486,6 +487,7 @@ export default function ProjectDetailPage() {
   const updateTeamMember = useUpdateTeamMember();
   const removeTeamMember = useRemoveTeamMember();
   const { data: phases } = useProjectPhases(projectId);
+  const { data: tasksData } = useTasks({ projectId, limit: 200 });
 
   // Budget threshold alerts
   useEffect(() => {
@@ -1220,7 +1222,7 @@ export default function ProjectDetailPage() {
               key={phase.id}
               phase={phase}
               projectId={projectId}
-              tasks={project?.tasks?.map((t: { id: string; title: string; status: string }) => ({
+              tasks={tasksData?.tasks?.map((t) => ({
                 id: t.id,
                 title: t.title,
                 status: t.status,

@@ -41,7 +41,7 @@ export function PipelineSaleForm({ pipeline, readOnly = false }: PipelineSaleFor
   const updateSale = useUpdatePipelineSale();
 
   const form = useForm<SaleFormValues>({
-    resolver: zodResolver(saleFormSchema),
+    resolver: zodResolver(saleFormSchema) as any,
     defaultValues: {
       projectName: pipeline.projectName,
       clientType: pipeline.clientType ?? '',

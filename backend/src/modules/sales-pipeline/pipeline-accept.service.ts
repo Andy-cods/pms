@@ -20,7 +20,7 @@ export class PipelineAcceptService {
    */
   async acceptPipeline(
     pipelineId: string,
-    userId: string,
+    _userId: string,
     decisionNote?: string,
   ) {
     return this.prisma.$transaction(async (tx) => {
@@ -147,7 +147,7 @@ export class PipelineAcceptService {
    */
   async declinePipeline(
     pipelineId: string,
-    userId: string,
+    _userId: string,
     decisionNote?: string,
   ) {
     const pipeline = await this.prisma.salesPipeline.findUniqueOrThrow({

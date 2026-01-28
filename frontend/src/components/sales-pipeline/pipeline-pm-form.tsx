@@ -41,7 +41,7 @@ export function PipelinePmForm({ pipeline, readOnly = false }: PipelinePmFormPro
   const evaluate = useEvaluatePipeline();
 
   const form = useForm<PmFormValues>({
-    resolver: zodResolver(pmFormSchema),
+    resolver: zodResolver(pmFormSchema) as any,
     defaultValues: {
       pmId: pipeline.pmId ?? '',
       plannerId: pipeline.plannerId ?? '',
