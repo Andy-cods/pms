@@ -57,6 +57,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { MediaPlanItemsTable } from '@/components/media-plan/media-plan-items-table';
+import { DesignPlanItemsGrid } from '@/components/media-plan/design-plan-items-grid';
+import { ContentPlanItemsList } from '@/components/media-plan/content-plan-items-list';
 
 // Status transition options
 const STATUS_TRANSITIONS: Record<MediaPlanStatus, MediaPlanStatus[]> = {
@@ -137,6 +139,8 @@ export default function MediaPlanDetailPage() {
       : 0;
   const availableTransitions = STATUS_TRANSITIONS[plan.status] ?? [];
   const isEditable = plan.status === 'DRAFT' || plan.status === 'ACTIVE';
+  const planType = (plan.type as MediaPlanType) ?? 'ADS';
+  const itemCountLabel = planType === 'DESIGN' ? 'Sản phẩm' : planType === 'CONTENT' ? 'Nội dung' : 'Số kênh';
 
   return (
     <div className="space-y-6">
@@ -288,7 +292,7 @@ export default function MediaPlanDetailPage() {
               <Layers className="h-5 w-5 text-[#ff9f0a]" />
             </div>
             <div>
-              <p className="text-caption text-muted-foreground">Số kênh</p>
+              <p className="text-caption text-muted-foreground">{itemCountLabel}</p>
               <p className="text-callout font-semibold tabular-nums">
                 {plan.itemCount}
               </p>
@@ -344,27 +348,54 @@ export default function MediaPlanDetailPage() {
         </span>
       </div>
 
-      {/* Items Table */}
-      <MediaPlanItemsTable
-        items={plan.items}
-        totalBudget={plan.totalBudget}
-        planType={(plan.type as MediaPlanType) ?? 'ADS'}
-        isEditable={isEditable}
-        onAddItem={async (input) => {
-          await addItemMutation.mutateAsync({ projectId, planId, input });
-        }}
-        onUpdateItem={async (itemId, input) => {
-          await updateItemMutation.mutateAsync({
-            projectId,
-            planId,
-            itemId,
-            input,
-          });
-        }}
-        onDeleteItem={async (itemId) => {
-          await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
-        }}
-      />
+      {/* Items - type-specific views */}
+      {planType === 'DESIGN' ? (
+        <DesignPlanItemsGrid
+          items={plan.items}
+          totalBudget={plan.totalBudget}
+          isEditable={isEditable}
+          onAddItem={async (input) => {
+            await addItemMutation.mutateAsync({ projectId, planId, input });
+          }}
+          onUpdateItem={async (itemId, input) => {
+            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+          }}
+          onDeleteItem={async (itemId) => {
+            await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
+          }}
+        />
+      ) : planType === 'CONTENT' ? (
+        <ContentPlanItemsList
+          items={plan.items}
+          totalBudget={plan.totalBudget}
+          isEditable={isEditable}
+          onAddItem={async (input) => {
+            await addItemMutation.mutateAsync({ projectId, planId, input });
+          }}
+          onUpdateItem={async (itemId, input) => {
+            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+          }}
+          onDeleteItem={async (itemId) => {
+            await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
+          }}
+        />
+      ) : (
+        <MediaPlanItemsTable
+          items={plan.items}
+          totalBudget={plan.totalBudget}
+          planType="ADS"
+          isEditable={isEditable}
+          onAddItem={async (input) => {
+            await addItemMutation.mutateAsync({ projectId, planId, input });
+          }}
+          onUpdateItem={async (itemId, input) => {
+            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+          }}
+          onDeleteItem={async (itemId) => {
+            await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
+          }}
+        />
+      )}
     </div>
   );
 }
