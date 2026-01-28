@@ -431,3 +431,23 @@ export interface ReorderTaskInput {
   newStatus: TaskStatus;
   newIndex: number;
 }
+
+// ============================================
+// BUDGET EVENT
+// ============================================
+
+export enum BudgetEventCategory {
+  FIXED_AD = 'FIXED_AD',
+  AD_SERVICE = 'AD_SERVICE',
+  CONTENT = 'CONTENT',
+  DESIGN = 'DESIGN',
+  MEDIA = 'MEDIA',
+  OTHER = 'OTHER',
+}
+
+export enum BudgetEventStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PAID = 'PAID',
+}

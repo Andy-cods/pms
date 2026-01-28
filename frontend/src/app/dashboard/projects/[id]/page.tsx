@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -48,6 +48,16 @@ import { ActivityTimeline } from '@/components/project/activity-timeline';
 import { StageHistoryTimeline } from '@/components/project/stage-history-timeline';
 import { useProjectBudget } from '@/hooks/use-project-budget';
 import { toast } from 'sonner';
+import { useBudgetEvents, useUpdateBudgetEventStatus, useBudgetThreshold } from '@/hooks/use-budget-events';
+import {
+  BudgetEventCategoryLabels,
+  BudgetEventStatusLabels,
+  BudgetEventTypeLabels,
+  type BudgetEventCategory,
+  type BudgetEventStatus,
+} from '@/lib/api/budget-events';
+import { BudgetDonutChart } from '@/components/project/budget-donut-chart';
+import { SpendingTicketModal } from '@/components/project/spending-ticket-modal';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -241,22 +251,271 @@ function ProjectDetailSkeleton() {
   );
 }
 
+// Budget Tab Content Component
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  APPROVED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  PAID: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+};
+
+const formatVND = (value: number) => {
+  return value.toLocaleString('vi-VN') + ' đ';
+};
+
+function BudgetTabContent({
+  projectId,
+  budget,
+  budgetEvents,
+  budgetEventsLoading,
+  threshold,
+  filterCategory,
+  filterStatus,
+  onFilterCategoryChange,
+  onFilterStatusChange,
+  onEditBudget,
+  onUpdateStatus,
+}: {
+  projectId: string;
+  budget: any;
+  budgetEvents: any[];
+  budgetEventsLoading: boolean;
+  threshold: { level: string; percent: number } | null;
+  filterCategory: BudgetEventCategory | 'ALL';
+  filterStatus: BudgetEventStatus | 'ALL';
+  onFilterCategoryChange: (v: BudgetEventCategory | 'ALL') => void;
+  onFilterStatusChange: (v: BudgetEventStatus | 'ALL') => void;
+  onEditBudget: () => void;
+  onUpdateStatus: (eventId: string, status: BudgetEventStatus) => void;
+}) {
+  const totalBudget = budget ? Number(budget.totalBudget) : 0;
+  const spentAmount = budget ? Number(budget.spentAmount) : 0;
+  const remaining = totalBudget - spentAmount;
+  const pct = threshold?.percent ?? 0;
+
+  const filteredEvents = budgetEvents.filter((e) => {
+    if (filterCategory !== 'ALL' && e.category !== filterCategory) return false;
+    if (filterStatus !== 'ALL' && e.status !== filterStatus) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="text-footnote text-muted-foreground mb-1">Tổng ngân sách</div>
+            <div className="text-title font-semibold text-foreground">
+              {totalBudget > 0 ? formatVND(totalBudget) : '—'}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="text-footnote text-muted-foreground mb-1">Đã chi tiêu</div>
+            <div className={cn(
+              'text-title font-semibold',
+              pct >= 100 ? 'text-red-500' : pct >= 80 ? 'text-orange-500' : 'text-foreground'
+            )}>
+              {formatVND(spentAmount)}
+            </div>
+            {totalBudget > 0 && (
+              <div className="mt-2">
+                <ProgressBar
+                  value={pct}
+                  className={cn(
+                    pct >= 100 ? '[&>div]:bg-red-500' : pct >= 80 ? '[&>div]:bg-orange-500' : ''
+                  )}
+                />
+                <div className="text-caption text-muted-foreground mt-1">{pct}% ngân sách</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="text-footnote text-muted-foreground mb-1">Còn lại</div>
+            <div className={cn(
+              'text-title font-semibold',
+              remaining < 0 ? 'text-red-500' : 'text-green-600 dark:text-green-400'
+            )}>
+              {totalBudget > 0 ? formatVND(remaining) : '—'}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Left: Chart + Table */}
+        <div className="space-y-4 lg:col-span-2">
+          {/* Donut Chart */}
+          <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-subheadline font-semibold">Phân bổ chi tiêu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BudgetDonutChart events={budgetEvents} />
+            </CardContent>
+          </Card>
+
+          {/* Tickets Table */}
+          <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+            <CardHeader className="pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-subheadline font-semibold">Ticket chi tiêu</CardTitle>
+                <p className="text-footnote text-muted-foreground">{filteredEvents.length} ticket</p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select
+                  value={filterCategory}
+                  onValueChange={(v) => onFilterCategoryChange(v as BudgetEventCategory | 'ALL')}
+                >
+                  <SelectTrigger className="h-8 text-xs rounded-lg w-[140px]">
+                    <SelectValue placeholder="Hạng mục" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tất cả hạng mục</SelectItem>
+                    {(Object.keys(BudgetEventCategoryLabels) as BudgetEventCategory[]).map((c) => (
+                      <SelectItem key={c} value={c}>{BudgetEventCategoryLabels[c]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filterStatus}
+                  onValueChange={(v) => onFilterStatusChange(v as BudgetEventStatus | 'ALL')}
+                >
+                  <SelectTrigger className="h-8 text-xs rounded-lg w-[130px]">
+                    <SelectValue placeholder="Trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tất cả</SelectItem>
+                    {(Object.keys(BudgetEventStatusLabels) as BudgetEventStatus[]).map((s) => (
+                      <SelectItem key={s} value={s}>{BudgetEventStatusLabels[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {budgetEventsLoading && <Skeleton className="h-10 w-full rounded-xl" />}
+              {!budgetEventsLoading && filteredEvents.length === 0 && (
+                <p className="text-footnote text-muted-foreground py-4 text-center">Chưa có ticket.</p>
+              )}
+              {!budgetEventsLoading && filteredEvents.length > 0 && (
+                <div className="space-y-2">
+                  {filteredEvents.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-surface border border-border/60"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-callout font-medium">
+                            {BudgetEventTypeLabels[e.type as keyof typeof BudgetEventTypeLabels]}
+                          </span>
+                          <span className="text-callout font-semibold">
+                            {e.amount.toLocaleString('vi-VN')} đ
+                          </span>
+                          <span className={cn(
+                            'text-xs px-2 py-0.5 rounded-full font-medium',
+                            STATUS_COLORS[e.status] || ''
+                          )}>
+                            {BudgetEventStatusLabels[e.status as keyof typeof BudgetEventStatusLabels]}
+                          </span>
+                        </div>
+                        <div className="text-footnote text-muted-foreground mt-0.5">
+                          {BudgetEventCategoryLabels[e.category as keyof typeof BudgetEventCategoryLabels]}
+                          {e.stage && ` · ${e.stage}`} · {e.createdBy.name} · {new Date(e.createdAt).toLocaleDateString('vi-VN')}
+                        </div>
+                        {e.note && (
+                          <div className="text-footnote text-muted-foreground mt-1 truncate">{e.note}</div>
+                        )}
+                      </div>
+                      {e.status === 'PENDING' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onUpdateStatus(e.id, 'APPROVED')}>
+                              Duyệt
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onUpdateStatus(e.id, 'REJECTED')}>
+                              Từ chối
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      {e.status === 'APPROVED' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs shrink-0"
+                          onClick={() => onUpdateStatus(e.id, 'PAID')}
+                        >
+                          Thanh toán
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Budget Card + Create Ticket */}
+        <div className="space-y-4">
+          <BudgetCard budget={budget ?? null} onEdit={onEditBudget} />
+          <SpendingTicketModal projectId={projectId} />
+          <Button
+            variant="outline"
+            className="w-full rounded-full"
+            onClick={onEditBudget}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Chỉnh ngân sách
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history'>('overview');
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<BudgetEventCategory | 'ALL'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<BudgetEventStatus | 'ALL'>('ALL');
 
   const { data: project, isLoading, error } = useProject(projectId);
   const { data: teamWithWorkload } = useProjectTeam(projectId);
   const { data: budget } = useProjectBudget(projectId);
+  const { data: budgetEvents, isLoading: budgetEventsLoading } = useBudgetEvents(projectId);
+  const updateStatusMutation = useUpdateBudgetEventStatus(projectId);
+  const { data: threshold } = useBudgetThreshold(projectId);
   const archiveMutation = useArchiveProject();
   const updateMutation = useUpdateProject();
   const updateTeamMember = useUpdateTeamMember();
   const removeTeamMember = useRemoveTeamMember();
+
+  // Budget threshold alerts
+  useEffect(() => {
+    if (threshold?.level === 'warning') {
+      toast.warning('Ngân sách đã sử dụng trên 80%!');
+    } else if (threshold?.level === 'critical') {
+      toast.error('Ngân sách đã vượt 100%!');
+    }
+  }, [threshold?.level]);
 
   const handleArchive = async () => {
     await archiveMutation.mutateAsync(projectId);
@@ -491,7 +750,7 @@ export default function ProjectDetailPage() {
       {/* Segment Control Tabs */}
       <SegmentControl
         value={activeTab}
-        onChange={setActiveTab}
+        onChange={(v) => setActiveTab(v as typeof activeTab)}
         items={[
           { value: 'overview', label: 'Tổng quan' },
           { value: 'team', label: 'Team', count: project.team.length },
@@ -938,9 +1197,23 @@ export default function ProjectDetailPage() {
       )}
 
       {activeTab === 'budget' && (
-        <BudgetCard
+        <BudgetTabContent
+          projectId={projectId}
           budget={budget ?? null}
-          onEdit={() => setShowBudgetForm(true)}
+          budgetEvents={budgetEvents ?? []}
+          budgetEventsLoading={budgetEventsLoading}
+          threshold={threshold ?? null}
+          filterCategory={filterCategory}
+          filterStatus={filterStatus}
+          onFilterCategoryChange={setFilterCategory}
+          onFilterStatusChange={setFilterStatus}
+          onEditBudget={() => setShowBudgetForm(true)}
+          onUpdateStatus={(eventId, status) => {
+            updateStatusMutation.mutate({ eventId, status }, {
+              onSuccess: () => toast.success('Đã cập nhật trạng thái'),
+              onError: () => toast.error('Không thể cập nhật trạng thái'),
+            });
+          }}
         />
       )}
 
