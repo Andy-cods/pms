@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "../styles/apple-colors.css";
 
 /* ============================================
    BC Agency PMS - Apple-Inspired Design System
@@ -109,29 +110,29 @@
   --popover: oklch(1 0 0);                       /* #ffffff */
   --popover-foreground: oklch(0.15 0.005 286);   /* #1d1d1f */
 
-  /* ===== Primary - Apple Blue #0071e3 ===== */
-  --primary: oklch(0.55 0.19 250);
-  --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.58 0.19 250);
-  --primary-active: oklch(0.50 0.19 250);
+/* ===== Primary - Apple Blue #0071e3 ===== */
+  --primary: var(--apple-blue);
+  --primary-foreground: #ffffff;
+  --primary-hover: color-mix(in srgb, var(--apple-blue) 92%, #ffffff 8%);
+  --primary-active: color-mix(in srgb, var(--apple-blue) 82%, #000000 18%);
 
   /* ===== Secondary ===== */
-  --secondary: oklch(0.965 0.002 286);           /* #f5f5f7 */
-  --secondary-foreground: oklch(0.15 0.005 286); /* #1d1d1f */
+  --secondary: var(--apple-gray6);
+  --secondary-foreground: var(--apple-gray);
 
   /* ===== Muted ===== */
   --muted: oklch(0.965 0.002 286);               /* #f5f5f7 */
   --muted-foreground: oklch(0.58 0.01 286);      /* #86868b */
 
-  /* ===== Accent ===== */
-  --accent: oklch(0.965 0.002 286);              /* #f5f5f7 */
-  --accent-foreground: oklch(0.15 0.005 286);    /* #1d1d1f */
+/* ===== Accent ===== */
+  --accent: var(--apple-gray5);
+  --accent-foreground: var(--apple-gray);
 
   /* ===== Status Colors - Apple HIG ===== */
   --success: oklch(0.72 0.19 145);               /* #34c759 - Apple Green */
   --warning: oklch(0.78 0.19 75);                /* #ff9f0a - Apple Orange */
-  --error: oklch(0.63 0.26 25);                  /* #ff3b30 - Apple Red */
-  --destructive: oklch(0.63 0.26 25);            /* #ff3b30 */
+  --error: var(--apple-red);                  /* Apple Red */
+  --destructive: var(--apple-red);
 
   /* ===== Borders - Ultra subtle, almost invisible ===== */
   --border: oklch(0 0 0 / 6%);
@@ -162,12 +163,13 @@
   --navbar-foreground: oklch(0.145 0 0);
   --navbar-border: oklch(0 0 0 / 6%);
 
-  /* ===== Glassmorphism Effects ===== */
-  --glass-bg: oklch(1 0 0 / 72%);
-  --glass-bg-light: oklch(1 0 0 / 56%);
-  --glass-border: oklch(1 0 0 / 50%);
-  --glass-blur: 20px;
-  --glass-saturate: 180%;
+  /* ===== Glassmorphism Effects - Liquid Glass ===== */
+  --glass-bg: oklch(0.98 0.005 250 / 68%);
+  --glass-bg-light: oklch(0.99 0.003 250 / 52%);
+  --glass-border: oklch(1 0 0 / 40%);
+  --glass-blur: 40px;
+  --glass-saturate: 200%;
+  --glass-shadow: 0 1px 3px oklch(0 0 0 / 4%), inset 0 1px 0 oklch(1 0 0 / 60%);
 
   /* Status Colors */
   --status-stable: oklch(0.723 0.191 142.495);
@@ -187,10 +189,10 @@
   --apple-orange: #ff9f0a;
   --apple-yellow: #ffcc00;
 
-  /* ===== Shadows - Ultra soft, layered depth (3 levels) ===== */
-  --shadow-sm: 0 2px 8px oklch(0 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 4%);
-  --shadow-md: 0 4px 16px oklch(0 0 0 / 6%), 0 2px 4px oklch(0 0 0 / 4%);
-  --shadow-lg: 0 8px 32px oklch(0 0 0 / 8%), 0 4px 8px oklch(0 0 0 / 4%);
+  /* ===== Shadows - Multi-layer depth (3 levels, 3 layers each) ===== */
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 3%), 0 2px 6px oklch(0 0 0 / 4%), 0 0 1px oklch(0 0 0 / 6%);
+  --shadow-md: 0 2px 4px oklch(0 0 0 / 3%), 0 6px 16px oklch(0 0 0 / 5%), 0 0 1px oklch(0 0 0 / 8%);
+  --shadow-lg: 0 4px 8px oklch(0 0 0 / 4%), 0 12px 40px oklch(0 0 0 / 8%), 0 0 1px oklch(0 0 0 / 10%);
 
   /* ===== Spacing Scale - 8px base ===== */
   --space-0: 0;
@@ -259,6 +261,25 @@
   --duration-slow: 350ms;
   --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-gentle: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ===== Gradient Fills ===== */
+  --gradient-primary: linear-gradient(135deg, #0071e3 0%, #00a1ff 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #005bb5 0%, #0088dd 100%);
+  --gradient-section-projects: linear-gradient(135deg, #0071e3 0%, #5ac8fa 100%);
+  --gradient-section-tasks: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+  --gradient-section-budget: linear-gradient(135deg, #ff9f0a 0%, #ffcc00 100%);
+  --gradient-section-teams: linear-gradient(135deg, #af52de 0%, #bf5af2 100%);
+  --gradient-section-reports: linear-gradient(135deg, #5ac8fa 0%, #64d2ff 100%);
+
+  /* ===== Section Accent Colors ===== */
+  --section-projects: #0071e3;
+  --section-tasks: #34c759;
+  --section-budget: #ff9f0a;
+  --section-teams: #af52de;
+  --section-reports: #5ac8fa;
 }
 
 /* ============================================
@@ -312,8 +333,8 @@
   /* ===== Status Colors - Dark mode variants ===== */
   --success: oklch(0.75 0.21 145);               /* #30d158 - Brighter green */
   --warning: oklch(0.88 0.19 95);                /* #ffd60a - Brighter yellow */
-  --error: oklch(0.66 0.26 25);                  /* #ff453a - Brighter red */
-  --destructive: oklch(0.66 0.26 25);
+  --error: var(--apple-red);                  /* Apple Red */
+  --destructive: var(--apple-red);
 
   /* ===== Borders - Ultra subtle ===== */
   --border: oklch(1 0 0 / 8%);
@@ -352,10 +373,13 @@
   --status-warning-foreground: oklch(0.145 0 0);
   --status-critical-foreground: oklch(0.985 0 0);
 
-  /* ===== Glassmorphism - Dark variant ===== */
-  --glass-bg: oklch(0.14 0 0 / 72%);
-  --glass-bg-light: oklch(0.20 0 0 / 56%);
-  --glass-border: oklch(1 0 0 / 10%);
+  /* ===== Glassmorphism - Dark variant - Liquid Glass ===== */
+  --glass-bg: oklch(0.16 0.008 250 / 65%);
+  --glass-bg-light: oklch(0.22 0.005 250 / 50%);
+  --glass-border: oklch(1 0 0 / 8%);
+  --glass-blur: 40px;
+  --glass-saturate: 200%;
+  --glass-shadow: 0 1px 3px oklch(0 0 0 / 30%), inset 0 1px 0 oklch(1 0 0 / 6%);
 
   /* ===== Apple System Colors Dark ===== */
   --apple-blue: #0a84ff;
@@ -367,10 +391,26 @@
   --apple-orange: #ff9f0a;
   --apple-yellow: #ffd60a;
 
-  /* ===== Shadows - Subtle for dark mode ===== */
-  --shadow-sm: 0 2px 8px oklch(0 0 0 / 30%), 0 1px 2px oklch(0 0 0 / 20%);
-  --shadow-md: 0 4px 16px oklch(0 0 0 / 40%), 0 2px 4px oklch(0 0 0 / 20%);
-  --shadow-lg: 0 8px 32px oklch(0 0 0 / 50%), 0 4px 8px oklch(0 0 0 / 30%);
+  /* ===== Shadows - Multi-layer for dark mode ===== */
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 20%), 0 2px 6px oklch(0 0 0 / 25%), 0 0 1px oklch(0 0 0 / 40%);
+  --shadow-md: 0 2px 4px oklch(0 0 0 / 25%), 0 6px 16px oklch(0 0 0 / 35%), 0 0 1px oklch(0 0 0 / 50%);
+  --shadow-lg: 0 4px 8px oklch(0 0 0 / 30%), 0 12px 40px oklch(0 0 0 / 45%), 0 0 1px oklch(0 0 0 / 60%);
+
+  /* ===== Gradient Fills - Dark ===== */
+  --gradient-primary: linear-gradient(135deg, #0a84ff 0%, #64d2ff 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #0077ed 0%, #5ac8fa 100%);
+  --gradient-section-projects: linear-gradient(135deg, #0a84ff 0%, #64d2ff 100%);
+  --gradient-section-tasks: linear-gradient(135deg, #30d158 0%, #66d97a 100%);
+  --gradient-section-budget: linear-gradient(135deg, #ff9f0a 0%, #ffd60a 100%);
+  --gradient-section-teams: linear-gradient(135deg, #bf5af2 0%, #da8fff 100%);
+  --gradient-section-reports: linear-gradient(135deg, #64d2ff 0%, #99e4ff 100%);
+
+  /* ===== Section Accent Colors - Dark ===== */
+  --section-projects: #0a84ff;
+  --section-tasks: #30d158;
+  --section-budget: #ff9f0a;
+  --section-teams: #bf5af2;
+  --section-reports: #64d2ff;
 }
 
 @layer base {
@@ -568,12 +608,29 @@
     line-height: var(--text-caption-leading);
   }
 
-  /* ===== Glassmorphism ===== */
+  /* ===== Glassmorphism - Liquid Glass ===== */
   .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-xl);
+    transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
+                transform var(--duration-normal) var(--ease-spring-gentle);
+  }
+
+  .glass-card:hover {
+    box-shadow: var(--shadow-md), var(--glass-shadow);
+    transform: translateY(-1px);
   }
 
   .glass-sidebar {
@@ -581,6 +638,7 @@
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border-right: 1px solid var(--sidebar-border);
+    box-shadow: 1px 0 4px oklch(0 0 0 / 3%);
   }
 
   .glass-navbar {
@@ -588,6 +646,7 @@
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     border-bottom: 1px solid var(--navbar-border);
+    box-shadow: 0 1px 4px oklch(0 0 0 / 3%);
   }
 
   /* ===== Apple-like transitions ===== */
@@ -610,6 +669,31 @@
     transition-duration: var(--duration-normal);
     transition-timing-function: var(--ease-spring);
   }
+
+  .transition-spring-bouncy {
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-spring-bouncy);
+  }
+
+  .transition-spring-gentle {
+    transition-duration: var(--duration-slow);
+    transition-timing-function: var(--ease-spring-gentle);
+  }
+
+  .transition-spring-snappy {
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-spring-snappy);
+  }
+
+  /* ===== Section Accent Utilities ===== */
+  .accent-projects { --accent-section: var(--section-projects); }
+  .accent-tasks    { --accent-section: var(--section-tasks); }
+  .accent-budget   { --accent-section: var(--section-budget); }
+  .accent-teams    { --accent-section: var(--section-teams); }
+  .accent-reports  { --accent-section: var(--section-reports); }
+
+  .section-accent-border { border-left: 3px solid var(--accent-section); }
+  .section-accent-text   { color: var(--accent-section); }
 
   /* ===== Interactive States ===== */
   .hover-lift {
@@ -641,13 +725,13 @@
     border-radius: var(--radius-xl);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--duration-normal) var(--ease-default),
-                transform var(--duration-normal) var(--ease-default);
+    transition: box-shadow var(--duration-normal) var(--ease-spring-gentle),
+                transform var(--duration-normal) var(--ease-spring-gentle);
   }
 
   .card-apple:hover {
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.005);
   }
 
   /* ===== Border radius shortcuts ===== */
@@ -704,13 +788,18 @@
     .transition-apple-fast,
     .transition-apple-slow,
     .transition-spring,
-    .card-apple {
+    .transition-spring-bouncy,
+    .transition-spring-gentle,
+    .transition-spring-snappy,
+    .card-apple,
+    .glass-card {
       transition: none;
     }
 
     .hover-lift:hover,
     .hover-scale:hover,
-    .card-apple:hover {
+    .card-apple:hover,
+    .glass-card:hover {
       transform: none;
     }
   }
@@ -734,17 +823,40 @@
   }
 
   .btn-apple-primary {
-    background: var(--primary);
+    background: var(--gradient-primary);
     color: var(--primary-foreground);
   }
 
   .btn-apple-primary:hover {
-    background: var(--primary-hover);
+    background: var(--gradient-primary-hover);
   }
 
   .btn-apple-primary:active {
     background: var(--primary-active);
     transform: scale(0.98);
+  }
+
+  .btn-gradient {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-gradient:hover {
+    background: var(--gradient-primary-hover);
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+  }
+
+  .section-header-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .btn-apple-secondary {
@@ -814,4 +926,69 @@
     font-size: var(--text-caption);
     font-weight: 500;
   }
+}
+
+/* Apple system color overrides (appended) */
+:root {
+  --primary: var(--apple-blue);
+  --primary-foreground: #ffffff;
+  --primary-hover: color-mix(in srgb, var(--apple-blue) 92%, #ffffff 8%);
+  --primary-active: color-mix(in srgb, var(--apple-blue) 82%, #000000 18%);
+
+  --secondary: var(--apple-gray6);
+  --secondary-foreground: var(--apple-gray);
+
+  --accent: var(--apple-gray5);
+  --accent-foreground: var(--apple-gray);
+
+  --destructive: var(--apple-red);
+  --destructive-foreground: #ffffff;
+
+  --success: var(--apple-green);
+  --warning: var(--apple-orange);
+  --error: var(--apple-red);
+
+  --border: var(--apple-gray4);
+  --input: var(--apple-gray5);
+  --ring: var(--apple-blue);
+
+  --card: #ffffff;
+  --card-foreground: var(--apple-gray);
+  --background: #f7f7f9;
+  --foreground: #1d1d1f;
+  --muted: var(--apple-gray5);
+  --muted-foreground: var(--apple-gray);
+  --surface: #ffffff;
+}
+
+:root.dark {
+  --primary: #0a84ff;
+  --primary-foreground: #ffffff;
+  --primary-hover: color-mix(in srgb, #0a84ff 92%, #ffffff 8%);
+  --primary-active: color-mix(in srgb, #0a84ff 82%, #000000 18%);
+
+  --secondary: var(--apple-gray6);
+  --secondary-foreground: var(--apple-gray);
+
+  --accent: var(--apple-gray5);
+  --accent-foreground: var(--apple-gray2);
+
+  --destructive: #ff453a;
+  --destructive-foreground: #ffffff;
+
+  --success: #30d158;
+  --warning: #ff9f0a;
+  --error: #ff453a;
+
+  --border: var(--apple-gray4);
+  --input: var(--apple-gray5);
+  --ring: #0a84ff;
+
+  --card: #0f1115;
+  --card-foreground: var(--apple-gray6);
+  --background: #0a0a0c;
+  --foreground: #f2f2f7;
+  --muted: var(--apple-gray4);
+  --muted-foreground: var(--apple-gray2);
+  --surface: #111318;
 }
