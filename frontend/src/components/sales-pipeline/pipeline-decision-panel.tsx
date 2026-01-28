@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,17 +31,32 @@ interface PipelineDecisionPanelProps {
 export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) {
   const [declineNote, setDeclineNote] = useState('');
   const decide = useDecidePipeline();
+  const router = useRouter();
 
   const isPending = pipeline.decision === PipelineDecision.PENDING;
   const isAccepted = pipeline.decision === PipelineDecision.ACCEPTED;
   const isDeclined = pipeline.decision === PipelineDecision.DECLINED;
 
-  const handleAccept = () => {
-    decide.mutate({ id: pipeline.id, decision: 'ACCEPTED' });
+  const handleAccept = async () => {
+    try {
+      const result = await decide.mutateAsync({ id: pipeline.id, decision: 'ACCEPTED' });
+      if (result?.project) {
+        toast.success(`Dự án ${result.project.code} đã được tạo!`);
+        router.push(`/dashboard/projects/${result.project.id}`);
+      }
+    } catch {
+      toast.error('Không thể chấp nhận pipeline');
+    }
   };
 
-  const handleDecline = () => {
-    decide.mutate({ id: pipeline.id, decision: 'DECLINED', note: declineNote });
+  const handleDecline = async () => {
+    try {
+      await decide.mutateAsync({ id: pipeline.id, decision: 'DECLINED', note: declineNote });
+      toast.info('Pipeline đã bị từ chối');
+      router.push('/dashboard/sales-pipeline');
+    } catch {
+      toast.error('Không thể từ chối pipeline');
+    }
   };
 
   // Already decided - show result
@@ -103,7 +120,7 @@ export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) 
         {/* Accept */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button className="bg-[#34c759] hover:bg-[#2db950] text-white">
+            <Button className="bg-[#34c759] hover:bg-[#2db950] text-white" disabled={decide.isPending}>
               <Check className="h-4 w-4 mr-2" />
               Chấp nhận
             </Button>
@@ -131,7 +148,7 @@ export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) 
         {/* Decline */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="text-[#ff3b30] border-[#ff3b30]/30 hover:bg-[#ff3b30]/5">
+            <Button variant="outline" className="text-[#ff3b30] border-[#ff3b30]/30 hover:bg-[#ff3b30]/5" disabled={decide.isPending}>
               <X className="h-4 w-4 mr-2" />
               Từ chối
             </Button>

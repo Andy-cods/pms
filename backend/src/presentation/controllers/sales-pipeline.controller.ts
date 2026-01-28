@@ -22,6 +22,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { SalesPipelineService } from '../../modules/sales-pipeline/sales-pipeline.service.js';
+import { PipelineAcceptService } from '../../modules/sales-pipeline/pipeline-accept.service.js';
 import { CreatePipelineDto } from '../../application/dto/sales-pipeline/create-pipeline.dto.js';
 import { UpdatePipelineSaleDto } from '../../application/dto/sales-pipeline/update-pipeline-sale.dto.js';
 import { UpdatePipelinePmDto } from '../../application/dto/sales-pipeline/update-pipeline-pm.dto.js';
@@ -44,6 +45,7 @@ export class SalesPipelineController {
   constructor(
     private prisma: PrismaService,
     private pipelineService: SalesPipelineService,
+    private acceptService: PipelineAcceptService,
   ) {}
 
   /** POST /api/sales-pipeline - Sale creates new pipeline entry */
@@ -145,6 +147,9 @@ export class SalesPipelineController {
       where: { id },
     });
     if (!existing) throw new NotFoundException('Pipeline not found');
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Pipeline is read-only after decision');
+    }
 
     return this.prisma.salesPipeline.update({
       where: { id },
@@ -169,6 +174,9 @@ export class SalesPipelineController {
       where: { id },
     });
     if (!existing) throw new NotFoundException('Pipeline not found');
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Pipeline is read-only after decision');
+    }
 
     // Merge existing + new data for financial calculation
     const merged = { ...existing, ...dto };
@@ -195,6 +203,12 @@ export class SalesPipelineController {
     if (!stage || !Object.values(PipelineStage).includes(stage)) {
       throw new BadRequestException('Invalid stage');
     }
+    const existing = await this.prisma.salesPipeline.findUniqueOrThrow({
+      where: { id },
+    });
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Pipeline is read-only after decision');
+    }
     return this.pipelineService.updateStage(id, stage);
   }
 
@@ -205,6 +219,12 @@ export class SalesPipelineController {
     @Body() dto: AddWeeklyNoteDto,
     @Req() req: { user: { sub: string } },
   ) {
+    const existing = await this.prisma.salesPipeline.findUniqueOrThrow({
+      where: { id },
+    });
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Pipeline is read-only after decision');
+    }
     return this.pipelineService.addWeeklyNote(id, dto.note, req.user.sub);
   }
 
@@ -214,29 +234,12 @@ export class SalesPipelineController {
   async decide(
     @Param('id') id: string,
     @Body() dto: PipelineDecisionDto,
+    @Req() req: { user: { sub: string } },
   ) {
-    const pipeline = await this.prisma.salesPipeline.findUnique({
-      where: { id },
-    });
-    if (!pipeline) throw new NotFoundException('Pipeline not found');
-    if (pipeline.decision !== PipelineDecision.PENDING) {
-      throw new BadRequestException(
-        `Pipeline already decided: ${pipeline.decision}`,
-      );
+    if (dto.decision === 'ACCEPTED') {
+      return this.acceptService.acceptPipeline(id, req.user.sub, dto.decisionNote);
+    } else {
+      return this.acceptService.declinePipeline(id, req.user.sub, dto.decisionNote);
     }
-
-    // Update decision fields
-    const updated = await this.prisma.salesPipeline.update({
-      where: { id },
-      data: {
-        decision: dto.decision,
-        decisionDate: new Date(),
-        decisionNote: dto.decisionNote,
-      },
-      include: PIPELINE_INCLUDE,
-    });
-
-    // Note: If ACCEPTED, Phase 8 integration will handle Project + Budget + Phases creation
-    return updated;
   }
 }
