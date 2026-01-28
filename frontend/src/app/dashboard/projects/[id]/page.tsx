@@ -62,6 +62,9 @@ import { AdsKpiCards } from '@/components/project/ads-kpi-cards';
 import { AdsTrendChart } from '@/components/project/ads-trend-chart';
 import { AdsReportTable } from '@/components/project/ads-report-table';
 import { AdsReportModal } from '@/components/project/ads-report-modal';
+import { useProjectPhases } from '@/hooks/use-project-phases';
+import { PhaseProgressBar } from '@/components/project-phase/phase-progress-bar';
+import { PhaseCard } from '@/components/project-phase/phase-card';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -464,7 +467,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history' | 'ads'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history' | 'ads' | 'phases'>('overview');
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
@@ -482,6 +485,7 @@ export default function ProjectDetailPage() {
   const updateMutation = useUpdateProject();
   const updateTeamMember = useUpdateTeamMember();
   const removeTeamMember = useRemoveTeamMember();
+  const { data: phases } = useProjectPhases(projectId);
 
   // Budget threshold alerts
   useEffect(() => {
@@ -731,6 +735,7 @@ export default function ProjectDetailPage() {
           { value: 'team', label: 'Team', count: project.team.length },
           { value: 'budget', label: 'Ngân sách' },
           { value: 'kpi', label: 'KPIs' },
+          { value: 'phases', label: 'Phases' },
           { value: 'ads', label: 'Báo cáo Ads' },
           { value: 'logs', label: 'Nhật ký' },
           { value: 'history', label: 'Lịch sử' },
@@ -1203,6 +1208,31 @@ export default function ProjectDetailPage() {
 
       {activeTab === 'history' && (
         <StageHistoryTimeline projectId={projectId} />
+      )}
+
+      {activeTab === 'phases' && (
+        <div className="space-y-4">
+          {phases && phases.length > 0 && (
+            <PhaseProgressBar phases={phases} />
+          )}
+          {phases?.map((phase) => (
+            <PhaseCard
+              key={phase.id}
+              phase={phase}
+              projectId={projectId}
+              tasks={project?.tasks?.map((t: { id: string; title: string; status: string }) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+              })) ?? []}
+            />
+          ))}
+          {(!phases || phases.length === 0) && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-[14px]">Chưa có phase nào cho dự án này.</p>
+            </div>
+          )}
+        </div>
       )}
 
       {activeTab === 'ads' && (
