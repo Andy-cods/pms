@@ -27,7 +27,7 @@ export default function SalesPipelinePage() {
   const updateStage = useUpdatePipelineStage();
   const [search, setSearch] = useState('');
 
-  const pipelines = data?.pipelines ?? [];
+  const pipelines = data?.data ?? [];
   const filtered = search
     ? pipelines.filter((p) =>
         p.projectName.toLowerCase().includes(search.toLowerCase())

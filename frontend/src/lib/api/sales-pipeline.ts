@@ -13,11 +13,13 @@ export interface PipelineListParams {
 }
 
 export interface PipelineListResponse {
-  pipelines: SalesPipeline[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  data: SalesPipeline[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export const salesPipelineApi = {
