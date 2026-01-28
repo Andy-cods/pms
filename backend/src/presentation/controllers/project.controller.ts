@@ -16,12 +16,23 @@ import {
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
-import { UserRole, TaskStatus } from '@prisma/client';
+import {
+  UserRole,
+  TaskStatus,
+  ProjectLifecycle,
+  PipelineDecision,
+} from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { ProjectPhaseService } from '../../modules/project-phase/project-phase.service.js';
+import { BRIEF_SECTIONS } from '../../modules/strategic-brief/brief-sections.config.js';
 import {
   CreateProjectDto,
   UpdateProjectDto,
+  UpdateProjectSaleDto,
+  UpdateProjectEvaluationDto,
+  UpdateLifecycleDto,
+  AddWeeklyNoteDto,
+  ProjectDecisionDto,
   ProjectListQueryDto,
   AddTeamMemberDto,
   UpdateTeamMemberDto,
@@ -30,13 +41,81 @@ import {
   type ProjectTeamMemberDto,
 } from '../../application/dto/project/project.dto.js';
 
-function generateProjectCode(): string {
-  const prefix = 'PRJ';
-  const randomNum = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, '0');
-  return `${prefix}${randomNum}`;
+// ─── Lifecycle state machine ───
+const LIFECYCLE_TRANSITIONS: Record<string, string[]> = {
+  LEAD: ['QUALIFIED', 'LOST'],
+  QUALIFIED: ['EVALUATION', 'LOST'],
+  EVALUATION: ['NEGOTIATION', 'LOST'],
+  NEGOTIATION: ['WON', 'LOST'],
+  WON: ['PLANNING'],
+  PLANNING: ['ONGOING'],
+  ONGOING: ['OPTIMIZING'],
+  OPTIMIZING: ['CLOSED'],
+  LOST: [],
+  CLOSED: [],
+};
+
+function canTransition(from: string, to: string): boolean {
+  return LIFECYCLE_TRANSITIONS[from]?.includes(to) ?? false;
 }
+
+/** Calculate COGS, Gross Profit, Profit Margin */
+function calculateFinancials(data: Record<string, any>) {
+  const cogs =
+    Number(data.costNSQC || 0) +
+    Number(data.costDesign || 0) +
+    Number(data.costMedia || 0) +
+    Number(data.costKOL || 0) +
+    Number(data.costOther || 0);
+  const totalBudget = Number(data.totalBudget || 0);
+  const grossProfit = totalBudget - cogs;
+  const profitMargin =
+    totalBudget > 0 ? (grossProfit / totalBudget) * 100 : 0;
+  return { cogs, grossProfit, profitMargin };
+}
+
+/** Generate deal code: DEAL-0001 */
+async function generateDealCode(prisma: PrismaService): Promise<string> {
+  const last = await prisma.project.findFirst({
+    where: { dealCode: { startsWith: 'DEAL-' } },
+    orderBy: { dealCode: 'desc' },
+    select: { dealCode: true },
+  });
+  const nextNum = last
+    ? parseInt(last.dealCode.replace('DEAL-', ''), 10) + 1
+    : 1;
+  return `DEAL-${String(nextNum).padStart(4, '0')}`;
+}
+
+/** Generate project code: PRJ0001 */
+async function generateProjectCode(prisma: PrismaService): Promise<string> {
+  const last = await prisma.project.findFirst({
+    where: { projectCode: { not: null, startsWith: 'PRJ' } },
+    orderBy: { projectCode: 'desc' },
+    select: { projectCode: true },
+  });
+  const nextNum = last?.projectCode
+    ? parseInt(last.projectCode.replace('PRJ', ''), 10) + 1
+    : 1;
+  return `PRJ${String(nextNum).padStart(4, '0')}`;
+}
+
+/** Shared include for project queries */
+const PROJECT_INCLUDE = {
+  client: { select: { id: true, companyName: true } },
+  nvkd: { select: { id: true, name: true, email: true, avatar: true } },
+  pm: { select: { id: true, name: true, email: true, avatar: true } },
+  planner: { select: { id: true, name: true, email: true, avatar: true } },
+  team: {
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, avatar: true },
+      },
+    },
+  },
+  strategicBrief: { select: { id: true, status: true, completionPct: true } },
+  _count: { select: { tasks: true } },
+};
 
 @Controller('projects')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -46,15 +125,21 @@ export class ProjectController {
     private phaseService: ProjectPhaseService,
   ) {}
 
+  // ═══════════════════════════════════════════════════
+  // CRUD
+  // ═══════════════════════════════════════════════════
+
   @Get()
   async listProjects(
     @Query() query: ProjectListQueryDto,
     @Req() req: { user: { sub: string; role: string } },
   ): Promise<ProjectListResponseDto> {
     const {
-      status,
-      stage,
+      healthStatus,
+      lifecycle,
       clientId,
+      nvkdId,
+      decision,
       search,
       page = 1,
       limit = 20,
@@ -62,30 +147,39 @@ export class ProjectController {
       sortOrder = 'desc',
     } = query;
 
-    const where: Record<string, unknown> = {
-      archivedAt: null,
-    };
+    const where: Record<string, unknown> = { archivedAt: null };
 
-    if (status) where.status = status;
-    if (stage) where.stage = stage;
+    if (healthStatus) where.healthStatus = healthStatus;
+    if (lifecycle?.length) where.lifecycle = { in: lifecycle };
     if (clientId) where.clientId = clientId;
+    if (decision) where.decision = decision;
+
+    // Role-based filter
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
+
+    if (nvkdId && isAdmin) where.nvkdId = nvkdId;
+
+    if (!isAdmin) {
+      if (req.user.role === UserRole.NVKD) {
+        where.nvkdId = req.user.sub;
+      } else {
+        where.OR = [
+          { pmId: req.user.sub },
+          { plannerId: req.user.sub },
+          { team: { some: { userId: req.user.sub } } },
+        ];
+      }
+    }
 
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { code: { contains: search, mode: 'insensitive' } },
+        { dealCode: { contains: search, mode: 'insensitive' } },
+        { projectCode: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
-    }
-
-    // Non-admin users only see projects they are part of
-    const isAdmin =
-      req.user.role === UserRole.SUPER_ADMIN ||
-      req.user.role === UserRole.ADMIN;
-    if (!isAdmin) {
-      where.team = {
-        some: { userId: req.user.sub },
-      };
     }
 
     const skip = (page - 1) * limit;
@@ -93,17 +187,7 @@ export class ProjectController {
     const [projects, total] = await Promise.all([
       this.prisma.project.findMany({
         where,
-        include: {
-          client: { select: { id: true, companyName: true } },
-          team: {
-            include: {
-              user: {
-                select: { id: true, name: true, email: true, avatar: true },
-              },
-            },
-          },
-          _count: { select: { tasks: true } },
-        },
+        include: PROJECT_INCLUDE,
         orderBy: { [sortBy]: sortOrder },
         skip,
         take: limit,
@@ -111,30 +195,10 @@ export class ProjectController {
       this.prisma.project.count({ where }),
     ]);
 
-    // Get task stats for each project
     const projectsWithStats = await Promise.all(
       projects.map(async (project) => {
-        const taskStats = await this.prisma.task.groupBy({
-          by: ['status'],
-          where: { projectId: project.id },
-          _count: true,
-        });
-
-        const stats = {
-          total: project._count.tasks,
-          todo: 0,
-          inProgress: 0,
-          done: 0,
-        };
-
-        taskStats.forEach((stat) => {
-          if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-          if (stat.status === TaskStatus.IN_PROGRESS)
-            stats.inProgress = stat._count;
-          if (stat.status === TaskStatus.DONE) stats.done = stat._count;
-        });
-
-        return this.mapToResponse(project, stats);
+        const taskStats = await this.getTaskStats(project.id, project._count.tasks);
+        return this.mapToResponse(project, taskStats);
       }),
     );
 
@@ -154,126 +218,51 @@ export class ProjectController {
   ): Promise<ProjectResponseDto> {
     const project = await this.prisma.project.findUnique({
       where: { id },
-      include: {
-        client: { select: { id: true, companyName: true } },
-        team: {
-          include: {
-            user: {
-              select: { id: true, name: true, email: true, avatar: true },
-            },
-          },
-        },
-        _count: { select: { tasks: true } },
-      },
+      include: PROJECT_INCLUDE,
     });
+    if (!project) throw new NotFoundException('Project not found');
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    // Check access
     await this.checkProjectAccess(id, req.user);
 
-    // Get task stats
-    const taskStats = await this.prisma.task.groupBy({
-      by: ['status'],
-      where: { projectId: id },
-      _count: true,
-    });
-
-    const stats = {
-      total: project._count.tasks,
-      todo: 0,
-      inProgress: 0,
-      done: 0,
-    };
-
-    taskStats.forEach((stat) => {
-      if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-      if (stat.status === TaskStatus.IN_PROGRESS)
-        stats.inProgress = stat._count;
-      if (stat.status === TaskStatus.DONE) stats.done = stat._count;
-    });
-
-    return this.mapToResponse(project, stats);
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
   }
 
   @Post()
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
+  @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async createProject(
     @Body() dto: CreateProjectDto,
     @Req() req: { user: { sub: string } },
   ): Promise<ProjectResponseDto> {
-    // Generate unique code if not provided
-    let code = dto.code;
-    if (!code) {
-      code = generateProjectCode();
-      let attempts = 0;
-      while (attempts < 10) {
-        const existing = await this.prisma.project.findUnique({
-          where: { code },
-        });
-        if (!existing) break;
-        code = generateProjectCode();
-        attempts++;
-      }
-    } else {
-      const existing = await this.prisma.project.findUnique({
-        where: { code },
-      });
-      if (existing) {
-        throw new BadRequestException('Project code already exists');
-      }
-    }
+    const dealCode = await generateDealCode(this.prisma);
 
     const project = await this.prisma.project.create({
       data: {
-        code,
+        dealCode,
         name: dto.name,
         description: dto.description,
+        lifecycle: ProjectLifecycle.LEAD,
+        nvkdId: req.user.sub,
+        clientType: dto.clientType,
         productType: dto.productType,
-        status: dto.status,
-        stage: dto.stage,
-        startDate: dto.startDate ? new Date(dto.startDate) : null,
-        endDate: dto.endDate ? new Date(dto.endDate) : null,
+        licenseLink: dto.licenseLink,
+        campaignObjective: dto.campaignObjective,
+        initialGoal: dto.initialGoal,
+        totalBudget: dto.totalBudget,
+        monthlyBudget: dto.monthlyBudget,
+        fixedAdFee: dto.fixedAdFee,
+        adServiceFee: dto.adServiceFee,
+        contentFee: dto.contentFee,
+        designFee: dto.designFee,
+        mediaFee: dto.mediaFee,
+        otherFee: dto.otherFee,
+        upsellOpportunity: dto.upsellOpportunity,
         clientId: dto.clientId,
-        driveLink: dto.driveLink,
-        planLink: dto.planLink,
-        trackingLink: dto.trackingLink,
-        team: {
-          create: {
-            userId: req.user.sub,
-            role: UserRole.PM,
-            isPrimary: true,
-          },
-        },
       },
-      include: {
-        client: { select: { id: true, companyName: true } },
-        team: {
-          include: {
-            user: {
-              select: { id: true, name: true, email: true, avatar: true },
-            },
-          },
-        },
-        _count: { select: { tasks: true } },
-      },
+      include: PROJECT_INCLUDE,
     });
 
-    // Auto-create 4 default phases with items
-    try {
-      await this.phaseService.createDefaultPhases(project.id);
-    } catch {
-      // Phase creation failure should not block project creation
-    }
-
-    return this.mapToResponse(project, {
-      total: 0,
-      todo: 0,
-      inProgress: 0,
-      done: 0,
-    });
+    return this.mapToResponse(project, { total: 0, todo: 0, inProgress: 0, done: 0 });
   }
 
   @Patch(':id')
@@ -284,24 +273,14 @@ export class ProjectController {
   ): Promise<ProjectResponseDto> {
     await this.checkProjectAccess(id, req.user, true);
 
-    // Get current project state for stage history tracking
     const currentProject = await this.prisma.project.findUnique({
       where: { id },
-      select: { stage: true, stageProgress: true },
+      select: { lifecycle: true, stageProgress: true },
     });
 
-    // Track stage change in history
-    const stageChanged =
-      dto.stage && currentProject && dto.stage !== currentProject.stage;
-    const progressChanged =
-      dto.stageProgress !== undefined &&
-      currentProject &&
-      dto.stageProgress !== currentProject.stageProgress;
-
-    // If stage changes, reset stageProgress to 0 unless explicitly provided
     let newStageProgress = dto.stageProgress;
-    if (stageChanged && dto.stageProgress === undefined) {
-      newStageProgress = 0;
+    if (dto.stageProgress === undefined && currentProject) {
+      newStageProgress = currentProject.stageProgress;
     }
 
     const project = await this.prisma.project.update({
@@ -310,8 +289,7 @@ export class ProjectController {
         name: dto.name,
         description: dto.description,
         productType: dto.productType,
-        status: dto.status,
-        stage: dto.stage,
+        healthStatus: dto.healthStatus,
         stageProgress: newStageProgress,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
@@ -320,56 +298,11 @@ export class ProjectController {
         planLink: dto.planLink,
         trackingLink: dto.trackingLink,
       },
-      include: {
-        client: { select: { id: true, companyName: true } },
-        team: {
-          include: {
-            user: {
-              select: { id: true, name: true, email: true, avatar: true },
-            },
-          },
-        },
-        _count: { select: { tasks: true } },
-      },
+      include: PROJECT_INCLUDE,
     });
 
-    // Create stage history record if stage or progress changed
-    if ((stageChanged || progressChanged) && currentProject) {
-      await this.prisma.stageHistory.create({
-        data: {
-          projectId: id,
-          fromStage: currentProject.stage,
-          toStage: dto.stage || currentProject.stage,
-          fromProgress: currentProject.stageProgress,
-          toProgress: newStageProgress ?? currentProject.stageProgress,
-          changedById: req.user.sub,
-          reason: dto.stageChangeReason || null,
-        },
-      });
-    }
-
-    // Get task stats
-    const taskStats = await this.prisma.task.groupBy({
-      by: ['status'],
-      where: { projectId: id },
-      _count: true,
-    });
-
-    const stats = {
-      total: project._count.tasks,
-      todo: 0,
-      inProgress: 0,
-      done: 0,
-    };
-
-    taskStats.forEach((stat) => {
-      if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-      if (stat.status === TaskStatus.IN_PROGRESS)
-        stats.inProgress = stat._count;
-      if (stat.status === TaskStatus.DONE) stats.done = stat._count;
-    });
-
-    return this.mapToResponse(project, stats);
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
   }
 
   @Delete(':id')
@@ -379,14 +312,155 @@ export class ProjectController {
     @Req() req: { user: { sub: string; role: string } },
   ): Promise<void> {
     await this.checkProjectAccess(id, req.user, true);
-
     await this.prisma.project.update({
       where: { id },
       data: { archivedAt: new Date() },
     });
   }
 
+  // ═══════════════════════════════════════════════════
+  // Sales Pipeline Endpoints (merged from SalesPipelineController)
+  // ═══════════════════════════════════════════════════
+
+  /** PATCH /projects/:id/sale - NVKD updates sale fields */
+  @Patch(':id/sale')
+  @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async updateSaleFields(
+    @Param('id') id: string,
+    @Body() dto: UpdateProjectSaleDto,
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Project not found');
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Project is read-only after decision');
+    }
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: dto,
+      include: PROJECT_INCLUDE,
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  /** PATCH /projects/:id/evaluate - PM/Planner evaluation with auto-calc */
+  @Patch(':id/evaluate')
+  @Roles(UserRole.PM, UserRole.PLANNER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async evaluate(
+    @Param('id') id: string,
+    @Body() dto: UpdateProjectEvaluationDto,
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Project not found');
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException('Project is read-only after decision');
+    }
+
+    const merged = { ...existing, ...dto };
+    const financials = calculateFinancials(merged);
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: {
+        ...dto,
+        cogs: financials.cogs,
+        grossProfit: financials.grossProfit,
+        profitMargin: financials.profitMargin,
+      },
+      include: PROJECT_INCLUDE,
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  /** PATCH /projects/:id/lifecycle - Transition lifecycle stage */
+  @Patch(':id/lifecycle')
+  async updateLifecycle(
+    @Param('id') id: string,
+    @Body() dto: UpdateLifecycleDto,
+    @Req() req: { user: { sub: string; role: string } },
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUniqueOrThrow({ where: { id } });
+
+    if (!canTransition(existing.lifecycle, dto.lifecycle)) {
+      throw new BadRequestException(
+        `Cannot transition from ${existing.lifecycle} to ${dto.lifecycle}`,
+      );
+    }
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: {
+        lifecycle: dto.lifecycle as ProjectLifecycle,
+        stageProgress: 0,
+      },
+      include: PROJECT_INCLUDE,
+    });
+
+    // Record stage history
+    await this.prisma.stageHistory.create({
+      data: {
+        projectId: id,
+        fromStage: existing.lifecycle,
+        toStage: dto.lifecycle,
+        fromProgress: existing.stageProgress,
+        toProgress: 0,
+        changedById: req.user.sub,
+      },
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  /** POST /projects/:id/weekly-note - Append weekly note */
+  @Post(':id/weekly-note')
+  async addWeeklyNote(
+    @Param('id') id: string,
+    @Body() dto: AddWeeklyNoteDto,
+    @Req() req: { user: { sub: string } },
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUniqueOrThrow({ where: { id } });
+    const existingNotes = (existing.weeklyNotes as any[]) || [];
+    const newNote = {
+      week: existingNotes.length + 1,
+      date: new Date().toISOString(),
+      note: dto.note,
+      authorId: req.user.sub,
+    };
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: { weeklyNotes: [...existingNotes, newNote] },
+      include: PROJECT_INCLUDE,
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  /** POST /projects/:id/decide - Accept (WON) or Decline (LOST) */
+  @Post(':id/decide')
+  @Roles(UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async decide(
+    @Param('id') id: string,
+    @Body() dto: ProjectDecisionDto,
+    @Req() req: { user: { sub: string } },
+  ): Promise<ProjectResponseDto> {
+    if (dto.decision === PipelineDecision.ACCEPTED) {
+      return this.acceptProject(id, req.user.sub, dto.decisionNote);
+    } else {
+      return this.declineProject(id, req.user.sub, dto.decisionNote);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
   // Stage History
+  // ═══════════════════════════════════════════════════
+
   @Get(':id/stage-history')
   async getStageHistory(
     @Param('id') id: string,
@@ -400,7 +474,6 @@ export class ProjectController {
       take: 50,
     });
 
-    // Get user names for changedById
     const userIds = [...new Set(history.map((h) => h.changedById))];
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
@@ -423,7 +496,10 @@ export class ProjectController {
     }));
   }
 
+  // ═══════════════════════════════════════════════════
   // Team Management
+  // ═══════════════════════════════════════════════════
+
   @Get(':id/team')
   async getProjectTeam(
     @Param('id') id: string,
@@ -438,35 +514,24 @@ export class ProjectController {
       },
     });
 
-    // Get workload stats for each member
     const memberStats = await Promise.all(
       team.map(async (m) => {
         const [projectTasks, totalTasks] = await Promise.all([
-          // Tasks in this project assigned to this user
           this.prisma.taskAssignee.count({
-            where: {
-              userId: m.userId,
-              task: { projectId: id },
-            },
+            where: { userId: m.userId, task: { projectId: id } },
           }),
-          // Total tasks across all projects assigned to this user
           this.prisma.taskAssignee.count({
             where: { userId: m.userId },
           }),
         ]);
 
-        // Tasks done in this project
         const projectTasksDone = await this.prisma.taskAssignee.count({
           where: {
             userId: m.userId,
-            task: {
-              projectId: id,
-              status: 'DONE',
-            },
+            task: { projectId: id, status: 'DONE' },
           },
         });
 
-        // Overdue tasks in this project
         const projectTasksOverdue = await this.prisma.taskAssignee.count({
           where: {
             userId: m.userId,
@@ -506,15 +571,9 @@ export class ProjectController {
   ): Promise<ProjectTeamMemberDto> {
     await this.checkProjectAccess(id, req.user, true);
 
-    // Check if user exists
-    const user = await this.prisma.user.findUnique({
-      where: { id: dto.userId },
-    });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    if (!user) throw new NotFoundException('User not found');
 
-    // Check if already a member with same role
     const existing = await this.prisma.projectTeam.findUnique({
       where: {
         projectId_userId_role: {
@@ -525,9 +584,7 @@ export class ProjectController {
       },
     });
     if (existing) {
-      throw new BadRequestException(
-        'User is already a team member with this role',
-      );
+      throw new BadRequestException('User is already a team member with this role');
     }
 
     const member = await this.prisma.projectTeam.create({
@@ -590,13 +647,10 @@ export class ProjectController {
   ): Promise<void> {
     await this.checkProjectAccess(id, req.user, true);
 
-    // Check if this is the last PM
     const member = await this.prisma.projectTeam.findUnique({
       where: { id: memberId },
     });
-    if (!member) {
-      throw new NotFoundException('Team member not found');
-    }
+    if (!member) throw new NotFoundException('Team member not found');
 
     if (member.role === UserRole.PM && member.isPrimary) {
       const pmCount = await this.prisma.projectTeam.count({
@@ -610,7 +664,148 @@ export class ProjectController {
     await this.prisma.projectTeam.delete({ where: { id: memberId } });
   }
 
-  // Helper methods
+  // ═══════════════════════════════════════════════════
+  // Accept / Decline (merged from PipelineAcceptService)
+  // ═══════════════════════════════════════════════════
+
+  private async acceptProject(
+    projectId: string,
+    userId: string,
+    decisionNote?: string,
+  ): Promise<ProjectResponseDto> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUniqueOrThrow({
+        where: { id: projectId },
+      });
+
+      if (project.lifecycle !== ProjectLifecycle.NEGOTIATION) {
+        throw new BadRequestException('Project must be in NEGOTIATION to accept');
+      }
+      if (project.decision !== PipelineDecision.PENDING) {
+        throw new BadRequestException(`Project already decided: ${project.decision}`);
+      }
+
+      // Generate project code
+      const projectCode = await generateProjectCode(this.prisma);
+
+      // Update project → WON
+      const updated = await tx.project.update({
+        where: { id: projectId },
+        data: {
+          projectCode,
+          lifecycle: ProjectLifecycle.WON,
+          decision: PipelineDecision.ACCEPTED,
+          decisionDate: new Date(),
+          decisionNote: decisionNote || null,
+          stageProgress: 0,
+        },
+        include: PROJECT_INCLUDE,
+      });
+
+      // Create default phases
+      await this.phaseService.createDefaultPhases(projectId, tx);
+
+      // Create strategic brief with 16 sections
+      await tx.strategicBrief.create({
+        data: {
+          projectId,
+          sections: {
+            createMany: {
+              data: BRIEF_SECTIONS.map((s) => ({
+                sectionNum: s.num,
+                sectionKey: s.key,
+                title: s.title,
+                isComplete: false,
+              })),
+            },
+          },
+        },
+      });
+
+      // Create team from nvkd/pm/planner
+      const teamMap = new Map<string, { role: string; isPrimary: boolean }>();
+      teamMap.set(project.nvkdId, { role: 'NVKD', isPrimary: false });
+      if (project.pmId && !teamMap.has(project.pmId)) {
+        teamMap.set(project.pmId, { role: 'PM', isPrimary: true });
+      }
+      if (project.plannerId && !teamMap.has(project.plannerId)) {
+        teamMap.set(project.plannerId, { role: 'PLANNER', isPrimary: false });
+      }
+
+      await tx.projectTeam.createMany({
+        data: Array.from(teamMap.entries()).map(([uid, m]) => ({
+          projectId,
+          userId: uid,
+          role: m.role as any,
+          isPrimary: m.isPrimary,
+        })),
+      });
+
+      // Record stage history
+      await tx.stageHistory.create({
+        data: {
+          projectId,
+          fromStage: ProjectLifecycle.NEGOTIATION,
+          toStage: ProjectLifecycle.WON,
+          fromProgress: project.stageProgress,
+          toProgress: 0,
+          changedById: userId,
+          reason: 'Pipeline accepted',
+        },
+      });
+
+      return updated;
+    });
+
+    const taskStats = await this.getTaskStats(projectId, result._count.tasks);
+    return this.mapToResponse(result, taskStats);
+  }
+
+  private async declineProject(
+    projectId: string,
+    userId: string,
+    decisionNote?: string,
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUniqueOrThrow({
+      where: { id: projectId },
+    });
+
+    if (existing.decision !== PipelineDecision.PENDING) {
+      throw new BadRequestException(`Project already decided: ${existing.decision}`);
+    }
+
+    const project = await this.prisma.project.update({
+      where: { id: projectId },
+      data: {
+        lifecycle: ProjectLifecycle.LOST,
+        decision: PipelineDecision.DECLINED,
+        decisionDate: new Date(),
+        decisionNote: decisionNote || null,
+      },
+      include: PROJECT_INCLUDE,
+    });
+
+    // Record stage history
+    await this.prisma.stageHistory.create({
+      data: {
+        projectId,
+        fromStage: existing.lifecycle,
+        toStage: ProjectLifecycle.LOST,
+        fromProgress: existing.stageProgress,
+        toProgress: 0,
+        changedById: userId,
+        reason: 'Pipeline declined',
+      },
+    });
+
+    const taskStats = await this.getTaskStats(projectId, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // Helpers
+  // ═══════════════════════════════════════════════════
+
   private async checkProjectAccess(
     projectId: string,
     user: { sub: string; role: string },
@@ -621,79 +816,57 @@ export class ProjectController {
       include: { team: true },
     });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
+    if (!project) throw new NotFoundException('Project not found');
 
     const isAdmin =
       user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
     const isMember = project.team.some((m) => m.userId === user.sub);
+    const isNvkd = project.nvkdId === user.sub;
+    const isPm = project.pmId === user.sub;
 
-    if (!isAdmin && !isMember) {
+    if (!isAdmin && !isMember && !isNvkd && !isPm) {
       throw new ForbiddenException('You do not have access to this project');
     }
 
     if (requireEdit && !isAdmin) {
-      const isPM = project.team.some(
+      const isPMRole = project.team.some(
         (m) => m.userId === user.sub && m.role === UserRole.PM,
       );
-      if (!isPM) {
-        throw new ForbiddenException(
-          'Only Project Managers can edit this project',
-        );
+      if (!isPMRole && !isNvkd) {
+        throw new ForbiddenException('Only PM or NVKD can edit this project');
       }
     }
   }
 
-  private mapToResponse(
-    project: {
-      id: string;
-      code: string;
-      name: string;
-      description: string | null;
-      productType: string | null;
-      status: string;
-      stage: string;
-      stageProgress: number;
-      startDate: Date | null;
-      endDate: Date | null;
-      timelineProgress: number;
-      driveLink: string | null;
-      planLink: string | null;
-      trackingLink: string | null;
-      clientId: string | null;
-      client: { id: string; companyName: string } | null;
-      team: Array<{
-        id: string;
-        userId: string;
-        role: string;
-        isPrimary: boolean;
-        user: {
-          id: string;
-          name: string;
-          email: string;
-          avatar: string | null;
-        };
-      }>;
-      createdAt: Date;
-      updatedAt: Date;
-      archivedAt: Date | null;
-    },
-    taskStats: {
-      total: number;
-      todo: number;
-      inProgress: number;
-      done: number;
-    },
-  ): ProjectResponseDto {
+  private async getTaskStats(
+    projectId: string,
+    totalTasks: number,
+  ): Promise<{ total: number; todo: number; inProgress: number; done: number }> {
+    const taskStats = await this.prisma.task.groupBy({
+      by: ['status'],
+      where: { projectId },
+      _count: true,
+    });
+
+    const stats = { total: totalTasks, todo: 0, inProgress: 0, done: 0 };
+    taskStats.forEach((stat) => {
+      if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
+      if (stat.status === TaskStatus.IN_PROGRESS) stats.inProgress = stat._count;
+      if (stat.status === TaskStatus.DONE) stats.done = stat._count;
+    });
+    return stats;
+  }
+
+  private mapToResponse(project: any, taskStats: any): ProjectResponseDto {
     return {
       id: project.id,
-      code: project.code,
+      dealCode: project.dealCode,
+      projectCode: project.projectCode,
       name: project.name,
       description: project.description,
       productType: project.productType,
-      status: project.status as ProjectResponseDto['status'],
-      stage: project.stage as ProjectResponseDto['stage'],
+      lifecycle: project.lifecycle,
+      healthStatus: project.healthStatus,
       stageProgress: project.stageProgress,
       startDate: project.startDate?.toISOString() ?? null,
       endDate: project.endDate?.toISOString() ?? null,
@@ -703,7 +876,51 @@ export class ProjectController {
       trackingLink: project.trackingLink,
       clientId: project.clientId,
       client: project.client,
-      team: project.team.map((m) => ({
+      // Team refs
+      nvkdId: project.nvkdId,
+      nvkd: project.nvkd ? { id: project.nvkd.id, name: project.nvkd.name } : null,
+      pmId: project.pmId,
+      pm: project.pm ? { id: project.pm.id, name: project.pm.name } : null,
+      plannerId: project.plannerId,
+      planner: project.planner
+        ? { id: project.planner.id, name: project.planner.name }
+        : null,
+      // Sales data
+      clientType: project.clientType,
+      campaignObjective: project.campaignObjective,
+      initialGoal: project.initialGoal,
+      upsellOpportunity: project.upsellOpportunity,
+      licenseLink: project.licenseLink,
+      // Budget/Fees
+      totalBudget: project.totalBudget ? Number(project.totalBudget) : null,
+      monthlyBudget: project.monthlyBudget ? Number(project.monthlyBudget) : null,
+      spentAmount: project.spentAmount ? Number(project.spentAmount) : null,
+      fixedAdFee: project.fixedAdFee ? Number(project.fixedAdFee) : null,
+      adServiceFee: project.adServiceFee ? Number(project.adServiceFee) : null,
+      contentFee: project.contentFee ? Number(project.contentFee) : null,
+      designFee: project.designFee ? Number(project.designFee) : null,
+      mediaFee: project.mediaFee ? Number(project.mediaFee) : null,
+      otherFee: project.otherFee ? Number(project.otherFee) : null,
+      // PM Evaluation
+      costNSQC: project.costNSQC ? Number(project.costNSQC) : null,
+      costDesign: project.costDesign ? Number(project.costDesign) : null,
+      costMedia: project.costMedia ? Number(project.costMedia) : null,
+      costKOL: project.costKOL ? Number(project.costKOL) : null,
+      costOther: project.costOther ? Number(project.costOther) : null,
+      cogs: project.cogs ? Number(project.cogs) : null,
+      grossProfit: project.grossProfit ? Number(project.grossProfit) : null,
+      profitMargin: project.profitMargin ? Number(project.profitMargin) : null,
+      // Client eval
+      clientTier: project.clientTier,
+      averageScore: project.averageScore ? Number(project.averageScore) : null,
+      // Decision
+      decision: project.decision,
+      decisionDate: project.decisionDate?.toISOString() ?? null,
+      decisionNote: project.decisionNote,
+      // Notes
+      weeklyNotes: project.weeklyNotes as unknown[] | null,
+      // Team
+      team: (project.team || []).map((m: any) => ({
         id: m.id,
         userId: m.userId,
         role: m.role,
