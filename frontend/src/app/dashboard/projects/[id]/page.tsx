@@ -89,6 +89,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { SegmentControl } from '@/components/ui/segment-control';
 
 // Apple-style thin progress bar
 function ProgressBar({
@@ -116,38 +117,7 @@ function ProgressBar({
   );
 }
 
-// Apple-style segment control
-function SegmentControl({
-  value,
-  onChange,
-  items,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  items: { value: string; label: string; count?: number }[];
-}) {
-  return (
-    <div className="inline-flex p-1 rounded-xl bg-surface">
-      {items.map((item) => (
-        <button
-          key={item.value}
-          onClick={() => onChange(item.value)}
-          className={cn(
-            'px-4 py-2 rounded-lg text-footnote font-medium transition-all duration-200',
-            value === item.value
-              ? 'bg-background shadow-sm text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          {item.label}
-          {item.count !== undefined && (
-            <span className="ml-1.5 text-muted-foreground">({item.count})</span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
+// SegmentControl is imported from @/components/ui/segment-control
 
 // Floating action pill button
 function ActionPill({

@@ -46,6 +46,18 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface UserWorkload {
+  totalTasks: number;
+  doneTasks: number;
+  overdueTasks: number;
+  completionPercent: number;
+  projectCount: number;
+}
+
+export interface AdminUserWithWorkload extends AdminUser {
+  workload: UserWorkload;
+}
+
 export interface ListUsersParams {
   search?: string;
   role?: UserRole;
@@ -89,6 +101,11 @@ export const adminUsersApi = {
 
   resetPassword: async (id: string): Promise<ResetPasswordResponse> => {
     const response = await api.post(`/admin/users/${id}/reset-password`);
+    return response.data;
+  },
+
+  getWorkload: async (): Promise<AdminUserWithWorkload[]> => {
+    const response = await api.get('/admin/users/workload');
     return response.data;
   },
 };

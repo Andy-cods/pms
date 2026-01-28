@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   adminUsersApi,
   type AdminUser,
+  type AdminUserWithWorkload,
   type CreateUserInput,
   type UpdateUserInput,
   type UserListResponse,
@@ -76,6 +77,14 @@ export function useDeactivateAdminUser() {
       const message = error.response?.data?.message || 'Không thể vô hiệu hóa người dùng';
       toast.error(message);
     },
+  });
+}
+
+// Users with workload stats
+export function useUsersWorkload() {
+  return useQuery<AdminUserWithWorkload[]>({
+    queryKey: ['admin-users-workload'],
+    queryFn: () => adminUsersApi.getWorkload(),
   });
 }
 
