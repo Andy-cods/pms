@@ -108,22 +108,23 @@ export class BudgetEventService {
     });
     const spent = result._sum.amount ?? 0;
 
-    await this.prisma.projectBudget.updateMany({
-      where: { projectId },
+    await this.prisma.project.update({
+      where: { id: projectId },
       data: { spentAmount: spent },
     });
   }
 
   async getThreshold(projectId: string): Promise<BudgetThresholdResponse> {
-    const budget = await this.prisma.projectBudget.findUnique({
-      where: { projectId },
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { totalBudget: true, spentAmount: true },
     });
-    if (!budget || Number(budget.totalBudget) === 0) {
+    if (!project || Number(project.totalBudget) === 0) {
       return { level: 'ok', percent: 0 };
     }
 
     const percent = Math.round(
-      (Number(budget.spentAmount) / Number(budget.totalBudget)) * 100,
+      (Number(project.spentAmount) / Number(project.totalBudget)) * 100,
     );
     const level =
       percent >= 100 ? 'critical' : percent >= 80 ? 'warning' : 'ok';

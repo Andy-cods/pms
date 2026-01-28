@@ -22,8 +22,7 @@ import { RequestRevisionDto } from '../../application/dto/strategic-brief/brief-
 
 const BRIEF_INCLUDE = {
   sections: { orderBy: { sectionNum: 'asc' as const } },
-  pipeline: { select: { id: true, projectName: true } },
-  project: { select: { id: true, code: true, name: true } },
+  project: { select: { id: true, dealCode: true, name: true } },
 };
 
 @Controller('strategic-briefs')
@@ -37,7 +36,7 @@ export class StrategicBriefController {
   /** POST /api/strategic-briefs - Create brief with 16 empty sections */
   @Post()
   async create(@Body() dto: CreateBriefDto) {
-    return this.briefService.create(dto.pipelineId, dto.projectId);
+    return this.briefService.create(dto.projectId!);
   }
 
   /** GET /api/strategic-briefs/:id - Get full brief with sections */
@@ -51,14 +50,14 @@ export class StrategicBriefController {
     return brief;
   }
 
-  /** GET /api/strategic-briefs/by-pipeline/:pipelineId */
-  @Get('by-pipeline/:pipelineId')
-  async getByPipeline(@Param('pipelineId') pipelineId: string) {
+  /** GET /api/strategic-briefs/by-project/:projectId */
+  @Get('by-project/:projectId')
+  async getByProject(@Param('projectId') projectId: string) {
     const brief = await this.prisma.strategicBrief.findUnique({
-      where: { pipelineId },
+      where: { projectId },
       include: BRIEF_INCLUDE,
     });
-    if (!brief) throw new NotFoundException('Brief not found for this pipeline');
+    if (!brief) throw new NotFoundException('Brief not found for this project');
     return brief;
   }
 

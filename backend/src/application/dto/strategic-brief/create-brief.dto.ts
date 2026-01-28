@@ -1,11 +1,6 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateBriefDto {
-  @IsOptional()
   @IsString()
-  pipelineId?: string;
-
-  @IsOptional()
-  @IsString()
-  projectId?: string;
+  projectId!: string;
 }

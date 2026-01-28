@@ -1,6 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
-import { type Prisma } from '@prisma/client';
 import {
   BRIEF_SECTIONS,
   TOTAL_SECTIONS,
@@ -11,30 +10,25 @@ export class StrategicBriefService {
   constructor(private prisma: PrismaService) {}
 
   /** Create brief with 16 empty sections */
-  async create(pipelineId?: string, projectId?: string) {
-    if (!pipelineId && !projectId) {
-      throw new BadRequestException(
-        'Either pipelineId or projectId is required',
-      );
+  async create(projectId: string) {
+    if (!projectId) {
+      throw new BadRequestException('projectId is required');
     }
 
-    const data: Prisma.StrategicBriefUncheckedCreateInput = {
-      ...(pipelineId && { pipelineId }),
-      ...(projectId && { projectId }),
-      sections: {
-        createMany: {
-          data: BRIEF_SECTIONS.map((s) => ({
-            sectionNum: s.num as number,
-            sectionKey: s.key as string,
-            title: s.title as string,
-            isComplete: false,
-          })),
+    return this.prisma.strategicBrief.create({
+      data: {
+        projectId,
+        sections: {
+          createMany: {
+            data: BRIEF_SECTIONS.map((s) => ({
+              sectionNum: s.num as number,
+              sectionKey: s.key as string,
+              title: s.title as string,
+              isComplete: false,
+            })),
+          },
         },
       },
-    } as any;
-
-    return this.prisma.strategicBrief.create({
-      data,
       include: { sections: { orderBy: { sectionNum: 'asc' } } },
     });
   }
