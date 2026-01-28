@@ -23,6 +23,7 @@ export interface MediaPlanResponseDto {
   id: string;
   projectId: string;
   name: string;
+  type: string;
   month: number;
   year: number;
   version: number;

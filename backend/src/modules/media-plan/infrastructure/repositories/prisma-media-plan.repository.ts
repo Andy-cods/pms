@@ -25,6 +25,7 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
     const {
       projectId,
       status,
+      type,
       month,
       year,
       search,
@@ -36,6 +37,7 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
 
     const where: Record<string, unknown> = { projectId };
     if (status) where.status = status;
+    if (type) where.type = type;
     if (month) where.month = month;
     if (year) where.year = year;
     if (search) {
@@ -72,6 +74,7 @@ export class PrismaMediaPlanRepository implements IMediaPlanRepository {
       data: {
         projectId: data.projectId,
         name: data.name,
+        type: data.type,
         month: data.month,
         year: data.year,
         totalBudget: data.totalBudget,

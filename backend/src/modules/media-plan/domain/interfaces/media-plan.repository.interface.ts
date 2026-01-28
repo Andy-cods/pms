@@ -1,4 +1,4 @@
-import type { MediaPlan, MediaPlanItem, MediaPlanStatus } from '@prisma/client';
+import type { MediaPlan, MediaPlanItem, MediaPlanStatus, MediaPlanType } from '@prisma/client';
 
 export interface MediaPlanWithItems extends MediaPlan {
   items: MediaPlanItem[];
@@ -13,6 +13,7 @@ export interface MediaPlanListResult {
 export interface MediaPlanQueryParams {
   projectId: string;
   status?: MediaPlanStatus;
+  type?: MediaPlanType;
   month?: number;
   year?: number;
   search?: string;
@@ -25,6 +26,7 @@ export interface MediaPlanQueryParams {
 export interface CreateMediaPlanData {
   projectId: string;
   name: string;
+  type?: MediaPlanType;
   month: number;
   year: number;
   totalBudget: number;

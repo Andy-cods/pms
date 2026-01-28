@@ -5,8 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
   type MediaPlan,
+  type MediaPlanType,
   MediaPlanStatusLabels,
   MediaPlanStatusColors,
+  MediaPlanTypeLabels,
+  MediaPlanTypeColors,
   formatVNDCompact,
   MONTHS,
 } from '@/lib/api/media-plans';
@@ -33,9 +36,19 @@ export function MediaPlanCard({ plan, onClick }: MediaPlanCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-callout font-semibold truncate group-hover:text-primary transition-colors">
-              {plan.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-callout font-semibold truncate group-hover:text-primary transition-colors">
+                {plan.name}
+              </h3>
+              <span
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0',
+                  MediaPlanTypeColors[plan.type as MediaPlanType] ?? MediaPlanTypeColors.ADS,
+                )}
+              >
+                {MediaPlanTypeLabels[plan.type as MediaPlanType] ?? plan.type}
+              </span>
+            </div>
             <p className="text-footnote text-muted-foreground mt-0.5">
               {monthLabel}/{plan.year} · v{plan.version}
             </p>

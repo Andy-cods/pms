@@ -9,8 +9,10 @@ import { useProject } from '@/hooks/use-projects';
 import { useMediaPlans } from '@/hooks/use-media-plans';
 import {
   type MediaPlanStatus,
+  type MediaPlanType,
   type MediaPlanListParams,
   MediaPlanStatusLabels,
+  MediaPlanTypeLabels,
   MONTHS,
 } from '@/lib/api/media-plans';
 
@@ -39,10 +41,12 @@ export default function MediaPlansListPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [monthFilter, setMonthFilter] = useState<string>('ALL');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
 
   const queryParams: MediaPlanListParams = {
     search: search || undefined,
     status: statusFilter !== 'ALL' ? (statusFilter as MediaPlanStatus) : undefined,
+    type: typeFilter !== 'ALL' ? (typeFilter as MediaPlanType) : undefined,
     month: monthFilter !== 'ALL' ? Number(monthFilter) : undefined,
     limit: 50,
   };
@@ -87,6 +91,29 @@ export default function MediaPlansListPage() {
           <Plus className="h-4 w-4 mr-1.5" />
           Tạo kế hoạch
         </Button>
+      </div>
+
+      {/* Type Tabs */}
+      <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-xl w-fit">
+        {[
+          { value: 'ALL', label: 'Tất cả' },
+          { value: 'ADS', label: 'Ads' },
+          { value: 'DESIGN', label: 'Design' },
+          { value: 'CONTENT', label: 'Content' },
+        ].map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setTypeFilter(tab.value)}
+            className={cn(
+              'px-4 py-1.5 rounded-lg text-sm font-medium transition-all',
+              typeFilter === tab.value
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Filters */}

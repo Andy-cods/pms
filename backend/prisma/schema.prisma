@@ -542,6 +542,12 @@ enum FileCategory {
   OTHER
 }
 
+enum MediaPlanType {
+  ADS
+  DESIGN
+  CONTENT
+}
+
 enum MediaPlanStatus {
   DRAFT
   PENDING_APPROVAL
@@ -625,6 +631,7 @@ model MediaPlan {
   projectId   String
   project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name        String
+  type        MediaPlanType   @default(ADS)
   month       Int
   year        Int
   version     Int             @default(1)
@@ -641,6 +648,7 @@ model MediaPlan {
   budgetEvents BudgetEvent[]
 
   @@index([projectId])
+  @@index([projectId, type])
   @@index([status])
   @@map("media_plans")
 }

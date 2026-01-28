@@ -12,23 +12,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MONTHS, type CreateMediaPlanInput } from '@/lib/api/media-plans';
+import {
+  MONTHS,
+  type CreateMediaPlanInput,
+  type MediaPlanType,
+  MediaPlanTypeLabels,
+} from '@/lib/api/media-plans';
 
 interface MediaPlanFormProps {
   onSubmit: (data: CreateMediaPlanInput) => Promise<void>;
   isSubmitting: boolean;
   onCancel: () => void;
   defaultValues?: Partial<CreateMediaPlanInput>;
+  defaultType?: MediaPlanType;
 }
+
+const PLAN_TYPES: MediaPlanType[] = ['ADS', 'DESIGN', 'CONTENT'];
 
 export function MediaPlanForm({
   onSubmit,
   isSubmitting,
   onCancel,
   defaultValues,
+  defaultType,
 }: MediaPlanFormProps) {
   const now = new Date();
   const [name, setName] = useState(defaultValues?.name ?? '');
+  const [planType, setPlanType] = useState<MediaPlanType>(defaultType ?? defaultValues?.type ?? 'ADS');
   const [month, setMonth] = useState(defaultValues?.month ?? now.getMonth() + 1);
   const [year, setYear] = useState(defaultValues?.year ?? now.getFullYear());
   const [totalBudget, setTotalBudget] = useState(
@@ -58,6 +68,7 @@ export function MediaPlanForm({
 
     await onSubmit({
       name: name.trim(),
+      type: planType,
       month,
       year,
       totalBudget: Number(totalBudget),
@@ -91,6 +102,22 @@ export function MediaPlanForm({
             className="h-11 rounded-xl bg-surface"
           />
           {errors.name && <p className="text-caption text-[#ff3b30]">{errors.name}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-footnote font-medium">Loại kế hoạch</Label>
+          <Select value={planType} onValueChange={(v) => setPlanType(v as MediaPlanType)}>
+            <SelectTrigger className="h-11 rounded-xl bg-surface">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {PLAN_TYPES.map((t) => (
+                <SelectItem key={t} value={t} className="rounded-lg">
+                  {MediaPlanTypeLabels[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -181,7 +208,7 @@ export function MediaPlanForm({
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ghi chú về kế hoạch media..."
+            placeholder="Ghi chú về kế hoạch..."
             rows={3}
             className="rounded-xl bg-surface border-0 resize-none"
           />
@@ -207,7 +234,7 @@ export function MediaPlanForm({
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Tóm tắt</span>
             <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-              {month}/{year}
+              {MediaPlanTypeLabels[planType]} · {month}/{year}
             </span>
           </div>
           <div className="space-y-1">

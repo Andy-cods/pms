@@ -17,17 +17,20 @@ import {
 import { cn } from '@/lib/utils';
 import {
   type MediaPlanItem,
+  type MediaPlanType,
   type CreateMediaPlanItemInput,
   type UpdateMediaPlanItemInput,
   formatVND,
-  MEDIA_CHANNELS,
-  CAMPAIGN_TYPES,
+  MEDIA_CHANNELS_BY_TYPE,
+  CAMPAIGN_TYPES_BY_TYPE,
+  METRIC_FIELDS_BY_TYPE,
 } from '@/lib/api/media-plans';
 import { MediaPlanItemForm } from './media-plan-item-form';
 
 interface MediaPlanItemsTableProps {
   items: MediaPlanItem[];
   totalBudget: number;
+  planType?: MediaPlanType;
   onAddItem: (input: CreateMediaPlanItemInput) => Promise<void>;
   onUpdateItem: (itemId: string, input: UpdateMediaPlanItemInput) => Promise<void>;
   onDeleteItem: (itemId: string) => Promise<void>;
@@ -37,6 +40,7 @@ interface MediaPlanItemsTableProps {
 export function MediaPlanItemsTable({
   items,
   totalBudget,
+  planType = 'ADS',
   onAddItem,
   onUpdateItem,
   onDeleteItem,
@@ -48,12 +52,20 @@ export function MediaPlanItemsTable({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const allocatedBudget = items.reduce((sum, item) => sum + item.budget, 0);
+  const metricFields = METRIC_FIELDS_BY_TYPE[planType];
 
   const getChannelLabel = (value: string) =>
-    MEDIA_CHANNELS.find((c) => c.value === value)?.label ?? value;
+    MEDIA_CHANNELS_BY_TYPE[planType].find((c) => c.value === value)?.label ?? value;
 
   const getCampaignTypeLabel = (value: string) =>
-    CAMPAIGN_TYPES.find((c) => c.value === value)?.label ?? value;
+    CAMPAIGN_TYPES_BY_TYPE[planType].find((c) => c.value === value)?.label ?? value;
+
+  const formatMetricValue = (item: MediaPlanItem, key: string, isCurrency?: boolean): string => {
+    const val = item[key as keyof MediaPlanItem] as number | null;
+    if (val == null) return '-';
+    if (isCurrency) return formatVND(val);
+    return val.toLocaleString('vi-VN');
+  };
 
   const handleAddItem = async (input: CreateMediaPlanItemInput) => {
     setIsSubmitting(true);
@@ -82,16 +94,20 @@ export function MediaPlanItemsTable({
     setDeletingItemId(null);
   };
 
+  // Contextual labels
+  const itemLabel = planType === 'DESIGN' ? 'sản phẩm' : planType === 'CONTENT' ? 'nội dung' : 'kênh';
+  const sectionTitle = planType === 'DESIGN' ? 'Chi tiết sản phẩm thiết kế' : planType === 'CONTENT' ? 'Chi tiết nội dung' : 'Chi tiết kênh';
+
   return (
     <>
       <Card className="rounded-2xl border-border/50 shadow-apple-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-subheadline font-semibold">
-              Chi tiết kênh
+              {sectionTitle}
             </CardTitle>
             <p className="text-footnote text-muted-foreground mt-1">
-              {items.length} kênh · {formatVND(allocatedBudget)} / {formatVND(totalBudget)}
+              {items.length} {itemLabel} · {formatVND(allocatedBudget)} / {formatVND(totalBudget)}
             </p>
           </div>
           {isEditable && (
@@ -102,7 +118,7 @@ export function MediaPlanItemsTable({
               onClick={() => setShowAddForm(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Thêm kênh
+              Thêm {itemLabel}
             </Button>
           )}
         </CardHeader>
@@ -112,9 +128,9 @@ export function MediaPlanItemsTable({
               <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
                 <Plus className="h-7 w-7 text-muted-foreground" />
               </div>
-              <p className="text-callout font-medium mb-1">Chưa có kênh nào</p>
+              <p className="text-callout font-medium mb-1">Chưa có {itemLabel} nào</p>
               <p className="text-footnote text-muted-foreground mb-4">
-                Thêm kênh media để bắt đầu lập kế hoạch
+                Thêm {itemLabel} để bắt đầu lập kế hoạch
               </p>
               {isEditable && (
                 <Button
@@ -124,7 +140,7 @@ export function MediaPlanItemsTable({
                   onClick={() => setShowAddForm(true)}
                 >
                   <Plus className="h-4 w-4 mr-1.5" />
-                  Thêm kênh đầu tiên
+                  Thêm {itemLabel} đầu tiên
                 </Button>
               )}
             </div>
@@ -133,14 +149,19 @@ export function MediaPlanItemsTable({
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground">Kênh</th>
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground">Loại</th>
+                    <th className="pb-3 text-footnote font-medium text-muted-foreground">
+                      {planType === 'DESIGN' ? 'Kênh TK' : planType === 'CONTENT' ? 'Kênh' : 'Kênh'}
+                    </th>
+                    <th className="pb-3 text-footnote font-medium text-muted-foreground">
+                      {planType === 'DESIGN' ? 'Loại SP' : planType === 'CONTENT' ? 'Loại ND' : 'Loại'}
+                    </th>
                     <th className="pb-3 text-footnote font-medium text-muted-foreground">Mục tiêu</th>
                     <th className="pb-3 text-footnote font-medium text-muted-foreground text-right">Ngân sách</th>
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground text-right">Reach</th>
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground text-right">Clicks</th>
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground text-right">Leads</th>
-                    <th className="pb-3 text-footnote font-medium text-muted-foreground text-right">CPL</th>
+                    {metricFields.map((field) => (
+                      <th key={field.key} className="pb-3 text-footnote font-medium text-muted-foreground text-right">
+                        {field.shortLabel}
+                      </th>
+                    ))}
                     {isEditable && (
                       <th className="pb-3 text-footnote font-medium text-muted-foreground w-20" />
                     )}
@@ -169,26 +190,13 @@ export function MediaPlanItemsTable({
                           {formatVND(item.budget)}
                         </span>
                       </td>
-                      <td className="py-3 pr-3 text-right">
-                        <span className="text-footnote tabular-nums text-muted-foreground">
-                          {item.targetReach?.toLocaleString('vi-VN') ?? '-'}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-3 text-right">
-                        <span className="text-footnote tabular-nums text-muted-foreground">
-                          {item.targetClicks?.toLocaleString('vi-VN') ?? '-'}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-3 text-right">
-                        <span className="text-footnote tabular-nums text-muted-foreground">
-                          {item.targetLeads?.toLocaleString('vi-VN') ?? '-'}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-3 text-right">
-                        <span className="text-footnote tabular-nums text-muted-foreground">
-                          {item.targetCPL ? formatVND(item.targetCPL) : '-'}
-                        </span>
-                      </td>
+                      {metricFields.map((field) => (
+                        <td key={field.key} className="py-3 pr-3 text-right">
+                          <span className="text-footnote tabular-nums text-muted-foreground">
+                            {formatMetricValue(item, field.key, field.isCurrency)}
+                          </span>
+                        </td>
+                      ))}
                       {isEditable && (
                         <td className="py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -223,16 +231,18 @@ export function MediaPlanItemsTable({
                     <td className="py-3 text-right text-callout font-semibold tabular-nums">
                       {formatVND(allocatedBudget)}
                     </td>
-                    <td className="py-3 text-right text-footnote tabular-nums text-muted-foreground">
-                      {items.reduce((s, i) => s + (i.targetReach ?? 0), 0).toLocaleString('vi-VN') || '-'}
-                    </td>
-                    <td className="py-3 text-right text-footnote tabular-nums text-muted-foreground">
-                      {items.reduce((s, i) => s + (i.targetClicks ?? 0), 0).toLocaleString('vi-VN') || '-'}
-                    </td>
-                    <td className="py-3 text-right text-footnote tabular-nums text-muted-foreground">
-                      {items.reduce((s, i) => s + (i.targetLeads ?? 0), 0).toLocaleString('vi-VN') || '-'}
-                    </td>
-                    <td className="py-3" />
+                    {metricFields.map((field) => {
+                      const sum = items.reduce((s, i) => s + ((i[field.key as keyof MediaPlanItem] as number) ?? 0), 0);
+                      return (
+                        <td key={field.key} className="py-3 text-right text-footnote tabular-nums text-muted-foreground">
+                          {sum > 0
+                            ? field.isCurrency
+                              ? formatVND(sum)
+                              : sum.toLocaleString('vi-VN')
+                            : '-'}
+                        </td>
+                      );
+                    })}
                     {isEditable && <td className="py-3" />}
                   </tr>
                 </tfoot>
@@ -246,6 +256,7 @@ export function MediaPlanItemsTable({
       <MediaPlanItemForm
         open={showAddForm}
         onOpenChange={setShowAddForm}
+        planType={planType}
         onSubmit={handleAddItem}
         isSubmitting={isSubmitting}
       />
@@ -255,6 +266,7 @@ export function MediaPlanItemsTable({
         open={!!editingItem}
         onOpenChange={(open) => !open && setEditingItem(null)}
         item={editingItem ?? undefined}
+        planType={planType}
         onSubmit={handleUpdateItem}
         isSubmitting={isSubmitting}
       />
@@ -266,9 +278,9 @@ export function MediaPlanItemsTable({
       >
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Xóa kênh?</AlertDialogTitle>
+            <AlertDialogTitle>Xóa {itemLabel}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc muốn xóa kênh này khỏi kế hoạch media? Hành động này
+              Bạn có chắc muốn xóa {itemLabel} này khỏi kế hoạch? Hành động này
               không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>

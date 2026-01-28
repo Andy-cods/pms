@@ -19,25 +19,33 @@ import {
 } from '@/components/ui/select';
 import {
   type MediaPlanItem,
+  type MediaPlanType,
   type CreateMediaPlanItemInput,
   type UpdateMediaPlanItemInput,
-  MEDIA_CHANNELS,
-  CAMPAIGN_TYPES,
-  CAMPAIGN_OBJECTIVES,
+  MEDIA_CHANNELS_BY_TYPE,
+  CAMPAIGN_TYPES_BY_TYPE,
+  CAMPAIGN_OBJECTIVES_BY_TYPE,
+  METRIC_FIELDS_BY_TYPE,
+  MediaPlanTypeLabels,
 } from '@/lib/api/media-plans';
 
 interface MediaPlanItemFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: MediaPlanItem;
+  planType?: MediaPlanType;
   onSubmit: (input: CreateMediaPlanItemInput) => Promise<void>;
   isSubmitting: boolean;
 }
+
+// Map DB field keys to state getter/setter indices
+const METRIC_KEYS = ['targetReach', 'targetClicks', 'targetLeads', 'targetCPL', 'targetCPC', 'targetROAS'] as const;
 
 export function MediaPlanItemForm({
   open,
   onOpenChange,
   item,
+  planType = 'ADS',
   onSubmit,
   isSubmitting,
 }: MediaPlanItemFormProps) {
@@ -49,40 +57,25 @@ export function MediaPlanItemForm({
   const [budget, setBudget] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [targetReach, setTargetReach] = useState('');
-  const [targetClicks, setTargetClicks] = useState('');
-  const [targetLeads, setTargetLeads] = useState('');
-  const [targetCPL, setTargetCPL] = useState('');
-  const [targetCPC, setTargetCPC] = useState('');
-  const [targetROAS, setTargetROAS] = useState('');
+  // Single object for all metric values (keyed by DB field name)
+  const [metrics, setMetrics] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const metricFields = METRIC_FIELDS_BY_TYPE[planType];
 
   useEffect(() => {
     if (item) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChannel(item.channel);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCampaignType(item.campaignType);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setObjective(item.objective);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBudget(String(item.budget));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStartDate(item.startDate.split('T')[0]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEndDate(item.endDate.split('T')[0]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetReach(item.targetReach ? String(item.targetReach) : '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetClicks(item.targetClicks ? String(item.targetClicks) : '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetLeads(item.targetLeads ? String(item.targetLeads) : '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetCPL(item.targetCPL ? String(item.targetCPL) : '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetCPC(item.targetCPC ? String(item.targetCPC) : '');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTargetROAS(item.targetROAS ? String(item.targetROAS) : '');
+      const m: Record<string, string> = {};
+      for (const k of METRIC_KEYS) {
+        m[k] = item[k] ? String(item[k]) : '';
+      }
+      setMetrics(m);
     } else {
       setChannel('');
       setCampaignType('');
@@ -90,20 +83,16 @@ export function MediaPlanItemForm({
       setBudget('');
       setStartDate('');
       setEndDate('');
-      setTargetReach('');
-      setTargetClicks('');
-      setTargetLeads('');
-      setTargetCPL('');
-      setTargetCPC('');
-      setTargetROAS('');
+      setMetrics({});
     }
     setErrors({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, open]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!channel) newErrors.channel = 'Vui lòng chọn kênh';
-    if (!campaignType) newErrors.campaignType = 'Vui lòng chọn loại chiến dịch';
+    if (!campaignType) newErrors.campaignType = 'Vui lòng chọn loại';
     if (!objective) newErrors.objective = 'Vui lòng chọn mục tiêu';
     if (!budget || Number(budget) <= 0) newErrors.budget = 'Vui lòng nhập ngân sách';
     if (!isEditing) {
@@ -128,23 +117,36 @@ export function MediaPlanItemForm({
       budget: Number(budget),
       startDate,
       endDate,
-      targetReach: targetReach ? Number(targetReach) : undefined,
-      targetClicks: targetClicks ? Number(targetClicks) : undefined,
-      targetLeads: targetLeads ? Number(targetLeads) : undefined,
-      targetCPL: targetCPL ? Number(targetCPL) : undefined,
-      targetCPC: targetCPC ? Number(targetCPC) : undefined,
-      targetROAS: targetROAS ? Number(targetROAS) : undefined,
+      targetReach: metrics.targetReach ? Number(metrics.targetReach) : undefined,
+      targetClicks: metrics.targetClicks ? Number(metrics.targetClicks) : undefined,
+      targetLeads: metrics.targetLeads ? Number(metrics.targetLeads) : undefined,
+      targetCPL: metrics.targetCPL ? Number(metrics.targetCPL) : undefined,
+      targetCPC: metrics.targetCPC ? Number(metrics.targetCPC) : undefined,
+      targetROAS: metrics.targetROAS ? Number(metrics.targetROAS) : undefined,
     };
 
     await onSubmit(data);
   };
+
+  const setMetric = (key: string, value: string) => {
+    setMetrics((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Contextual labels based on plan type
+  const channelLabel = planType === 'DESIGN' ? 'Kênh thiết kế' : planType === 'CONTENT' ? 'Kênh nội dung' : 'Kênh media';
+  const typeLabel = planType === 'DESIGN' ? 'Loại sản phẩm' : planType === 'CONTENT' ? 'Loại nội dung' : 'Loại chiến dịch';
+  const objectiveLabel = planType === 'DESIGN' ? 'Mục tiêu thiết kế' : planType === 'CONTENT' ? 'Mục tiêu nội dung' : 'Mục tiêu';
+  const dialogTitle = isEditing
+    ? `Chỉnh sửa ${planType === 'DESIGN' ? 'sản phẩm' : planType === 'CONTENT' ? 'nội dung' : 'kênh'}`
+    : `Thêm ${planType === 'DESIGN' ? 'sản phẩm thiết kế' : planType === 'CONTENT' ? 'nội dung' : 'kênh media'}`;
+  const submitLabel = isEditing ? 'Lưu thay đổi' : `Thêm ${planType === 'DESIGN' ? 'sản phẩm' : planType === 'CONTENT' ? 'nội dung' : 'kênh'}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-headline font-semibold">
-            {isEditing ? 'Chỉnh sửa kênh' : 'Thêm kênh media'}
+            {dialogTitle}
           </DialogTitle>
         </DialogHeader>
 
@@ -152,14 +154,14 @@ export function MediaPlanItemForm({
           {/* Channel */}
           <div className="space-y-2">
             <Label className="text-footnote font-medium">
-              Kênh <span className="text-[#ff3b30]">*</span>
+              {channelLabel} <span className="text-[#ff3b30]">*</span>
             </Label>
             <Select value={channel} onValueChange={setChannel}>
               <SelectTrigger className="h-11 rounded-xl bg-surface border-0">
-                <SelectValue placeholder="Chọn kênh media" />
+                <SelectValue placeholder={`Chọn ${channelLabel.toLowerCase()}`} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                {MEDIA_CHANNELS.map((c) => (
+                {MEDIA_CHANNELS_BY_TYPE[planType].map((c) => (
                   <SelectItem key={c.value} value={c.value} className="rounded-lg">
                     {c.label}
                   </SelectItem>
@@ -174,14 +176,14 @@ export function MediaPlanItemForm({
           {/* Campaign Type */}
           <div className="space-y-2">
             <Label className="text-footnote font-medium">
-              Loại chiến dịch <span className="text-[#ff3b30]">*</span>
+              {typeLabel} <span className="text-[#ff3b30]">*</span>
             </Label>
             <Select value={campaignType} onValueChange={setCampaignType}>
               <SelectTrigger className="h-11 rounded-xl bg-surface border-0">
-                <SelectValue placeholder="Chọn loại chiến dịch" />
+                <SelectValue placeholder={`Chọn ${typeLabel.toLowerCase()}`} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                {CAMPAIGN_TYPES.map((c) => (
+                {CAMPAIGN_TYPES_BY_TYPE[planType].map((c) => (
                   <SelectItem key={c.value} value={c.value} className="rounded-lg">
                     {c.label}
                   </SelectItem>
@@ -196,14 +198,14 @@ export function MediaPlanItemForm({
           {/* Objective */}
           <div className="space-y-2">
             <Label className="text-footnote font-medium">
-              Mục tiêu <span className="text-[#ff3b30]">*</span>
+              {objectiveLabel} <span className="text-[#ff3b30]">*</span>
             </Label>
             <Select value={objective} onValueChange={setObjective}>
               <SelectTrigger className="h-11 rounded-xl bg-surface border-0">
-                <SelectValue placeholder="Chọn mục tiêu" />
+                <SelectValue placeholder={`Chọn ${objectiveLabel.toLowerCase()}`} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                {CAMPAIGN_OBJECTIVES.map((c) => (
+                {CAMPAIGN_OBJECTIVES_BY_TYPE[planType].map((c) => (
                   <SelectItem key={c.value} value={c.value} className="rounded-lg">
                     {c.label}
                   </SelectItem>
@@ -265,91 +267,28 @@ export function MediaPlanItemForm({
             </div>
           </div>
 
-          {/* Target Metrics */}
+          {/* Dynamic Target Metrics - changes per plan type */}
           <div className="space-y-3">
             <Label className="text-footnote font-medium text-muted-foreground">
               Chỉ tiêu mục tiêu (tùy chọn)
             </Label>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target Reach
-                </Label>
-                <Input
-                  type="number"
-                  value={targetReach}
-                  onChange={(e) => setTargetReach(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target Clicks
-                </Label>
-                <Input
-                  type="number"
-                  value={targetClicks}
-                  onChange={(e) => setTargetClicks(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target Leads
-                </Label>
-                <Input
-                  type="number"
-                  value={targetLeads}
-                  onChange={(e) => setTargetLeads(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target CPL (VND)
-                </Label>
-                <Input
-                  type="number"
-                  value={targetCPL}
-                  onChange={(e) => setTargetCPL(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target CPC (VND)
-                </Label>
-                <Input
-                  type="number"
-                  value={targetCPC}
-                  onChange={(e) => setTargetCPC(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-caption text-muted-foreground">
-                  Target ROAS
-                </Label>
-                <Input
-                  type="number"
-                  value={targetROAS}
-                  onChange={(e) => setTargetROAS(e.target.value)}
-                  placeholder="0"
-                  min={0}
-                  step="0.1"
-                  className="h-10 rounded-xl bg-surface border-0 text-footnote"
-                />
-              </div>
+              {metricFields.map((field) => (
+                <div key={field.key} className="space-y-1.5">
+                  <Label className="text-caption text-muted-foreground">
+                    {field.label}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={metrics[field.key] ?? ''}
+                    onChange={(e) => setMetric(field.key, e.target.value)}
+                    placeholder={field.placeholder ?? '0'}
+                    min={0}
+                    step={field.step}
+                    className="h-10 rounded-xl bg-surface border-0 text-footnote"
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -370,7 +309,7 @@ export function MediaPlanItemForm({
             >
               {isSubmitting
                 ? isEditing ? 'Đang lưu...' : 'Đang thêm...'
-                : isEditing ? 'Lưu thay đổi' : 'Thêm kênh'}
+                : submitLabel}
             </Button>
           </div>
         </form>

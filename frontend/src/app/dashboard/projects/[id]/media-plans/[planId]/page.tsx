@@ -25,8 +25,11 @@ import {
 } from '@/hooks/use-media-plans';
 import {
   type MediaPlanStatus,
+  type MediaPlanType,
   MediaPlanStatusLabels,
   MediaPlanStatusColors,
+  MediaPlanTypeLabels,
+  MediaPlanTypeColors,
   formatVND,
   formatVNDCompact,
   MONTHS,
@@ -153,6 +156,14 @@ export default function MediaPlanDetailPage() {
               <h1 className="text-headline font-semibold tracking-tight">
                 {plan.name}
               </h1>
+              <span
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10px] font-medium',
+                  MediaPlanTypeColors[plan.type as MediaPlanType] ?? MediaPlanTypeColors.ADS,
+                )}
+              >
+                {MediaPlanTypeLabels[plan.type as MediaPlanType] ?? plan.type}
+              </span>
               <span
                 className={cn(
                   'px-2.5 py-0.5 rounded-full text-caption font-medium',
@@ -337,6 +348,7 @@ export default function MediaPlanDetailPage() {
       <MediaPlanItemsTable
         items={plan.items}
         totalBudget={plan.totalBudget}
+        planType={(plan.type as MediaPlanType) ?? 'ADS'}
         isEditable={isEditable}
         onAddItem={async (input) => {
           await addItemMutation.mutateAsync({ projectId, planId, input });

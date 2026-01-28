@@ -46,6 +46,7 @@ export class MediaPlanService {
     const { data, total } = await this.repository.findAll({
       projectId,
       status: query.status,
+      type: query.type,
       month: query.month,
       year: query.year,
       search: query.search,
@@ -90,6 +91,7 @@ export class MediaPlanService {
     const plan = await this.repository.create({
       projectId,
       name: dto.name,
+      type: dto.type,
       month: dto.month,
       year: dto.year,
       totalBudget: dto.totalBudget,
@@ -370,6 +372,7 @@ export class MediaPlanService {
       id: plan.id,
       projectId: plan.projectId,
       name: plan.name,
+      type: plan.type,
       month: plan.month,
       year: plan.year,
       version: plan.version,

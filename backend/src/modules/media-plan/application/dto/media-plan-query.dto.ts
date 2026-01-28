@@ -1,11 +1,15 @@
 import { IsString, IsOptional, IsInt, IsEnum, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { MediaPlanStatus } from '@prisma/client';
+import { MediaPlanStatus, MediaPlanType } from '@prisma/client';
 
 export class MediaPlanListQueryDto {
   @IsOptional()
   @IsEnum(MediaPlanStatus)
   status?: MediaPlanStatus;
+
+  @IsOptional()
+  @IsEnum(MediaPlanType)
+  type?: MediaPlanType;
 
   @IsOptional()
   @Type(() => Number)
