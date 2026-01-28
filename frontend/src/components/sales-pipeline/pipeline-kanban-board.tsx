@@ -25,13 +25,13 @@ import { PipelineStage, PipelineStageLabels, type SalesPipeline } from '@/types'
 import { PipelineCard, PipelineCardSkeleton } from './pipeline-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const STAGE_COLORS: Record<string, string> = {
-  LEAD: '#8e8e93',
-  QUALIFIED: '#007aff',
-  EVALUATION: '#ff9f0a',
-  NEGOTIATION: '#af52de',
-  WON: '#34c759',
-  LOST: '#ff3b30',
+const STAGE_COLORS: Record<string, { accent: string; bg: string; text: string }> = {
+  LEAD: { accent: 'bg-slate-400', bg: 'bg-slate-400/8', text: 'text-slate-500' },
+  QUALIFIED: { accent: 'bg-blue-500', bg: 'bg-blue-500/8', text: 'text-blue-600' },
+  EVALUATION: { accent: 'bg-amber-500', bg: 'bg-amber-500/8', text: 'text-amber-600' },
+  NEGOTIATION: { accent: 'bg-violet-500', bg: 'bg-violet-500/8', text: 'text-violet-600' },
+  WON: { accent: 'bg-emerald-500', bg: 'bg-emerald-500/8', text: 'text-emerald-600' },
+  LOST: { accent: 'bg-rose-500', bg: 'bg-rose-500/8', text: 'text-rose-600' },
 };
 
 const STAGE_ORDER: PipelineStage[] = [
@@ -42,6 +42,13 @@ const STAGE_ORDER: PipelineStage[] = [
   PipelineStage.WON,
   PipelineStage.LOST,
 ];
+
+function formatColumnValue(value: number): string {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+  return value.toLocaleString('vi-VN');
+}
 
 interface PipelineKanbanBoardProps {
   pipelines: SalesPipeline[];
@@ -63,14 +70,18 @@ export function PipelineKanbanBoard({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Group pipelines by stage
   const columns = React.useMemo(() => {
-    return STAGE_ORDER.map((stage) => ({
-      stage,
-      label: PipelineStageLabels[stage],
-      color: STAGE_COLORS[stage],
-      items: pipelines.filter((p) => p.status === stage),
-    }));
+    return STAGE_ORDER.map((stage) => {
+      const items = pipelines.filter((p) => p.status === stage);
+      const totalValue = items.reduce((sum, p) => sum + (p.totalBudget ?? 0), 0);
+      return {
+        stage,
+        label: PipelineStageLabels[stage],
+        colors: STAGE_COLORS[stage],
+        items,
+        totalValue,
+      };
+    });
   }, [pipelines]);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -86,12 +97,10 @@ export function PipelineKanbanBoard({
     }
 
     const overId = over.id as string;
-    // Dropped on column
     const targetColumn = STAGE_ORDER.find((s) => s === overId);
     if (targetColumn) {
       onStageChange?.(active.id as string, targetColumn);
     } else {
-      // Dropped on a card → find its column
       for (const col of columns) {
         if (col.items.some((p) => p.id === overId)) {
           onStageChange?.(active.id as string, col.stage);
@@ -104,9 +113,9 @@ export function PipelineKanbanBoard({
 
   if (isLoading) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-3 overflow-x-auto pb-4">
         {STAGE_ORDER.map((stage) => (
-          <PipelineColumnSkeleton key={stage} />
+          <PipelineColumnSkeleton key={stage} stage={stage} />
         ))}
       </div>
     );
@@ -119,14 +128,15 @@ export function PipelineKanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-300px)]">
+      <div className="flex gap-3 overflow-x-auto pb-4 min-h-[calc(100vh-300px)]">
         {columns.map((col) => (
           <PipelineColumn
             key={col.stage}
             stage={col.stage}
             label={col.label}
-            color={col.color}
+            colors={col.colors}
             items={col.items}
+            totalValue={col.totalValue}
             onPipelineClick={onPipelineClick}
           />
         ))}
@@ -136,7 +146,7 @@ export function PipelineKanbanBoard({
         dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)' }}
       >
         {activePipeline ? (
-          <div className="rotate-2 scale-105">
+          <div className="rotate-2 scale-105 opacity-95">
             <PipelineCard pipeline={activePipeline} isDragging />
           </div>
         ) : null}
@@ -148,12 +158,13 @@ export function PipelineKanbanBoard({
 interface PipelineColumnProps {
   stage: PipelineStage;
   label: string;
-  color: string;
+  colors: { accent: string; bg: string; text: string };
   items: SalesPipeline[];
+  totalValue: number;
   onPipelineClick?: (pipeline: SalesPipeline) => void;
 }
 
-function PipelineColumn({ stage, label, color, items, onPipelineClick }: PipelineColumnProps) {
+function PipelineColumn({ stage, label, colors, items, totalValue, onPipelineClick }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useSortable({
     id: stage,
     data: { type: 'column', stage },
@@ -163,27 +174,45 @@ function PipelineColumn({ stage, label, color, items, onPipelineClick }: Pipelin
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col w-[280px] min-w-[280px]',
-        'rounded-2xl bg-secondary/30',
+        'flex flex-col w-[290px] min-w-[290px]',
+        'rounded-xl bg-muted/30',
         'transition-all duration-200 ease-out',
-        isOver && 'ring-2 ring-dashed ring-primary/50 bg-primary/5'
+        isOver && 'ring-2 ring-primary/40 bg-primary/5 scale-[1.01]'
       )}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-          <h3 className="text-[15px] font-semibold text-foreground">{label}</h3>
-          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[12px] font-medium rounded-full bg-secondary text-muted-foreground">
+      <div className="px-3.5 pt-3.5 pb-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
+            <div className={cn('h-2 w-2 rounded-full', colors.accent)} />
+            <h3 className="text-[13px] font-bold text-foreground tracking-tight">{label}</h3>
+          </div>
+          <span className={cn(
+            'inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5',
+            'text-[11px] font-bold rounded-md',
+            colors.bg, colors.text
+          )}>
             {items.length}
           </span>
         </div>
+
+        {/* Column Value Summary */}
+        {totalValue > 0 && (
+          <p className="text-[11px] tabular-nums text-muted-foreground font-medium pl-4">
+            {formatColumnValue(totalValue)} VND
+          </p>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="mx-3.5 mb-2">
+        <div className={cn('h-0.5 rounded-full', colors.accent, 'opacity-30')} />
       </div>
 
       {/* Items */}
       <ScrollArea className="flex-1 px-2">
         <SortableContext items={items.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2 pb-4">
+          <div className="space-y-2 pb-3">
             {items.map((pipeline) => (
               <SortablePipelineCard
                 key={pipeline.id}
@@ -192,8 +221,9 @@ function PipelineColumn({ stage, label, color, items, onPipelineClick }: Pipelin
               />
             ))}
             {items.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-border/50 text-muted-foreground text-[13px]">
-                <p>No pipelines</p>
+              <div className="flex flex-col items-center justify-center h-28 mx-1 rounded-xl border-2 border-dashed border-border/40 text-muted-foreground/60">
+                <div className={cn('h-6 w-6 rounded-full mb-2 opacity-30', colors.accent)} />
+                <p className="text-[12px] font-medium">Trống</p>
               </div>
             )}
           </div>
@@ -225,24 +255,31 @@ function SortablePipelineCard({ pipeline, onClick }: SortablePipelineCardProps) 
       style={style}
       {...attributes}
       {...listeners}
-      className={cn('touch-manipulation', isDragging && 'opacity-40')}
+      className={cn('touch-manipulation', isDragging && 'opacity-30')}
     >
       <PipelineCard pipeline={pipeline} onClick={onClick} isDragging={isDragging} />
     </div>
   );
 }
 
-function PipelineColumnSkeleton() {
+function PipelineColumnSkeleton({ stage }: { stage: string }) {
+  const colors = STAGE_COLORS[stage] || STAGE_COLORS.LEAD;
   return (
-    <div className="flex flex-col w-[280px] min-w-[280px] rounded-2xl bg-secondary/30">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-secondary animate-pulse" />
-          <div className="h-4 w-20 bg-secondary rounded animate-pulse" />
-          <div className="h-5 w-6 bg-secondary rounded-full animate-pulse" />
+    <div className="flex flex-col w-[290px] min-w-[290px] rounded-xl bg-muted/30">
+      <div className="px-3.5 pt-3.5 pb-2.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
+            <div className={cn('h-2 w-2 rounded-full', colors.accent)} />
+            <div className="h-4 w-20 bg-muted rounded-md animate-pulse" />
+          </div>
+          <div className="h-[22px] w-[22px] bg-muted rounded-md animate-pulse" />
         </div>
+        <div className="h-3 w-16 bg-muted rounded-md animate-pulse ml-4" />
       </div>
-      <div className="px-2 space-y-2 pb-4">
+      <div className="mx-3.5 mb-2">
+        <div className={cn('h-0.5 rounded-full opacity-30', colors.accent)} />
+      </div>
+      <div className="px-2 space-y-2 pb-3">
         <PipelineCardSkeleton />
         <PipelineCardSkeleton />
       </div>

@@ -2,11 +2,13 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
+import { CheckCircle2 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import type { FieldConfig } from './brief-section-config';
 import type { BriefSection } from '@/lib/api/strategic-brief';
 
@@ -25,7 +27,6 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>('');
 
-  // Debounced auto-save
   const debouncedSave = useCallback(
     (values: Record<string, unknown>) => {
       const serialized = JSON.stringify(values);
@@ -40,7 +41,6 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
     [onSave],
   );
 
-  // Watch all fields for auto-save
   useEffect(() => {
     if (readOnly) return;
     const subscription = form.watch((values) => {
@@ -61,7 +61,7 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
       <div className="space-y-4">
         {fields.map((field) => (
           <div key={field.name}>
-            <Label htmlFor={field.name}>
+            <Label htmlFor={field.name} className="text-[13px]">
               {field.label}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
@@ -72,7 +72,7 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
                 disabled={readOnly}
                 placeholder={field.placeholder}
                 rows={4}
-                className="mt-1.5"
+                className="mt-1.5 resize-none"
               />
             ) : field.type === 'number' ? (
               <Input
@@ -98,12 +98,23 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
       </div>
 
       {/* Completion toggle */}
-      <div className="flex items-center justify-between rounded-xl border border-border/50 p-4">
-        <div>
-          <p className="text-sm font-medium text-foreground">Đánh dấu hoàn thành</p>
-          <p className="text-[12px] text-muted-foreground">
-            Đánh dấu section này là đã hoàn thành
-          </p>
+      <div className={cn(
+        'flex items-center justify-between rounded-lg border p-4 transition-colors',
+        section.isComplete
+          ? 'border-emerald-500/30 bg-emerald-500/5'
+          : 'border-border/40 bg-muted/20'
+      )}>
+        <div className="flex items-center gap-2.5">
+          <CheckCircle2 className={cn(
+            'h-5 w-5',
+            section.isComplete ? 'text-emerald-500' : 'text-muted-foreground/40'
+          )} />
+          <div>
+            <p className="text-[13px] font-semibold text-foreground">Đánh dấu hoàn thành</p>
+            <p className="text-[11px] text-muted-foreground">
+              {section.isComplete ? 'Section đã hoàn thành' : 'Đánh dấu section này là đã hoàn thành'}
+            </p>
+          </div>
         </div>
         <Switch
           checked={section.isComplete}

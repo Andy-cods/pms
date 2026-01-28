@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Calculator, UserCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,37 +67,35 @@ export function PipelinePmForm({ pipeline, readOnly = false }: PipelinePmFormPro
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
       {/* Cost Structure */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Chi phí nội bộ (COGS)</h3>
+      <FormSection icon={<Calculator className="h-3.5 w-3.5" />} title="Chi phí nội bộ (COGS)">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <Label htmlFor="costNSQC">Chi phí NSQC</Label>
-            <Input id="costNSQC" type="number" {...form.register('costNSQC')} disabled={readOnly} />
+            <Input id="costNSQC" type="number" {...form.register('costNSQC')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="costDesign">Chi phí Design</Label>
-            <Input id="costDesign" type="number" {...form.register('costDesign')} disabled={readOnly} />
+            <Input id="costDesign" type="number" {...form.register('costDesign')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="costMedia">Chi phí Media</Label>
-            <Input id="costMedia" type="number" {...form.register('costMedia')} disabled={readOnly} />
+            <Input id="costMedia" type="number" {...form.register('costMedia')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="costKOL">Chi phí KOL</Label>
-            <Input id="costKOL" type="number" {...form.register('costKOL')} disabled={readOnly} />
+            <Input id="costKOL" type="number" {...form.register('costKOL')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="costOther">Chi phí khác</Label>
-            <Input id="costOther" type="number" {...form.register('costOther')} disabled={readOnly} />
+            <Input id="costOther" type="number" {...form.register('costOther')} disabled={readOnly} className="mt-1.5" />
           </div>
         </div>
-      </div>
+      </FormSection>
 
       {/* Evaluation */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Đánh giá khách hàng</h3>
+      <FormSection icon={<UserCheck className="h-3.5 w-3.5" />} title="Đánh giá khách hàng">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="clientTier">Client Tier</Label>
@@ -105,7 +104,7 @@ export function PipelinePmForm({ pipeline, readOnly = false }: PipelinePmFormPro
               onValueChange={(val) => form.setValue('clientTier', val as 'A' | 'B' | 'C' | 'D')}
               disabled={readOnly}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1.5">
                 <SelectValue placeholder="Chọn tier" />
               </SelectTrigger>
               <SelectContent>
@@ -118,42 +117,58 @@ export function PipelinePmForm({ pipeline, readOnly = false }: PipelinePmFormPro
           </div>
           <div>
             <Label htmlFor="averageScore">Điểm trung bình (0-10)</Label>
-            <Input id="averageScore" type="number" step="0.1" min="0" max="10" {...form.register('averageScore')} disabled={readOnly} />
+            <Input id="averageScore" type="number" step="0.1" min="0" max="10" {...form.register('averageScore')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="marketSize">Quy mô thị trường</Label>
-            <Input id="marketSize" {...form.register('marketSize')} disabled={readOnly} />
+            <Input id="marketSize" {...form.register('marketSize')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="competitionLevel">Mức độ cạnh tranh</Label>
-            <Input id="competitionLevel" {...form.register('competitionLevel')} disabled={readOnly} />
+            <Input id="competitionLevel" {...form.register('competitionLevel')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div className="col-span-2">
             <Label htmlFor="productUSP">USP sản phẩm</Label>
-            <Textarea id="productUSP" {...form.register('productUSP')} disabled={readOnly} rows={2} />
+            <Textarea id="productUSP" {...form.register('productUSP')} disabled={readOnly} rows={2} className="mt-1.5 resize-none" />
           </div>
           <div>
             <Label htmlFor="audienceSize">Quy mô đối tượng</Label>
-            <Input id="audienceSize" {...form.register('audienceSize')} disabled={readOnly} />
+            <Input id="audienceSize" {...form.register('audienceSize')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="productLifecycle">Vòng đời sản phẩm</Label>
-            <Input id="productLifecycle" {...form.register('productLifecycle')} disabled={readOnly} />
+            <Input id="productLifecycle" {...form.register('productLifecycle')} disabled={readOnly} className="mt-1.5" />
           </div>
           <div>
             <Label htmlFor="scalePotential">Tiềm năng mở rộng</Label>
-            <Input id="scalePotential" {...form.register('scalePotential')} disabled={readOnly} />
+            <Input id="scalePotential" {...form.register('scalePotential')} disabled={readOnly} className="mt-1.5" />
           </div>
         </div>
-      </div>
+      </FormSection>
 
       {!readOnly && (
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <Button type="submit" disabled={evaluate.isPending}>
             {evaluate.isPending ? 'Đang lưu...' : 'Lưu đánh giá'}
           </Button>
         </div>
       )}
     </form>
+  );
+}
+
+function FormSection({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border/30 bg-muted/20">
+        <div className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/10 text-primary">
+          {icon}
+        </div>
+        <h3 className="text-[13px] font-bold text-foreground">{title}</h3>
+      </div>
+      <div className="px-5 py-4">
+        {children}
+      </div>
+    </div>
   );
 }

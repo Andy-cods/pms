@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X } from 'lucide-react';
+import { Check, X, Shield, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -59,126 +59,147 @@ export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) 
     }
   };
 
-  // Already decided - show result
+  // Already decided
   if (!isPending) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Quyết định</h3>
-        <div
-          className={cn(
-            'rounded-xl border p-4',
-            isAccepted
-              ? 'border-[#34c759]/30 bg-[#34c759]/5'
-              : 'border-[#ff3b30]/30 bg-[#ff3b30]/5'
-          )}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            {isAccepted ? (
-              <Check className="h-5 w-5 text-[#34c759]" />
-            ) : (
-              <X className="h-5 w-5 text-[#ff3b30]" />
-            )}
-            <span
-              className={cn(
-                'text-sm font-semibold',
-                isAccepted ? 'text-[#34c759]' : 'text-[#ff3b30]'
-              )}
-            >
-              {isAccepted ? 'Đã chấp nhận' : 'Đã từ chối'}
-            </span>
+      <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+        <div className="px-5 pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h3 className="text-[14px] font-bold text-foreground">Quyết định</h3>
           </div>
-          {pipeline.decisionDate && (
-            <p className="text-[12px] text-muted-foreground">
-              Ngày: {new Date(pipeline.decisionDate).toLocaleDateString('vi-VN')}
-            </p>
-          )}
-          {pipeline.decisionNote && (
-            <p className="text-[13px] text-foreground mt-2">{pipeline.decisionNote}</p>
-          )}
-          {isAccepted && pipeline.project && (
-            <Link
-              href={`/dashboard/projects/${pipeline.project.id}`}
-              className="inline-flex items-center gap-1 mt-3 text-[13px] font-medium text-primary hover:underline"
-            >
-              Xem dự án: {pipeline.project.code} - {pipeline.project.name}
-            </Link>
-          )}
+
+          <div className={cn(
+            'rounded-lg border p-4',
+            isAccepted ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'
+          )}>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className={cn(
+                'flex items-center justify-center h-8 w-8 rounded-full',
+                isAccepted ? 'bg-emerald-500/15' : 'bg-rose-500/15'
+              )}>
+                {isAccepted ? (
+                  <Check className="h-4 w-4 text-emerald-600" />
+                ) : (
+                  <X className="h-4 w-4 text-rose-600" />
+                )}
+              </div>
+              <div>
+                <span className={cn(
+                  'text-[14px] font-bold',
+                  isAccepted ? 'text-emerald-600' : 'text-rose-600'
+                )}>
+                  {isAccepted ? 'Đã chấp nhận' : 'Đã từ chối'}
+                </span>
+                {pipeline.decisionDate && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {new Date(pipeline.decisionDate).toLocaleDateString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+            {pipeline.decisionNote && (
+              <p className="text-[13px] text-foreground/80 mt-2 pl-10">{pipeline.decisionNote}</p>
+            )}
+            {isAccepted && pipeline.project && (
+              <Link
+                href={`/dashboard/projects/${pipeline.project.id}`}
+                className="inline-flex items-center gap-1.5 mt-3 ml-10 text-[13px] font-semibold text-primary hover:underline"
+              >
+                Xem dự án: {pipeline.project.code} - {pipeline.project.name}
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // Pending - show action buttons
+  // Pending
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-foreground">Quyết định</h3>
-      <p className="text-[13px] text-muted-foreground">
-        Xem xét thông tin pipeline và đưa ra quyết định chấp nhận hoặc từ chối.
-      </p>
+    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+      <div className="px-5 pt-5 pb-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
+            <Shield className="h-3.5 w-3.5 text-primary" />
+          </div>
+          <h3 className="text-[14px] font-bold text-foreground">Quyết định</h3>
+        </div>
 
-      <div className="flex gap-3">
-        {/* Accept */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="bg-[#34c759] hover:bg-[#2db950] text-white" disabled={decide.isPending}>
-              <Check className="h-4 w-4 mr-2" />
-              Chấp nhận
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Chấp nhận Pipeline?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Pipeline sẽ được chuyển thành dự án. Thông tin tài chính sẽ được sao chép sang
-                ngân sách dự án. Hành động này không thể hoàn tác.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleAccept}
-                className="bg-[#34c759] hover:bg-[#2db950]"
-              >
-                Xác nhận chấp nhận
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <p className="text-[13px] text-muted-foreground mb-5">
+          Xem xét thông tin pipeline và đưa ra quyết định chấp nhận hoặc từ chối.
+        </p>
 
-        {/* Decline */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" className="text-[#ff3b30] border-[#ff3b30]/30 hover:bg-[#ff3b30]/5" disabled={decide.isPending}>
-              <X className="h-4 w-4 mr-2" />
-              Từ chối
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Từ chối Pipeline?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Pipeline sẽ được đánh dấu là từ chối. Hành động này không thể hoàn tác.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-2">
-              <Textarea
-                placeholder="Lý do từ chối (tùy chọn)..."
-                value={declineNote}
-                onChange={(e) => setDeclineNote(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Hủy</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDecline}
-                className="bg-[#ff3b30] hover:bg-[#e8352b]"
-              >
-                Xác nhận từ chối
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" disabled={decide.isPending}>
+                <Check className="h-4 w-4" />
+                Chấp nhận
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Chấp nhận Pipeline?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Pipeline sẽ được chuyển thành dự án. Thông tin tài chính sẽ được sao chép sang
+                  ngân sách dự án. Hành động này không thể hoàn tác.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleAccept}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Xác nhận chấp nhận
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="text-rose-600 border-rose-500/30 hover:bg-rose-500/5 gap-1.5" disabled={decide.isPending}>
+                <X className="h-4 w-4" />
+                Từ chối
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Từ chối Pipeline?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Pipeline sẽ được đánh dấu là từ chối. Hành động này không thể hoàn tác.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="py-2">
+                <Textarea
+                  placeholder="Lý do từ chối (tùy chọn)..."
+                  value={declineNote}
+                  onChange={(e) => setDeclineNote(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDecline}
+                  className="bg-rose-600 hover:bg-rose-700"
+                >
+                  Xác nhận từ chối
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );

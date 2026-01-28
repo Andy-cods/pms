@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { ChevronLeft, ChevronRight, Send, Check, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Send, Check, RotateCcw, BookOpen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,10 +37,10 @@ interface BriefWizardProps {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Bản nháp', color: 'bg-secondary text-muted-foreground' },
-  SUBMITTED: { label: 'Đã gửi duyệt', color: 'bg-[#007aff]/10 text-[#007aff]' },
-  APPROVED: { label: 'Đã duyệt', color: 'bg-[#34c759]/10 text-[#34c759]' },
-  REVISION_REQUESTED: { label: 'Yêu cầu sửa', color: 'bg-[#ff9f0a]/10 text-[#ff9f0a]' },
+  DRAFT: { label: 'Bản nháp', color: 'bg-muted text-muted-foreground' },
+  SUBMITTED: { label: 'Đã gửi duyệt', color: 'bg-blue-500/10 text-blue-600' },
+  APPROVED: { label: 'Đã duyệt', color: 'bg-emerald-500/10 text-emerald-600' },
+  REVISION_REQUESTED: { label: 'Yêu cầu sửa', color: 'bg-amber-500/10 text-amber-600' },
 };
 
 export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardProps) {
@@ -78,22 +78,25 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
   const statusInfo = STATUS_LABELS[brief.status] ?? STATUS_LABELS.DRAFT;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Strategic Brief</h1>
-          {brief.pipeline && (
-            <p className="text-[13px] text-muted-foreground mt-0.5">
-              {brief.pipeline.projectName}
-            </p>
-          )}
-        </div>
         <div className="flex items-center gap-3">
-          <span className={cn('px-3 py-1 rounded-full text-[12px] font-medium', statusInfo.color)}>
-            {statusInfo.label}
-          </span>
+          <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10">
+            <BookOpen className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">Strategic Brief</h1>
+            {brief.pipeline && (
+              <p className="text-[12px] text-muted-foreground">
+                {brief.pipeline.projectName}
+              </p>
+            )}
+          </div>
         </div>
+        <span className={cn('px-3 py-1 rounded-lg text-[11px] font-bold', statusInfo.color)}>
+          {statusInfo.label}
+        </span>
       </div>
 
       {/* Main Layout */}
@@ -109,56 +112,63 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
         {/* Content */}
         <div className="flex-1 min-w-0">
           {currentSection && currentConfig ? (
-            <div className="space-y-6">
-              {/* Section Title */}
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{currentSection.title}</h2>
-                <p className="text-[12px] text-muted-foreground">
-                  Section {currentStep} / {totalSteps}
-                </p>
+            <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+              {/* Section Header */}
+              <div className="px-6 py-4 border-b border-border/30 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[16px] font-bold text-foreground">{currentSection.title}</h2>
+                  <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+                    {currentStep} / {totalSteps}
+                  </span>
+                </div>
               </div>
 
               {/* Section Content */}
-              <BriefSectionRenderer
-                section={currentSection}
-                config={currentConfig}
-                onSave={handleSave}
-                readOnly={isReadOnly}
-              />
+              <div className="p-6">
+                <BriefSectionRenderer
+                  section={currentSection}
+                  config={currentConfig}
+                  onSave={handleSave}
+                  readOnly={isReadOnly}
+                />
+              </div>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between pt-4 border-t border-border/50">
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border/30 bg-muted/10">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => onStepChange(currentStep - 1)}
                   disabled={currentStep <= 1}
+                  className="gap-1"
                 >
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Trước
+                  <ChevronLeft className="h-4 w-4" /> Trước
                 </Button>
                 <Button
+                  size="sm"
                   onClick={() => onStepChange(currentStep + 1)}
                   disabled={currentStep >= totalSteps}
+                  className="gap-1"
                 >
-                  Tiếp <ChevronRight className="h-4 w-4 ml-1" />
+                  Tiếp <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Chọn một section từ sidebar
+            <div className="flex items-center justify-center h-64 text-muted-foreground rounded-xl border border-border/40 bg-card">
+              <p className="text-[13px]">Chọn một section từ sidebar</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Action Bar */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
-        {/* Submit */}
+      <div className="flex items-center justify-end gap-3 pt-2">
         {canSubmit && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button>
-                <Send className="h-4 w-4 mr-2" /> Gửi duyệt
+              <Button className="gap-1.5">
+                <Send className="h-4 w-4" /> Gửi duyệt
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -178,13 +188,12 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
           </AlertDialog>
         )}
 
-        {/* Approve */}
         {canApprove && (
           <>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="bg-[#34c759] hover:bg-[#2db950] text-white">
-                  <Check className="h-4 w-4 mr-2" /> Duyệt
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                  <Check className="h-4 w-4" /> Duyệt
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -197,7 +206,7 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
                 <AlertDialogFooter>
                   <AlertDialogCancel>Hủy</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-[#34c759] hover:bg-[#2db950]"
+                    className="bg-emerald-600 hover:bg-emerald-700"
                     onClick={() => approveBrief.mutate(brief.id)}
                   >
                     Xác nhận duyệt
@@ -208,8 +217,8 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-[#ff9f0a] border-[#ff9f0a]/30">
-                  <RotateCcw className="h-4 w-4 mr-2" /> Yêu cầu sửa
+                <Button variant="outline" className="text-amber-600 border-amber-500/30 hover:bg-amber-500/5 gap-1.5">
+                  <RotateCcw className="h-4 w-4" /> Yêu cầu sửa
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -225,6 +234,7 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
                     value={revisionComment}
                     onChange={(e) => setRevisionComment(e.target.value)}
                     rows={3}
+                    className="resize-none"
                   />
                 </div>
                 <AlertDialogFooter>
