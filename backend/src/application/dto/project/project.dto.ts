@@ -4,37 +4,22 @@ import {
   IsEnum,
   IsDateString,
   IsInt,
+  IsNumber,
+  IsArray,
   Min,
   Max,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { sanitizeInput, sanitizeRichText } from '@shared/utils/sanitize.util';
+import {
+  ProjectLifecycle,
+  HealthStatus,
+  PipelineDecision,
+  ClientTier,
+} from '@prisma/client';
 
-// Enums matching Prisma schema
-export enum ProjectStatus {
-  STABLE = 'STABLE',
-  WARNING = 'WARNING',
-  CRITICAL = 'CRITICAL',
-}
-
-export enum ProjectStage {
-  INTAKE = 'INTAKE',
-  DISCOVERY = 'DISCOVERY',
-  PLANNING = 'PLANNING',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-  PROPOSAL_PITCH = 'PROPOSAL_PITCH',
-  ONGOING = 'ONGOING',
-  OPTIMIZATION = 'OPTIMIZATION',
-  COMPLETED = 'COMPLETED',
-  CLOSED = 'CLOSED',
-}
-
-// Create Project DTO
+// ─── Create Project DTO (NVKD creates a deal → lifecycle=LEAD) ───
 export class CreateProjectDto {
-  @IsOptional()
-  @IsString()
-  code?: string;
-
   @Transform(({ value }) => sanitizeInput(value))
   @IsString()
   name!: string;
@@ -46,42 +31,76 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsString()
+  clientType?: string;
+
+  @IsOptional()
+  @IsString()
   productType?: string;
 
   @IsOptional()
-  @IsEnum(ProjectStatus)
-  status?: ProjectStatus;
+  @IsString()
+  licenseLink?: string;
 
   @IsOptional()
-  @IsEnum(ProjectStage)
-  stage?: ProjectStage;
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  campaignObjective?: string;
 
   @IsOptional()
-  @IsDateString()
-  startDate?: string;
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  initialGoal?: string;
 
   @IsOptional()
-  @IsDateString()
-  endDate?: string;
+  @Type(() => Number)
+  @IsNumber()
+  totalBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  monthlyBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  fixedAdFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  adServiceFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  contentFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  designFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  mediaFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  otherFee?: number;
+
+  @IsOptional()
+  @IsString()
+  upsellOpportunity?: string;
 
   @IsOptional()
   @IsString()
   clientId?: string;
-
-  @IsOptional()
-  @IsString()
-  driveLink?: string;
-
-  @IsOptional()
-  @IsString()
-  planLink?: string;
-
-  @IsOptional()
-  @IsString()
-  trackingLink?: string;
 }
 
-// Update Project DTO
+// ─── Update Project (general fields) ───
 export class UpdateProjectDto {
   @IsOptional()
   @Transform(({ value }) => (value ? sanitizeInput(value) : value))
@@ -98,12 +117,8 @@ export class UpdateProjectDto {
   productType?: string;
 
   @IsOptional()
-  @IsEnum(ProjectStatus)
-  status?: ProjectStatus;
-
-  @IsOptional()
-  @IsEnum(ProjectStage)
-  stage?: ProjectStage;
+  @IsEnum(HealthStatus)
+  healthStatus?: HealthStatus;
 
   @IsOptional()
   @IsInt()
@@ -141,19 +156,195 @@ export class UpdateProjectDto {
   stageChangeReason?: string;
 }
 
-// Query params for listing projects
-export class ProjectListQueryDto {
+// ─── Update Sale Fields (NVKD) ───
+export class UpdateProjectSaleDto {
   @IsOptional()
-  @IsEnum(ProjectStatus)
-  status?: ProjectStatus;
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  name?: string;
 
   @IsOptional()
-  @IsEnum(ProjectStage)
-  stage?: ProjectStage;
+  @IsString()
+  clientType?: string;
+
+  @IsOptional()
+  @IsString()
+  productType?: string;
+
+  @IsOptional()
+  @IsString()
+  licenseLink?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  campaignObjective?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  initialGoal?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  totalBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  monthlyBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  fixedAdFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  adServiceFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  contentFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  designFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  mediaFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  otherFee?: number;
+
+  @IsOptional()
+  @IsString()
+  upsellOpportunity?: string;
+}
+
+// ─── PM/Planner Evaluation ───
+export class UpdateProjectEvaluationDto {
+  @IsOptional()
+  @IsString()
+  pmId?: string;
+
+  @IsOptional()
+  @IsString()
+  plannerId?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  costNSQC?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  costDesign?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  costMedia?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  costKOL?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  costOther?: number;
+
+  @IsOptional()
+  @IsEnum(ClientTier)
+  clientTier?: ClientTier;
+
+  @IsOptional()
+  @IsString()
+  marketSize?: string;
+
+  @IsOptional()
+  @IsString()
+  competitionLevel?: string;
+
+  @IsOptional()
+  @IsString()
+  productUSP?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  averageScore?: number;
+
+  @IsOptional()
+  @IsString()
+  audienceSize?: string;
+
+  @IsOptional()
+  @IsString()
+  productLifecycle?: string;
+
+  @IsOptional()
+  @IsString()
+  scalePotential?: string;
+}
+
+// ─── Lifecycle Transition ───
+export class UpdateLifecycleDto {
+  @IsEnum(ProjectLifecycle)
+  lifecycle!: ProjectLifecycle;
+}
+
+// ─── Weekly Note ───
+export class AddWeeklyNoteDto {
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  note!: string;
+}
+
+// ─── Decision (Accept/Decline) ───
+export class ProjectDecisionDto {
+  @IsEnum(PipelineDecision)
+  decision!: PipelineDecision;
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? sanitizeInput(value) : value))
+  @IsString()
+  decisionNote?: string;
+}
+
+// ─── List Query (supports lifecycle filter) ───
+export class ProjectListQueryDto {
+  @IsOptional()
+  @IsEnum(HealthStatus)
+  healthStatus?: HealthStatus;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(ProjectLifecycle, { each: true })
+  lifecycle?: ProjectLifecycle[];
 
   @IsOptional()
   @IsString()
   clientId?: string;
+
+  @IsOptional()
+  @IsString()
+  nvkdId?: string;
+
+  @IsOptional()
+  @IsEnum(PipelineDecision)
+  decision?: PipelineDecision;
 
   @IsOptional()
   @IsString()
@@ -169,7 +360,7 @@ export class ProjectListQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(200)
   limit?: number = 20;
 
   @IsOptional()
@@ -181,7 +372,59 @@ export class ProjectListQueryDto {
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
 
-// Response DTOs
+// ─── Update Budget Fields (convenience endpoint) ───
+export class UpdateBudgetDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  totalBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  monthlyBudget?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  spentAmount?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  fixedAdFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  adServiceFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  contentFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  designFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  mediaFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  otherFee?: number;
+
+  @IsOptional()
+  @IsString()
+  budgetPacing?: string;
+}
+
+// ─── Response DTOs ───
 export class ProjectTeamMemberDto {
   id!: string;
   userId!: string;
@@ -197,12 +440,13 @@ export class ProjectTeamMemberDto {
 
 export class ProjectResponseDto {
   id!: string;
-  code!: string;
+  dealCode!: string;
+  projectCode!: string | null;
   name!: string;
   description!: string | null;
   productType!: string | null;
-  status!: ProjectStatus;
-  stage!: ProjectStage;
+  lifecycle!: ProjectLifecycle;
+  healthStatus!: HealthStatus;
   stageProgress!: number;
   startDate!: string | null;
   endDate!: string | null;
@@ -211,11 +455,51 @@ export class ProjectResponseDto {
   planLink!: string | null;
   trackingLink!: string | null;
   clientId!: string | null;
-  client!: {
-    id: string;
-    companyName: string;
-  } | null;
+  client!: { id: string; companyName: string } | null;
+  // Team refs
+  nvkdId!: string;
+  nvkd!: { id: string; name: string } | null;
+  pmId!: string | null;
+  pm!: { id: string; name: string } | null;
+  plannerId!: string | null;
+  planner!: { id: string; name: string } | null;
+  // Sales data
+  clientType!: string | null;
+  campaignObjective!: string | null;
+  initialGoal!: string | null;
+  upsellOpportunity!: string | null;
+  licenseLink!: string | null;
+  // Budget/Fees
+  totalBudget!: number | null;
+  monthlyBudget!: number | null;
+  spentAmount!: number | null;
+  fixedAdFee!: number | null;
+  adServiceFee!: number | null;
+  contentFee!: number | null;
+  designFee!: number | null;
+  mediaFee!: number | null;
+  otherFee!: number | null;
+  // PM Evaluation
+  costNSQC!: number | null;
+  costDesign!: number | null;
+  costMedia!: number | null;
+  costKOL!: number | null;
+  costOther!: number | null;
+  cogs!: number | null;
+  grossProfit!: number | null;
+  profitMargin!: number | null;
+  // Client evaluation
+  clientTier!: string | null;
+  averageScore!: number | null;
+  // Decision
+  decision!: PipelineDecision;
+  decisionDate!: string | null;
+  decisionNote!: string | null;
+  // Notes
+  weeklyNotes!: unknown[] | null;
+  // Team
   team!: ProjectTeamMemberDto[];
+  // Task stats
   taskStats!: {
     total: number;
     todo: number;
@@ -235,7 +519,7 @@ export class ProjectListResponseDto {
   totalPages!: number;
 }
 
-// Team management DTOs
+// ─── Team Management DTOs ───
 export class AddTeamMemberDto {
   @IsString()
   userId!: string;
