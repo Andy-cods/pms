@@ -21,6 +21,7 @@ import { ReportModule } from './modules/report/report.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MediaPlanModule } from './modules/media-plan/media-plan.module';
 import { AdsReportModule } from './modules/ads-report/ads-report.module';
+import { SalesPipelineModule } from './modules/sales-pipeline/sales-pipeline.module';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 
 @Module({
@@ -54,6 +55,7 @@ import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
     MetricsModule,
     MediaPlanModule,
     AdsReportModule,
+    SalesPipelineModule,
   ],
   controllers: [AppController],
   providers: [
