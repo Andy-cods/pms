@@ -7,8 +7,7 @@ export interface ProjectPhaseItem {
   description: string | null;
   weight: number;
   isComplete: boolean;
-  taskId: string | null;
-  task: { id: string; title: string; status: string } | null;
+  tasks: { id: string; title: string; status: string }[];
   orderIndex: number;
   pic: string | null;
   support: string | null;
@@ -43,15 +42,6 @@ export const projectPhasesApi = {
     return res.data;
   },
 
-  addItem: async (
-    projectId: string,
-    phaseId: string,
-    data: { name: string; description?: string; weight?: number; pic?: string; support?: string; expectedOutput?: string },
-  ): Promise<ProjectPhaseItem> => {
-    const res = await api.post(`/projects/${projectId}/phases/${phaseId}/items`, data);
-    return res.data;
-  },
-
   updateItem: async (
     projectId: string,
     phaseId: string,
@@ -65,23 +55,16 @@ export const projectPhasesApi = {
     return res.data;
   },
 
-  deleteItem: async (
-    projectId: string,
-    phaseId: string,
-    itemId: string,
-  ): Promise<void> => {
-    await api.delete(`/projects/${projectId}/phases/${phaseId}/items/${itemId}`);
-  },
-
   linkTask: async (
     projectId: string,
     phaseId: string,
     itemId: string,
-    taskId: string | null,
+    taskId: string,
+    action: 'connect' | 'disconnect' = 'connect',
   ): Promise<ProjectPhaseItem> => {
     const res = await api.patch(
       `/projects/${projectId}/phases/${phaseId}/items/${itemId}/link-task`,
-      { taskId },
+      { taskId, action },
     );
     return res.data;
   },

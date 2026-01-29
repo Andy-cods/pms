@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, Link2, Unlink, User, Users, FileOutput, Pencil } from 'lucide-react';
+import { Link2, Unlink, User, Users, FileOutput, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { ProjectPhaseItem } from '@/lib/api/project-phases';
-import { useUpdatePhaseItem, useDeletePhaseItem, useLinkTask } from '@/hooks/use-project-phases';
+import { useUpdatePhaseItem, useLinkTask } from '@/hooks/use-project-phases';
 
 interface PhaseItemRowProps {
   item: ProjectPhaseItem;
@@ -18,8 +18,7 @@ interface PhaseItemRowProps {
 
 export function PhaseItemRow({ item, projectId, phaseId, onLinkTask }: PhaseItemRowProps) {
   const updateItem = useUpdatePhaseItem();
-  const deleteItem = useDeletePhaseItem();
-  const unlinkTask = useLinkTask();
+  const linkTask = useLinkTask();
 
   const [editing, setEditing] = useState(false);
   const [editPic, setEditPic] = useState(item.pic ?? '');
@@ -44,12 +43,8 @@ export function PhaseItemRow({ item, projectId, phaseId, onLinkTask }: PhaseItem
     });
   };
 
-  const handleDelete = () => {
-    deleteItem.mutate({ projectId, phaseId, itemId: item.id });
-  };
-
-  const handleUnlink = () => {
-    unlinkTask.mutate({ projectId, phaseId, itemId: item.id, taskId: null });
+  const handleUnlinkTask = (taskId: string) => {
+    linkTask.mutate({ projectId, phaseId, itemId: item.id, taskId, action: 'disconnect' });
   };
 
   const handleSaveMeta = () => {
@@ -57,7 +52,6 @@ export function PhaseItemRow({ item, projectId, phaseId, onLinkTask }: PhaseItem
     const support = editSupport.trim() || undefined;
     const expectedOutput = editOutput.trim() || undefined;
 
-    // Only save if something changed
     if (pic !== (item.pic ?? undefined) || support !== (item.support ?? undefined) || expectedOutput !== (item.expectedOutput ?? undefined)) {
       updateItem.mutate({
         projectId,
@@ -93,30 +87,32 @@ export function PhaseItemRow({ item, projectId, phaseId, onLinkTask }: PhaseItem
           {item.weight}%
         </span>
 
-        {item.task ? (
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] font-medium text-foreground/70 bg-muted/60 border border-border/30 px-1.5 py-0.5 rounded-md max-w-[120px] truncate">
-              {item.task.title}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={handleUnlink}
-            >
-              <Unlink className="h-3 w-3" />
-            </Button>
-          </div>
-        ) : (
+        {/* Task badges */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {item.tasks.map((task) => (
+            <div key={task.id} className="flex items-center gap-0.5">
+              <span className="text-[10px] font-medium text-foreground/70 bg-muted/60 border border-border/30 px-1.5 py-0.5 rounded-md max-w-[100px] truncate">
+                {task.title}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleUnlinkTask(task.id)}
+              >
+                <Unlink className="h-2.5 w-2.5" />
+              </Button>
+            </div>
+          ))}
           <Button
             variant="ghost"
             size="sm"
             className="h-6 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity gap-1"
             onClick={() => onLinkTask(item.id)}
           >
-            <Link2 className="h-3 w-3" /> Link Task
+            <Link2 className="h-3 w-3" /> {item.tasks.length === 0 ? 'Link Task' : '+'}
           </Button>
-        )}
+        </div>
 
         {/* Edit meta button */}
         <Button
@@ -126,15 +122,6 @@ export function PhaseItemRow({ item, projectId, phaseId, onLinkTask }: PhaseItem
           onClick={() => setEditing(!editing)}
         >
           <Pencil className="h-3 w-3" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-          onClick={handleDelete}
-        >
-          <Trash2 className="h-3 w-3" />
         </Button>
       </div>
 

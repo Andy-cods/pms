@@ -54,42 +54,6 @@ export function useUpdatePhaseItem() {
   });
 }
 
-export function useAddPhaseItem() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      projectId,
-      phaseId,
-      data,
-    }: {
-      projectId: string;
-      phaseId: string;
-      data: { name: string; description?: string; weight?: number; pic?: string; support?: string; expectedOutput?: string };
-    }) => projectPhasesApi.addItem(projectId, phaseId, data),
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });
-    },
-  });
-}
-
-export function useDeletePhaseItem() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      projectId,
-      phaseId,
-      itemId,
-    }: {
-      projectId: string;
-      phaseId: string;
-      itemId: string;
-    }) => projectPhasesApi.deleteItem(projectId, phaseId, itemId),
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });
-    },
-  });
-}
-
 export function useLinkTask() {
   const qc = useQueryClient();
   return useMutation({
@@ -98,12 +62,14 @@ export function useLinkTask() {
       phaseId,
       itemId,
       taskId,
+      action = 'connect',
     }: {
       projectId: string;
       phaseId: string;
       itemId: string;
-      taskId: string | null;
-    }) => projectPhasesApi.linkTask(projectId, phaseId, itemId, taskId),
+      taskId: string;
+      action?: 'connect' | 'disconnect';
+    }) => projectPhasesApi.linkTask(projectId, phaseId, itemId, taskId, action),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });
     },

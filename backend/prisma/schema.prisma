@@ -310,7 +310,7 @@ model Task {
   subtasks       Task[]            @relation("TaskHierarchy")
   project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   reviewer       User?             @relation("TaskReviewer", fields: [reviewerId], references: [id])
-  phaseItem      ProjectPhaseItem?
+  phaseItems     ProjectPhaseItem[]
 
   @@index([projectId])
   @@index([parentId])
@@ -850,10 +850,9 @@ model ProjectPhaseItem {
   phase          ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   name           String
   description    String?
-  weight         Int          @default(0)
+  weight         Float        @default(0)
   isComplete     Boolean      @default(false)
-  taskId         String?      @unique
-  task           Task?        @relation(fields: [taskId], references: [id])
+  tasks          Task[]
   orderIndex     Int          @default(0)
   pic            String?      // Person in charge role (e.g., "Sale", "Planner")
   support        String?      // Support role (e.g., "Account/Team")
@@ -862,6 +861,5 @@ model ProjectPhaseItem {
   updatedAt      DateTime     @updatedAt
 
   @@index([phaseId])
-  @@index([taskId])
   @@map("project_phase_items")
 }

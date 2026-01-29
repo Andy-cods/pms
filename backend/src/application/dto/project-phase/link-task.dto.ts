@@ -1,7 +1,10 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 
 export class LinkTaskDto {
-  @IsOptional()
   @IsString()
-  taskId?: string | null;
+  taskId!: string;
+
+  @IsOptional()
+  @IsIn(['connect', 'disconnect'])
+  action?: 'connect' | 'disconnect';
 }

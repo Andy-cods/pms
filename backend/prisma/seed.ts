@@ -1,5 +1,6 @@
 import {
   PrismaClient,
+  Prisma,
   UserRole,
   ProjectLifecycle,
   HealthStatus,
@@ -1274,7 +1275,7 @@ async function main() {
             sectionKey: s.key,
             title: s.title,
             isComplete: true,
-            data: BRIEF_DATA[s.key] ?? {},
+            data: (BRIEF_DATA[s.key] ?? {}) as Prisma.InputJsonValue,
           })),
         },
       },
@@ -1294,7 +1295,7 @@ async function main() {
             sectionKey: s.key,
             title: s.title,
             isComplete: s.num <= 6,
-            data: s.num <= 6 ? (BRIEF_DATA[s.key] ?? {}) : undefined,
+            data: s.num <= 6 ? ((BRIEF_DATA[s.key] ?? {}) as Prisma.InputJsonValue) : undefined,
           })),
         },
       },
@@ -1384,7 +1385,7 @@ async function main() {
   async function createPhasesForProject(
     projectId: string,
     completionMap: Record<string, boolean[]>,
-    linkedTasks?: Record<string, string>,
+    linkedTasks?: Record<string, string[]>,
   ) {
     for (const phaseDef of PHASE_DEFS) {
       const completions = completionMap[phaseDef.phaseType] || phaseDef.items.map(() => false);
@@ -1394,7 +1395,7 @@ async function main() {
       const totalWeight = phaseDef.items.reduce((sum, item) => sum + item.weight, 0);
       const progress = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
 
-      await prisma.projectPhase.create({
+      const phase = await prisma.projectPhase.create({
         data: {
           projectId,
           phaseType: phaseDef.phaseType,
@@ -1411,7 +1412,6 @@ async function main() {
                 weight: item.weight,
                 orderIndex: item.orderIndex,
                 isComplete: completions[idx] || false,
-                taskId: linkedTasks?.[`${phaseDef.phaseType}_${idx}`] || undefined,
                 pic: item.pic,
                 support: item.support,
                 expectedOutput: item.expectedOutput,
@@ -1419,7 +1419,22 @@ async function main() {
             },
           },
         },
+        include: { items: { orderBy: { orderIndex: 'asc' } } },
       });
+
+      // Connect tasks to items (many-to-many)
+      if (linkedTasks) {
+        for (let idx = 0; idx < phase.items.length; idx++) {
+          const taskIds = linkedTasks[`${phaseDef.phaseType}_${idx}`];
+          const item = phase.items[idx];
+          if (item && taskIds && taskIds.length > 0) {
+            await prisma.projectPhaseItem.update({
+              where: { id: item.id },
+              data: { tasks: { connect: taskIds.map((id) => ({ id })) } },
+            });
+          }
+        }
+      }
     }
   }
 
@@ -1430,8 +1445,12 @@ async function main() {
     [ProjectPhaseType.VAN_HANH_TOI_UU]: [false],
     [ProjectPhaseType.TONG_KET]: [false],
   }, {
-    [`${ProjectPhaseType.KHOI_TAO_PLAN}_2`]: t1_1.id,
-    [`${ProjectPhaseType.SETUP_CHUAN_BI}_2`]: t1_3.id,
+    [`${ProjectPhaseType.KHOI_TAO_PLAN}_0`]: [t1_1.id],
+    [`${ProjectPhaseType.KHOI_TAO_PLAN}_2`]: [t1_1.id, t1_2.id],
+    [`${ProjectPhaseType.KHOI_TAO_PLAN}_3`]: [t1_3.id],
+    [`${ProjectPhaseType.SETUP_CHUAN_BI}_2`]: [t1_3.id, t1_4.id],
+    [`${ProjectPhaseType.VAN_HANH_TOI_UU}_0`]: [t1_5.id],
+    [`${ProjectPhaseType.VAN_HANH_TOI_UU}_2`]: [t1_7.id],
   });
 
   // P2 (PLANNING, 40% stage): Phase 1 partially done
@@ -1441,7 +1460,8 @@ async function main() {
     [ProjectPhaseType.VAN_HANH_TOI_UU]: [false],
     [ProjectPhaseType.TONG_KET]: [false],
   }, {
-    [`${ProjectPhaseType.KHOI_TAO_PLAN}_0`]: t2_1.id,
+    [`${ProjectPhaseType.KHOI_TAO_PLAN}_0`]: [t2_1.id],
+    [`${ProjectPhaseType.KHOI_TAO_PLAN}_1`]: [t2_2.id, t2_3.id],
   });
 
   // P3 (COMPLETED, 100%): All phases done

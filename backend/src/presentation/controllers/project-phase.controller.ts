@@ -34,7 +34,7 @@ export class ProjectPhaseController {
         items: {
           orderBy: { orderIndex: 'asc' },
           include: {
-            task: { select: { id: true, title: true, status: true } },
+            tasks: { select: { id: true, title: true, status: true } },
           },
         },
       },
@@ -103,11 +103,16 @@ export class ProjectPhaseController {
     @Param('itemId') itemId: string,
     @Body() dto: LinkTaskDto,
   ) {
+    const action = dto.action ?? 'connect';
     return this.prisma.projectPhaseItem.update({
       where: { id: itemId },
-      data: { taskId: dto.taskId },
+      data: {
+        tasks: action === 'disconnect'
+          ? { disconnect: { id: dto.taskId } }
+          : { connect: { id: dto.taskId } },
+      },
       include: {
-        task: { select: { id: true, title: true, status: true } },
+        tasks: { select: { id: true, title: true, status: true } },
       },
     });
   }

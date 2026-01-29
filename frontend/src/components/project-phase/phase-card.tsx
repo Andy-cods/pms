@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import type { ProjectPhase } from '@/lib/api/project-phases';
 import { PhaseItemRow } from './phase-item-row';
-import { AddItemDialog } from './add-item-dialog';
 import { LinkTaskModal } from './link-task-modal';
 import { useUpdatePhase } from '@/hooks/use-project-phases';
 
@@ -143,9 +142,6 @@ export function PhaseCard({ phase, projectId, tasks = [] }: PhaseCardProps) {
                   onLinkTask={(itemId) => setLinkModal({ phaseId: phase.id, itemId })}
                 />
               ))}
-              <div className="px-3 pt-1">
-                <AddItemDialog projectId={projectId} phaseId={phase.id} />
-              </div>
             </div>
           </div>
         )}
