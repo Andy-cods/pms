@@ -10,6 +10,9 @@ export interface ProjectPhaseItem {
   taskId: string | null;
   task: { id: string; title: string; status: string } | null;
   orderIndex: number;
+  pic: string | null;
+  support: string | null;
+  expectedOutput: string | null;
 }
 
 export interface ProjectPhase {
@@ -43,7 +46,7 @@ export const projectPhasesApi = {
   addItem: async (
     projectId: string,
     phaseId: string,
-    data: { name: string; description?: string; weight?: number },
+    data: { name: string; description?: string; weight?: number; pic?: string; support?: string; expectedOutput?: string },
   ): Promise<ProjectPhaseItem> => {
     const res = await api.post(`/projects/${projectId}/phases/${phaseId}/items`, data);
     return res.data;
@@ -53,7 +56,7 @@ export const projectPhasesApi = {
     projectId: string,
     phaseId: string,
     itemId: string,
-    data: { name?: string; description?: string; weight?: number; isComplete?: boolean },
+    data: { name?: string; description?: string; weight?: number; isComplete?: boolean; pic?: string; support?: string; expectedOutput?: string },
   ): Promise<ProjectPhaseItem> => {
     const res = await api.patch(
       `/projects/${projectId}/phases/${phaseId}/items/${itemId}`,

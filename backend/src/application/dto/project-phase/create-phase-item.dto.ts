@@ -17,4 +17,19 @@ export class CreatePhaseItemDto {
   @Min(0)
   @Max(100)
   weight?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  pic?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  support?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  expectedOutput?: string;
 }

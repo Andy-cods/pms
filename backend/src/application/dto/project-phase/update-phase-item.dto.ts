@@ -22,4 +22,19 @@ export class UpdatePhaseItemDto {
   @IsOptional()
   @IsBoolean()
   isComplete?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  pic?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  support?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => sanitizeInput(value))
+  @IsString()
+  expectedOutput?: string;
 }

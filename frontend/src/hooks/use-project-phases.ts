@@ -15,6 +15,24 @@ export function useProjectPhases(projectId: string) {
   });
 }
 
+export function useUpdatePhase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      phaseId,
+      data,
+    }: {
+      projectId: string;
+      phaseId: string;
+      data: { startDate?: string; endDate?: string };
+    }) => projectPhasesApi.updatePhase(projectId, phaseId, data),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });
+    },
+  });
+}
+
 export function useUpdatePhaseItem() {
   const qc = useQueryClient();
   return useMutation({
@@ -27,7 +45,7 @@ export function useUpdatePhaseItem() {
       projectId: string;
       phaseId: string;
       itemId: string;
-      data: { name?: string; description?: string; weight?: number; isComplete?: boolean };
+      data: { name?: string; description?: string; weight?: number; isComplete?: boolean; pic?: string; support?: string; expectedOutput?: string };
     }) => projectPhasesApi.updateItem(projectId, phaseId, itemId, data),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });
@@ -46,7 +64,7 @@ export function useAddPhaseItem() {
     }: {
       projectId: string;
       phaseId: string;
-      data: { name: string; description?: string; weight?: number };
+      data: { name: string; description?: string; weight?: number; pic?: string; support?: string; expectedOutput?: string };
     }) => projectPhasesApi.addItem(projectId, phaseId, data),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: phaseKeys.list(vars.projectId) });

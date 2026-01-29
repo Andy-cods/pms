@@ -73,6 +73,8 @@ import { useProjectPhases } from '@/hooks/use-project-phases';
 import { useTasks } from '@/hooks/use-tasks';
 import { PhaseProgressBar } from '@/components/project-phase/phase-progress-bar';
 import { PhaseCard } from '@/components/project-phase/phase-card';
+import { useBriefByProject, useCreateBrief } from '@/hooks/use-strategic-brief';
+import { BriefWizard } from '@/components/strategic-brief/brief-wizard';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -496,6 +498,9 @@ export default function ProjectDetailPage() {
   const removeTeamMember = useRemoveTeamMember();
   const { data: phases } = useProjectPhases(projectId);
   const { data: tasksData } = useTasks({ projectId, limit: 200 });
+  const { data: briefData, isLoading: briefLoading } = useBriefByProject(projectId);
+  const createBrief = useCreateBrief();
+  const [briefStep, setBriefStep] = useState(1);
 
   // Budget threshold alerts
   useEffect(() => {
@@ -1246,17 +1251,44 @@ export default function ProjectDetailPage() {
       )}
 
       {activeTab === 'brief' && (
-        <div className="text-center py-12 text-muted-foreground">
-          {project.strategicBrief ? (
-            <Button
-              variant="outline"
-              className="rounded-full"
-              onClick={() => router.push(`/dashboard/strategic-briefs/${project.strategicBrief!.id}`)}
-            >
-              Xem Strategic Brief ({project.strategicBrief.completionPct}%)
-            </Button>
-          ) : (
-            <p className="text-footnote">Chưa có Strategic Brief cho dự án này.</p>
+        <div>
+          {briefLoading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          )}
+          {!briefLoading && briefData && (
+            <BriefWizard
+              brief={briefData}
+              currentStep={briefStep}
+              onStepChange={setBriefStep}
+            />
+          )}
+          {!briefLoading && !briefData && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Files className="h-8 w-8 text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="text-callout font-semibold">Chưa có Strategic Brief</p>
+                <p className="text-footnote text-muted-foreground mt-1">
+                  Tạo Brief để bắt đầu lên kế hoạch chiến lược cho dự án này
+                </p>
+              </div>
+              <Button
+                className="rounded-full gap-2"
+                onClick={() => createBrief.mutate(
+                  { projectId },
+                  {
+                    onSuccess: () => toast.success('Đã tạo Strategic Brief'),
+                    onError: () => toast.error('Không thể tạo Brief'),
+                  },
+                )}
+                disabled={createBrief.isPending}
+              >
+                {createBrief.isPending ? 'Đang tạo...' : 'Tạo Strategic Brief'}
+              </Button>
+            </div>
           )}
         </div>
       )}

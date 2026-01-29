@@ -20,6 +20,7 @@ export function useBriefByProject(projectId: string) {
     queryKey: briefKeys.byProject(projectId),
     queryFn: () => strategicBriefApi.getByProject(projectId),
     enabled: !!projectId,
+    retry: false,
   });
 }
 
