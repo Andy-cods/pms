@@ -52,6 +52,9 @@ import { ActivityTimeline } from '@/components/project/activity-timeline';
 import { StageHistoryTimeline } from '@/components/project/stage-history-timeline';
 import { useProjectBudget } from '@/hooks/use-projects';
 import { toast } from 'sonner';
+import { SaleInfoCard } from '@/components/project/sale-info-card';
+import { EvaluationCard } from '@/components/project/evaluation-card';
+import { WeeklyNotesCard } from '@/components/project/weekly-notes-card';
 import { useBudgetEvents, useUpdateBudgetEventStatus, useBudgetThreshold } from '@/hooks/use-budget-events';
 import {
   BudgetEventCategoryLabels,
@@ -867,6 +870,15 @@ export default function ProjectDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Sale Info (green) */}
+            <SaleInfoCard project={project} editable />
+
+            {/* PM Evaluation (pink) */}
+            <EvaluationCard project={project} editable />
+
+            {/* Weekly Notes */}
+            <WeeklyNotesCard project={project} editable />
           </div>
 
           {/* Sidebar */}

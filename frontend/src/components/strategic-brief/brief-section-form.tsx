@@ -83,6 +83,18 @@ export function BriefSectionForm({ section, fields, onSave, readOnly = false }: 
                 placeholder={field.placeholder}
                 className="mt-1.5"
               />
+            ) : field.type === 'select' && field.options ? (
+              <select
+                id={field.name}
+                {...form.register(field.name)}
+                disabled={readOnly}
+                className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">-- Chọn --</option>
+                {field.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
             ) : (
               <Input
                 id={field.name}

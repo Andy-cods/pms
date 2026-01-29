@@ -15,107 +15,154 @@ export interface SectionConfig {
   customComponent?: string;
 }
 
+// =============================================
+// 16 SECTION CONFIGS (Quy Trình 2 - Strategic Brief)
+// =============================================
+
 export const SECTION_CONFIGS: SectionConfig[] = [
+  // 1. Objectives
   {
-    sectionKey: 'brand_overview',
+    sectionKey: 'objectives',
     fields: [
-      { name: 'brandName', label: 'Tên thương hiệu', type: 'text', required: true },
-      { name: 'brandDescription', label: 'Mô tả', type: 'textarea' },
-      { name: 'brandValues', label: 'Giá trị cốt lõi', type: 'textarea' },
-      { name: 'brandTone', label: 'Tone of voice', type: 'text' },
+      { name: 'businessObjective', label: 'Mục tiêu kinh doanh', type: 'textarea', required: true, placeholder: 'VD: Tăng doanh thu 30% trong Q2' },
+      { name: 'communicationObjective', label: 'Mục tiêu truyền thông', type: 'textarea', placeholder: 'VD: Tăng nhận diện thương hiệu 50%' },
+      { name: 'marketingObjective', label: 'Mục tiêu marketing', type: 'textarea', placeholder: 'VD: Tăng leads 40%, giảm CPA 20%' },
+      { name: 'primaryKPI', label: 'KPI chính', type: 'text', required: true, placeholder: 'VD: ROAS, CPA, Leads' },
+      { name: 'secondaryKPI', label: 'KPI phụ', type: 'text', placeholder: 'VD: CTR, Engagement Rate' },
     ],
   },
+
+  // 2. Market Research
   {
-    sectionKey: 'market_analysis',
+    sectionKey: 'market_research',
     fields: [
-      { name: 'marketOverview', label: 'Tổng quan thị trường', type: 'textarea', required: true },
-      { name: 'marketTrends', label: 'Xu hướng', type: 'textarea' },
-      { name: 'marketChallenges', label: 'Thách thức', type: 'textarea' },
+      { name: 'industryOverview', label: 'Tổng quan ngành', type: 'textarea', required: true },
+      { name: 'industryTrends', label: 'Xu hướng ngành (mỗi dòng 1 xu hướng)', type: 'textarea', placeholder: 'VD:\nTrend 1\nTrend 2' },
+      { name: 'ecommercePlatforms', label: 'Nền tảng e-commerce', type: 'textarea', placeholder: 'Shopee, Lazada, TikTok Shop...' },
+      { name: 'keyInsights', label: 'Key Insights', type: 'textarea' },
+      { name: 'userBehavior', label: 'Hành vi người dùng', type: 'textarea' },
+      { name: 'priceSensitivity', label: 'Độ nhạy giá', type: 'text' },
+      { name: 'strategicImplication', label: 'Hàm ý chiến lược', type: 'textarea' },
     ],
   },
+
+  // 3. Customer Research - custom (personas + journey)
   {
-    sectionKey: 'target_audience',
+    sectionKey: 'customer_research',
+    fields: [],
+    customComponent: 'customer-research',
+  },
+
+  // 4. Competitor Analysis - custom (competitor cards)
+  {
+    sectionKey: 'competitor_analysis',
+    fields: [],
+    customComponent: 'competitors',
+  },
+
+  // 5. Internal SWOT
+  {
+    sectionKey: 'internal_swot',
     fields: [
-      { name: 'demographics', label: 'Demographics', type: 'textarea', required: true },
-      { name: 'psychographics', label: 'Psychographics', type: 'textarea' },
-      { name: 'behaviors', label: 'Behaviors', type: 'textarea' },
-      { name: 'painPoints', label: 'Pain points', type: 'textarea' },
+      { name: 'strengths', label: 'Điểm mạnh (Strengths)', type: 'textarea', required: true },
+      { name: 'weaknesses', label: 'Điểm yếu (Weaknesses)', type: 'textarea', required: true },
+      { name: 'resourceReality', label: 'Thực trạng nguồn lực', type: 'textarea' },
     ],
   },
+
+  // 6. Strategic Recommendation
   {
-    sectionKey: 'campaign_objectives',
+    sectionKey: 'strategic_recommendation',
     fields: [
-      { name: 'primaryObjective', label: 'Mục tiêu chính', type: 'textarea', required: true },
-      { name: 'secondaryObjectives', label: 'Mục tiêu phụ', type: 'textarea' },
-      { name: 'successMetrics', label: 'Chỉ số thành công', type: 'textarea' },
+      { name: 'strategyStatement', label: 'Tuyên bố chiến lược', type: 'textarea', required: true, placeholder: 'VD: Tập trung vào funnel giữa để tối ưu conversion...' },
+      { name: 'funnelStrategy', label: 'Chiến lược funnel', type: 'textarea', placeholder: 'Awareness → Consideration → Conversion' },
+      { name: 'pillars', label: 'Trụ cột chiến lược (mỗi dòng 1 trụ cột)', type: 'textarea', placeholder: 'VD:\nContent Marketing\nPerformance Ads\nKOL Collaboration' },
     ],
   },
+
+  // 7. Channel Strategy - custom (channel mix %)
   {
-    sectionKey: 'key_messages',
-    fields: [
-      { name: 'mainMessage', label: 'Thông điệp chính', type: 'textarea', required: true },
-      { name: 'supportingMessages', label: 'Thông điệp hỗ trợ', type: 'textarea' },
-      { name: 'callToAction', label: 'CTA', type: 'text' },
-    ],
+    sectionKey: 'channel_strategy',
+    fields: [],
+    customComponent: 'channel-strategy',
   },
+
+  // 8. Creative Direction
   {
     sectionKey: 'creative_direction',
     fields: [
-      { name: 'visualStyle', label: 'Phong cách hình ảnh', type: 'textarea' },
-      { name: 'colorPalette', label: 'Bảng màu', type: 'text' },
-      { name: 'references', label: 'Tham khảo', type: 'textarea' },
-      { name: 'guidelines', label: 'Lưu ý', type: 'textarea' },
+      { name: 'coreInsight', label: 'Core Insight', type: 'textarea', required: true },
+      { name: 'keyMessage', label: 'Key Message', type: 'textarea', required: true },
+      { name: 'toneOfVoice', label: 'Tone of Voice', type: 'text', placeholder: 'VD: Thân thiện, Chuyên nghiệp' },
+      { name: 'preferredFormats', label: 'Định dạng ưu tiên (mỗi dòng 1 format)', type: 'textarea', placeholder: 'VD:\nShort-form video\nCarousel\nStatic image' },
     ],
   },
+
+  // 9. Media & Execution
   {
-    sectionKey: 'media_strategy',
+    sectionKey: 'media_execution',
     fields: [
-      { name: 'channels', label: 'Kênh truyền thông', type: 'textarea', required: true },
-      { name: 'approach', label: 'Cách tiếp cận', type: 'textarea' },
-      { name: 'frequency', label: 'Tần suất', type: 'text' },
+      { name: 'awarenessStrategy', label: 'Chiến lược Awareness', type: 'textarea', required: true },
+      { name: 'leadStrategy', label: 'Chiến lược Lead/Conversion', type: 'textarea' },
+      { name: 'retargetStrategy', label: 'Chiến lược Retarget', type: 'textarea' },
     ],
   },
+
+  // 10. Timeline - custom (phases + milestones)
   {
-    sectionKey: 'content_strategy',
+    sectionKey: 'timeline',
+    fields: [],
+    customComponent: 'timeline',
+  },
+
+  // 11. Budget Logic - custom (allocation table)
+  {
+    sectionKey: 'budget_logic',
+    fields: [],
+    customComponent: 'budget-allocation',
+  },
+
+  // 12. KPI & Measurement - custom (targets table)
+  {
+    sectionKey: 'kpi_measurement',
+    fields: [],
+    customComponent: 'kpi-metrics',
+  },
+
+  // 13. Risk Mitigation - custom (risk pairs)
+  {
+    sectionKey: 'risk_mitigation',
+    fields: [],
+    customComponent: 'risk-mitigation',
+  },
+
+  // 14. Governance - custom (approval matrix)
+  {
+    sectionKey: 'governance',
+    fields: [],
+    customComponent: 'governance',
+  },
+
+  // 15. Planner Notes
+  {
+    sectionKey: 'planner_notes',
     fields: [
-      { name: 'contentPillars', label: 'Content Pillars', type: 'textarea', required: true },
-      { name: 'contentTypes', label: 'Loại nội dung', type: 'textarea' },
-      { name: 'postingSchedule', label: 'Lịch đăng bài', type: 'textarea' },
+      { name: 'prerequisites', label: 'Điều kiện tiên quyết', type: 'textarea', placeholder: 'Các yêu cầu cần có trước khi bắt đầu...' },
+      { name: 'specialNotes', label: 'Ghi chú đặc biệt', type: 'textarea', placeholder: 'Lưu ý quan trọng cho team...' },
     ],
   },
+
+  // 16. Quotation
   {
-    sectionKey: 'kol_influencer',
+    sectionKey: 'quotation',
     fields: [
-      { name: 'kolStrategy', label: 'Chiến lược KOL', type: 'textarea' },
-      { name: 'targetKOLs', label: 'KOL mục tiêu', type: 'textarea' },
-      { name: 'kolBudget', label: 'Ngân sách KOL', type: 'number' },
-    ],
-  },
-  { sectionKey: 'budget_allocation', fields: [], customComponent: 'budget-allocation' },
-  { sectionKey: 'timeline', fields: [], customComponent: 'timeline' },
-  { sectionKey: 'kpi_metrics', fields: [], customComponent: 'kpi-metrics' },
-  { sectionKey: 'competitors', fields: [], customComponent: 'competitors' },
-  {
-    sectionKey: 'deliverables',
-    fields: [
-      { name: 'deliverableList', label: 'Danh sách sản phẩm', type: 'textarea', required: true },
-      { name: 'format', label: 'Định dạng', type: 'text' },
-      { name: 'quantity', label: 'Số lượng', type: 'text' },
-    ],
-  },
-  {
-    sectionKey: 'approval_process',
-    fields: [
-      { name: 'approvalSteps', label: 'Các bước duyệt', type: 'textarea' },
-      { name: 'stakeholders', label: 'Người liên quan', type: 'textarea' },
-      { name: 'revisionPolicy', label: 'Chính sách sửa đổi', type: 'textarea' },
-    ],
-  },
-  {
-    sectionKey: 'additional_notes',
-    fields: [
-      { name: 'notes', label: 'Ghi chú', type: 'textarea' },
-      { name: 'attachments', label: 'Đính kèm (links)', type: 'textarea' },
+      { name: 'quotationLink', label: 'Link báo giá', type: 'url', placeholder: 'https://docs.google.com/...' },
+      { name: 'quotationStatus', label: 'Trạng thái', type: 'select', options: [
+        { value: 'draft', label: 'Bản nháp' },
+        { value: 'sent', label: 'Đã gửi khách' },
+        { value: 'approved', label: 'Khách duyệt' },
+        { value: 'rejected', label: 'Khách từ chối' },
+      ] },
     ],
   },
 ];

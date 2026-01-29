@@ -7,6 +7,10 @@ import { BudgetAllocationSection } from './sections/budget-allocation-section';
 import { TimelineSection } from './sections/timeline-section';
 import { KpiMetricsSection } from './sections/kpi-metrics-section';
 import { CompetitorsSection } from './sections/competitors-section';
+import { CustomerResearchSection } from './sections/customer-research-section';
+import { ChannelStrategySection } from './sections/channel-strategy-section';
+import { RiskMitigationSection } from './sections/risk-mitigation-section';
+import { GovernanceSection } from './sections/governance-section';
 
 interface BriefSectionRendererProps {
   section: BriefSection;
@@ -26,6 +30,14 @@ export function BriefSectionRenderer({ section, config, onSave, readOnly = false
         return <KpiMetricsSection section={section} onSave={onSave} readOnly={readOnly} />;
       case 'competitors':
         return <CompetitorsSection section={section} onSave={onSave} readOnly={readOnly} />;
+      case 'customer-research':
+        return <CustomerResearchSection section={section} onSave={onSave} readOnly={readOnly} />;
+      case 'channel-strategy':
+        return <ChannelStrategySection section={section} onSave={onSave} readOnly={readOnly} />;
+      case 'risk-mitigation':
+        return <RiskMitigationSection section={section} onSave={onSave} readOnly={readOnly} />;
+      case 'governance':
+        return <GovernanceSection section={section} onSave={onSave} readOnly={readOnly} />;
     }
   }
 
