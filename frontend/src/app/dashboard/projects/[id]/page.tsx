@@ -989,11 +989,8 @@ export default function ProjectDetailPage() {
               compact
             />
 
-            {/* Decision Panel - show for NEGOTIATION projects or already decided */}
-            {(project.lifecycle === ProjectLifecycle.NEGOTIATION ||
-              project.decision !== PipelineDecision.PENDING) && (
-              <ProjectDecisionPanel project={project} />
-            )}
+            {/* Decision Panel - always visible; component handles all states internally */}
+            <ProjectDecisionPanel project={project} />
           </div>
         </div>
         </div>
