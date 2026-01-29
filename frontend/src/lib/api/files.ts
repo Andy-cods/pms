@@ -52,7 +52,7 @@ export interface FileInfo {
   };
   project?: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   };
   task?: {

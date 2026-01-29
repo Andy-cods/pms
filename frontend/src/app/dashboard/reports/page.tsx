@@ -152,7 +152,7 @@ export default function ReportsPage() {
                   <SelectItem key={project.id} value={project.id}>
                     <div className="flex flex-col">
                       <span>{project.name}</span>
-                      <span className="text-xs text-muted-foreground">{project.code}</span>
+                      <span className="text-xs text-muted-foreground">{project.dealCode}</span>
                     </div>
                   </SelectItem>
                 ))}

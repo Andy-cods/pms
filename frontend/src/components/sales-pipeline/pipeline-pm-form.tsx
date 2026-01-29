@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { SalesPipeline } from '@/types';
-import { useEvaluatePipeline } from '@/hooks/use-sales-pipeline';
+import type { Project } from '@/types';
+import { useEvaluateProject } from '@/hooks/use-projects';
 
 const pmFormSchema = z.object({
   pmId: z.string().optional(),
@@ -34,12 +34,12 @@ const pmFormSchema = z.object({
 type PmFormValues = z.infer<typeof pmFormSchema>;
 
 interface PipelinePmFormProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
   readOnly?: boolean;
 }
 
 export function PipelinePmForm({ pipeline, readOnly = false }: PipelinePmFormProps) {
-  const evaluate = useEvaluatePipeline();
+  const evaluate = useEvaluateProject();
 
   const form = useForm<PmFormValues>({
     resolver: zodResolver(pmFormSchema) as any,

@@ -87,9 +87,9 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Strategic Brief</h1>
-            {brief.pipeline && (
+            {brief.project && (
               <p className="text-[12px] text-muted-foreground">
-                {brief.pipeline.projectName}
+                {brief.project.name}
               </p>
             )}
           </div>

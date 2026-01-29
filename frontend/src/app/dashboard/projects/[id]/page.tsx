@@ -29,24 +29,25 @@ import {
   useProjectTeam,
   useArchiveProject,
   useUpdateProject,
+  useUpdateProjectLifecycle,
   useUpdateTeamMember,
   useRemoveTeamMember,
 } from '@/hooks/use-projects';
 import {
-  ProjectStatusLabels,
-  ProjectStageLabels,
-  ProjectStatusDotColors,
-  type ProjectStage,
+  HealthStatusLabels,
+  ProjectLifecycleLabels,
+  HealthStatusDotColors,
 } from '@/lib/api/projects';
+import type { ProjectLifecycle } from '@/types';
 import type { UserRole } from '@/lib/api/admin-users';
-import { ProjectStageTimeline } from '@/components/project/project-stage-timeline';
+import { ProjectLifecycleTimeline } from '@/components/project/project-stage-timeline';
 import { TeamMemberModal } from '@/components/project/team-member-modal';
 import { BudgetCard } from '@/components/project/budget-card';
 import { BudgetFormModal } from '@/components/project/budget-form-modal';
 import { KpiCard } from '@/components/project/kpi-card';
 import { ActivityTimeline } from '@/components/project/activity-timeline';
 import { StageHistoryTimeline } from '@/components/project/stage-history-timeline';
-import { useProjectBudget } from '@/hooks/use-project-budget';
+import { useProjectBudget } from '@/hooks/use-projects';
 import { toast } from 'sonner';
 import { useBudgetEvents, useUpdateBudgetEventStatus, useBudgetThreshold } from '@/hooks/use-budget-events';
 import {
@@ -484,6 +485,7 @@ export default function ProjectDetailPage() {
   const { data: threshold } = useBudgetThreshold(projectId);
   const archiveMutation = useArchiveProject();
   const updateMutation = useUpdateProject();
+  const lifecycleMutation = useUpdateProjectLifecycle();
   const updateTeamMember = useUpdateTeamMember();
   const removeTeamMember = useRemoveTeamMember();
   const { data: phases } = useProjectPhases(projectId);
@@ -504,11 +506,12 @@ export default function ProjectDetailPage() {
   };
 
   // Handler for stage change from timeline
-  const handleStageChange = async (newStage: ProjectStage, reason?: string) => {
+  const handleStageChange = async (newStage: ProjectLifecycle, reason?: string) => {
     if (!project) return;
-    await updateMutation.mutateAsync({
+    await lifecycleMutation.mutateAsync({
       id: projectId,
-      input: { stage: newStage, stageChangeReason: reason },
+      lifecycle: newStage,
+      reason,
     });
   };
 
@@ -618,20 +621,20 @@ export default function ProjectDetailPage() {
               <span
                 className={cn(
                   'h-2.5 w-2.5 rounded-full',
-                  ProjectStatusDotColors[project.status]
+                  HealthStatusDotColors[project.healthStatus]
                 )}
               />
               <span className="text-callout font-medium">
-                {ProjectStatusLabels[project.status]}
+                {HealthStatusLabels[project.healthStatus]}
               </span>
             </div>
           </div>
           <p className="text-callout text-muted-foreground">
-            {project.code}
+            {project.dealCode}
             {project.client && ` · ${project.client.companyName}`}
             {' · '}
             <span className="font-medium">
-              {ProjectStageLabels[project.stage]}
+              {ProjectLifecycleLabels[project.lifecycle]}
             </span>
           </p>
         </div>
@@ -784,11 +787,11 @@ export default function ProjectDetailPage() {
                       Giai đoạn dự án
                     </span>
                     <span className="text-footnote text-muted-foreground">
-                      {ProjectStageLabels[project.stage]} · {project.stageProgress}%
+                      {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
                     </span>
                   </div>
-                  <ProjectStageTimeline
-                    currentStage={project.stage as ProjectStage}
+                  <ProjectLifecycleTimeline
+                    currentStage={project.lifecycle as ProjectLifecycle}
                     stageProgress={project.stageProgress}
                     isEditable={true}
                     onStageChange={handleStageChange}
@@ -935,11 +938,11 @@ export default function ProjectDetailPage() {
                         key={member.id}
                         className="h-10 w-10 border-2 border-background ring-0"
                       >
-                        {member.user.avatar && (
-                          <AvatarImage src={member.user.avatar} />
+                        {member.user?.avatar && (
+                          <AvatarImage src={member.user?.avatar} />
                         )}
                         <AvatarFallback className="text-xs font-medium bg-muted">
-                          {member.user.name.charAt(0).toUpperCase()}
+                          {member.user?.name?.charAt(0)?.toUpperCase() ?? '?'}
                         </AvatarFallback>
                       </Avatar>
                     ))}
@@ -1005,11 +1008,11 @@ export default function ProjectDetailPage() {
                         {/* Avatar with completion ring */}
                         <div className="relative">
                           <Avatar className="h-11 w-11">
-                            {member.user.avatar && (
-                              <AvatarImage src={member.user.avatar} />
+                            {member.user?.avatar && (
+                              <AvatarImage src={member.user?.avatar} />
                             )}
                             <AvatarFallback className="text-sm font-medium bg-muted">
-                              {member.user.name.charAt(0).toUpperCase()}
+                              {member.user?.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           {workload && workload.projectTasksOverdue > 0 && (
@@ -1024,7 +1027,7 @@ export default function ProjectDetailPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-callout font-medium truncate">
-                              {member.user.name}
+                              {member.user?.name}
                             </span>
                             {member.isPrimary && (
                               <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-caption font-medium shrink-0">
@@ -1071,7 +1074,7 @@ export default function ProjectDetailPage() {
                             </div>
                           ) : (
                             <div className="text-footnote text-muted-foreground">
-                              {member.user.email}
+                              {member.user?.email}
                             </div>
                           )}
                         </div>
@@ -1088,7 +1091,7 @@ export default function ProjectDetailPage() {
                                 memberId: member.id,
                                 input: { role: newRole },
                               });
-                              toast.success(`Đã cập nhật vai trò của ${member.user.name}`);
+                              toast.success(`Đã cập nhật vai trò của ${member.user?.name}`);
                             } catch {
                               toast.error('Không thể cập nhật vai trò');
                             }
@@ -1125,7 +1128,7 @@ export default function ProjectDetailPage() {
                               <AlertDialogDescription>
                                 Bạn có chắc muốn xóa{' '}
                                 <span className="font-medium text-foreground">
-                                  {member.user.name}
+                                  {member.user?.name}
                                 </span>{' '}
                                 khỏi team dự án?
                               </AlertDialogDescription>
@@ -1143,7 +1146,7 @@ export default function ProjectDetailPage() {
                                       memberId: member.id,
                                     });
                                     toast.success(
-                                      `Đã xóa ${member.user.name} khỏi team`
+                                      `Đã xóa ${member.user?.name} khỏi team`
                                     );
                                   } catch (error: unknown) {
                                     const err = error as {

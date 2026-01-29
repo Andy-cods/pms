@@ -101,7 +101,7 @@ export interface FileResponseDto {
   };
   project?: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   };
   task?: {

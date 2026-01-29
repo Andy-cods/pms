@@ -178,7 +178,7 @@ export default function MediaPlanDetailPage() {
               </span>
             </div>
             <p className="text-[14px] text-muted-foreground mt-0.5">
-              {project?.code} · {monthLabel}/{plan.year} · v{plan.version}
+              {project?.dealCode} · {monthLabel}/{plan.year} · v{plan.version}
             </p>
           </div>
         </div>

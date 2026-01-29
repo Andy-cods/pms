@@ -703,7 +703,7 @@ export class ProjectController {
       });
 
       // Create default phases
-      await this.phaseService.createDefaultPhases(projectId, tx);
+      await this.phaseService.createDefaultPhases(projectId);
 
       // Create strategic brief with 16 sections
       await tx.strategicBrief.create({

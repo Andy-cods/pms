@@ -20,17 +20,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import type { SalesPipeline } from '@/types';
+import type { Project } from '@/types';
 import { PipelineDecision } from '@/types';
-import { useDecidePipeline } from '@/hooks/use-sales-pipeline';
+import { useDecideProject } from '@/hooks/use-projects';
 
 interface PipelineDecisionPanelProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
 }
 
 export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) {
   const [declineNote, setDeclineNote] = useState('');
-  const decide = useDecidePipeline();
+  const decide = useDecideProject();
   const router = useRouter();
 
   const isPending = pipeline.decision === PipelineDecision.PENDING;
@@ -40,9 +40,9 @@ export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) 
   const handleAccept = async () => {
     try {
       const result = await decide.mutateAsync({ id: pipeline.id, decision: 'ACCEPTED' });
-      if (result?.project) {
-        toast.success(`Dự án ${result.project.code} đã được tạo!`);
-        router.push(`/dashboard/projects/${result.project.id}`);
+      if (result) {
+        toast.success(`Dự án ${result.dealCode ?? result.name} đã được chấp nhận!`);
+        router.push(`/dashboard/projects/${result.id}`);
       }
     } catch {
       toast.error('Không thể chấp nhận pipeline');
@@ -107,12 +107,12 @@ export function PipelineDecisionPanel({ pipeline }: PipelineDecisionPanelProps) 
             {pipeline.decisionNote && (
               <p className="text-[13px] text-foreground/80 mt-2 pl-10">{pipeline.decisionNote}</p>
             )}
-            {isAccepted && pipeline.project && (
+            {isAccepted && (
               <Link
-                href={`/dashboard/projects/${pipeline.project.id}`}
+                href={`/dashboard/projects/${pipeline.id}`}
                 className="inline-flex items-center gap-1.5 mt-3 ml-10 text-[13px] font-semibold text-primary hover:underline"
               >
-                Xem dự án: {pipeline.project.code} - {pipeline.project.name}
+                Xem dự án: {pipeline.dealCode} - {pipeline.name}
                 <ExternalLink className="h-3 w-3" />
               </Link>
             )}

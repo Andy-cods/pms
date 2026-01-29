@@ -6,21 +6,21 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { usePipeline } from '@/hooks/use-sales-pipeline';
+import { useProject } from '@/hooks/use-projects';
 import { useAuth } from '@/hooks/use-auth';
-import { UserRole, PipelineDecision, PipelineStageLabels, PipelineStage } from '@/types';
+import { UserRole, PipelineDecision, ProjectLifecycleLabels, ProjectLifecycle } from '@/types';
 import { PipelineSaleForm } from '@/components/sales-pipeline/pipeline-sale-form';
 import { PipelinePmForm } from '@/components/sales-pipeline/pipeline-pm-form';
 import { PipelineProfitCalculator } from '@/components/sales-pipeline/pipeline-profit-calculator';
 import { PipelineWeeklyNotes } from '@/components/sales-pipeline/pipeline-weekly-notes';
 import { PipelineDecisionPanel } from '@/components/sales-pipeline/pipeline-decision-panel';
 
-const STAGE_FLOW: PipelineStage[] = [
-  PipelineStage.LEAD,
-  PipelineStage.QUALIFIED,
-  PipelineStage.EVALUATION,
-  PipelineStage.NEGOTIATION,
-  PipelineStage.WON,
+const STAGE_FLOW: ProjectLifecycle[] = [
+  ProjectLifecycle.LEAD,
+  ProjectLifecycle.QUALIFIED,
+  ProjectLifecycle.EVALUATION,
+  ProjectLifecycle.NEGOTIATION,
+  ProjectLifecycle.WON,
 ];
 
 const STAGE_COLORS: Record<string, string> = {
@@ -43,7 +43,7 @@ export default function PipelineDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const id = params.id as string;
-  const { data: pipeline, isLoading } = usePipeline(id);
+  const { data: pipeline, isLoading } = useProject(id);
 
   if (isLoading) {
     return (
@@ -80,7 +80,7 @@ export default function PipelineDetailPage() {
   const pmReadOnly = isDecided || !isPMOrAdmin;
 
   const decisionInfo = DECISION_BADGE[pipeline.decision] || DECISION_BADGE.PENDING;
-  const currentStageIdx = STAGE_FLOW.indexOf(pipeline.status as PipelineStage);
+  const currentStageIdx = STAGE_FLOW.indexOf(pipeline.lifecycle as ProjectLifecycle);
 
   return (
     <div className="space-y-6">
@@ -97,7 +97,7 @@ export default function PipelineDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
-              {pipeline.projectName}
+              {pipeline.name}
             </h1>
             <span className={cn(
               'shrink-0 px-2.5 py-0.5 rounded-md text-[11px] font-bold',
@@ -107,21 +107,21 @@ export default function PipelineDetailPage() {
             </span>
           </div>
           <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
-            <span>NVKD: <span className="font-medium text-foreground/80">{pipeline.nvkd.name}</span></span>
+            <span>NVKD: <span className="font-medium text-foreground/80">{pipeline.nvkd?.name ?? '—'}</span></span>
             {pipeline.pm && (
               <>
                 <span className="text-border">|</span>
                 <span>PM: <span className="font-medium text-foreground/80">{pipeline.pm.name}</span></span>
               </>
             )}
-            {pipeline.project && (
+            {pipeline.dealCode && (
               <>
                 <span className="text-border">|</span>
                 <button
-                  onClick={() => router.push(`/dashboard/projects/${pipeline.project!.id}`)}
+                  onClick={() => router.push(`/dashboard/projects/${pipeline.id}`)}
                   className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                 >
-                  {pipeline.project.code} <ExternalLink className="h-3 w-3" />
+                  {pipeline.dealCode} <ExternalLink className="h-3 w-3" />
                 </button>
               </>
             )}
@@ -130,11 +130,11 @@ export default function PipelineDetailPage() {
       </div>
 
       {/* Stage Progress Flow */}
-      {pipeline.status !== PipelineStage.LOST && (
+      {pipeline.lifecycle !== ProjectLifecycle.LOST && (
         <div className="flex items-center gap-1">
           {STAGE_FLOW.map((stage, idx) => {
             const isReached = currentStageIdx >= idx;
-            const isCurrent = pipeline.status === stage;
+            const isCurrent = pipeline.lifecycle === stage;
             const color = STAGE_COLORS[stage];
             return (
               <div key={stage} className="flex items-center gap-1 flex-1">
@@ -156,21 +156,21 @@ export default function PipelineDetailPage() {
           })}
         </div>
       )}
-      {pipeline.status !== PipelineStage.LOST && (
+      {pipeline.lifecycle !== ProjectLifecycle.LOST && (
         <div className="flex items-center gap-1 -mt-4">
           {STAGE_FLOW.map((stage) => (
             <div key={stage} className="flex-1 text-center">
               <span className={cn(
                 'text-[10px] font-medium',
-                pipeline.status === stage ? 'text-foreground' : 'text-muted-foreground/60'
+                pipeline.lifecycle === stage ? 'text-foreground' : 'text-muted-foreground/60'
               )}>
-                {PipelineStageLabels[stage]}
+                {ProjectLifecycleLabels[stage]}
               </span>
             </div>
           ))}
         </div>
       )}
-      {pipeline.status === PipelineStage.LOST && (
+      {pipeline.lifecycle === ProjectLifecycle.LOST && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500/10">
           <div className="h-2 w-2 rounded-full bg-rose-500" />
           <span className="text-[12px] font-semibold text-rose-600">Lost</span>

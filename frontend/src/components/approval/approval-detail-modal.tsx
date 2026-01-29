@@ -106,7 +106,7 @@ export function ApprovalDetailModal({
                   <div>
                     <h3 className="text-lg font-semibold">{approval.title}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {approval.project.code} - {approval.project.name}
+                      {approval.project.dealCode} - {approval.project.name}
                     </p>
                   </div>
                   <Badge className={ApprovalStatusColors[approval.status]}>

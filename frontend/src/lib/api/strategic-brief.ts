@@ -13,15 +13,13 @@ export interface BriefSection {
 
 export interface StrategicBrief {
   id: string;
-  pipelineId: string | null;
-  projectId: string | null;
+  projectId: string;
   status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REVISION_REQUESTED';
   completionPct: number;
   submittedAt: string | null;
   approvedAt: string | null;
   sections: BriefSection[];
-  pipeline?: { id: string; projectName: string } | null;
-  project?: { id: string; code: string; name: string } | null;
+  project?: { id: string; dealCode: string; name: string } | null;
 }
 
 export const strategicBriefApi = {
@@ -30,12 +28,12 @@ export const strategicBriefApi = {
     return res.data;
   },
 
-  getByPipeline: async (pipelineId: string): Promise<StrategicBrief> => {
-    const res = await api.get(`/strategic-briefs/by-pipeline/${pipelineId}`);
+  getByProject: async (projectId: string): Promise<StrategicBrief> => {
+    const res = await api.get(`/strategic-briefs/by-project/${projectId}`);
     return res.data;
   },
 
-  create: async (input: { pipelineId?: string; projectId?: string }): Promise<StrategicBrief> => {
+  create: async (input: { projectId: string }): Promise<StrategicBrief> => {
     const res = await api.post('/strategic-briefs', input);
     return res.data;
   },

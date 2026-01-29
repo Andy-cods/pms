@@ -18,7 +18,7 @@ import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
 import {
   UserRole,
   ApprovalStatus as PrismaApprovalStatus,
-  ProjectStage,
+  ProjectLifecycle,
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import {
@@ -68,7 +68,7 @@ export class ApprovalController {
       projectId: approval.projectId,
       project: {
         id: approval.project.id,
-        code: approval.project.code,
+        dealCode: approval.project.dealCode,
         name: approval.project.name,
       },
       type: approval.type,
@@ -184,7 +184,7 @@ export class ApprovalController {
       this.prisma.approval.findMany({
         where,
         include: {
-          project: { select: { id: true, code: true, name: true } },
+          project: { select: { id: true, dealCode: true, name: true } },
           submittedBy: {
             select: { id: true, name: true, email: true, avatar: true },
           },
@@ -222,7 +222,7 @@ export class ApprovalController {
         status: PrismaApprovalStatus.PENDING,
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -289,7 +289,7 @@ export class ApprovalController {
     const approval = await this.prisma.approval.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -371,7 +371,7 @@ export class ApprovalController {
           : undefined,
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -384,10 +384,10 @@ export class ApprovalController {
     });
 
     // Update project stage to UNDER_REVIEW if not already
-    if (project.stage !== ProjectStage.UNDER_REVIEW) {
+    if (project.lifecycle !== ProjectLifecycle.EVALUATION) {
       await this.prisma.project.update({
         where: { id: dto.projectId },
-        data: { stage: ProjectStage.UNDER_REVIEW },
+        data: { lifecycle: ProjectLifecycle.EVALUATION },
       });
     }
 
@@ -442,7 +442,7 @@ export class ApprovalController {
           : undefined,
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -499,7 +499,7 @@ export class ApprovalController {
         respondedAt: new Date(),
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -523,14 +523,14 @@ export class ApprovalController {
     );
 
     // Update project stage based on current stage
-    const newStage =
-      approval.project.stage === ProjectStage.UNDER_REVIEW
-        ? ProjectStage.PROPOSAL_PITCH
-        : ProjectStage.ONGOING;
+    const newLifecycle =
+      approval.project.lifecycle === ProjectLifecycle.EVALUATION
+        ? ProjectLifecycle.NEGOTIATION
+        : ProjectLifecycle.ONGOING;
 
     await this.prisma.project.update({
       where: { id: approval.projectId },
-      data: { stage: newStage },
+      data: { lifecycle: newLifecycle },
     });
 
     return this.mapToResponse(updated);
@@ -567,7 +567,7 @@ export class ApprovalController {
         respondedAt: new Date(),
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -593,7 +593,7 @@ export class ApprovalController {
     // Revert project stage
     await this.prisma.project.update({
       where: { id: approval.projectId },
-      data: { stage: ProjectStage.PLANNING },
+      data: { lifecycle: ProjectLifecycle.PLANNING },
     });
 
     return this.mapToResponse(updated);
@@ -631,7 +631,7 @@ export class ApprovalController {
         respondedAt: new Date(),
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         submittedBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },

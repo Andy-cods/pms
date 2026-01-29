@@ -9,7 +9,7 @@ import {
   ReportSummary,
   FullReportData,
 } from '../../application/dto/report/report.dto.js';
-import { TaskStatus, ProjectStatus, UserRole } from '@prisma/client';
+import { TaskStatus, HealthStatus, UserRole } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
@@ -148,7 +148,7 @@ export class ReportService {
         ],
       },
       include: {
-        project: { select: { name: true, code: true } },
+        project: { select: { name: true, dealCode: true } },
         assignees: {
           include: {
             user: { select: { name: true } },
@@ -200,10 +200,10 @@ export class ReportService {
 
       return {
         id: project.id,
-        code: project.code,
+        dealCode: project.dealCode,
         name: project.name,
-        status: project.status,
-        stage: project.stage,
+        healthStatus: project.healthStatus,
+        lifecycle: project.lifecycle,
         stageProgress: project.stageProgress,
         startDate: project.startDate,
         endDate: project.endDate,
@@ -220,7 +220,7 @@ export class ReportService {
       status: task.status,
       priority: task.priority,
       projectName: task.project.name,
-      projectCode: task.project.code,
+      projectDealCode: task.project.dealCode,
       assignees: task.assignees.map((a) => a.user.name),
       deadline: task.deadline,
       estimatedHours: task.estimatedHours,
@@ -231,10 +231,10 @@ export class ReportService {
 
     // Calculate summary
     const projectStatusBreakdown = {
-      stable: projects.filter((p) => p.status === ProjectStatus.STABLE).length,
-      warning: projects.filter((p) => p.status === ProjectStatus.WARNING)
+      stable: projects.filter((p) => p.healthStatus === HealthStatus.STABLE).length,
+      warning: projects.filter((p) => p.healthStatus === HealthStatus.WARNING)
         .length,
-      critical: projects.filter((p) => p.status === ProjectStatus.CRITICAL)
+      critical: projects.filter((p) => p.healthStatus === HealthStatus.CRITICAL)
         .length,
     };
 
@@ -349,15 +349,15 @@ export class ReportService {
 
         data.projects.forEach((project, index) => {
           doc.fontSize(12).font('Helvetica-Bold');
-          doc.text(`${index + 1}. [${project.code}] ${project.name}`);
+          doc.text(`${index + 1}. [${project.dealCode}] ${project.name}`);
 
           doc.fontSize(10).font('Helvetica');
           doc.text(`   Khach hang: ${project.client?.companyName || 'N/A'}`);
           doc.text(
-            `   Trang thai: ${this.getProjectStatusVietnamese(project.status)}`,
+            `   Trang thai: ${this.getProjectStatusVietnamese(project.healthStatus)}`,
           );
           doc.text(
-            `   Giai doan: ${this.getProjectStageVietnamese(project.stage)}`,
+            `   Giai doan: ${this.getProjectStageVietnamese(project.lifecycle)}`,
           );
           doc.text(`   Tien do: ${project.stageProgress}%`);
           doc.text(
@@ -382,7 +382,7 @@ export class ReportService {
         // Group tasks by project
         const tasksByProject = data.tasks.reduce(
           (acc, task) => {
-            const key = task.projectCode;
+            const key = task.projectDealCode;
             if (!acc[key]) {
               acc[key] = { name: task.projectName, tasks: [] };
             }
@@ -570,11 +570,11 @@ export class ReportService {
     // Data rows
     projects.forEach((project) => {
       sheet.addRow([
-        project.code,
+        project.dealCode,
         project.name,
         project.client?.companyName || 'N/A',
-        this.getProjectStatusVietnamese(project.status),
-        this.getProjectStageVietnamese(project.stage),
+        this.getProjectStatusVietnamese(project.healthStatus),
+        this.getProjectStageVietnamese(project.lifecycle),
         project.stageProgress,
         project.startDate ? this.formatDate(project.startDate) : 'N/A',
         project.endDate ? this.formatDate(project.endDate) : 'N/A',
@@ -627,7 +627,7 @@ export class ReportService {
     // Data rows
     tasks.forEach((task) => {
       sheet.addRow([
-        task.projectCode,
+        task.projectDealCode,
         task.projectName,
         task.title,
         this.getTaskStatusVietnamese(task.status),
@@ -670,7 +670,7 @@ export class ReportService {
       // Project header
       sheet.mergeCells(`A${currentRow}:E${currentRow}`);
       const projectHeaderCell = sheet.getCell(`A${currentRow}`);
-      projectHeaderCell.value = `[${project.code}] ${project.name}`;
+      projectHeaderCell.value = `[${project.dealCode}] ${project.name}`;
       projectHeaderCell.font = { bold: true };
       projectHeaderCell.fill = {
         type: 'pattern',

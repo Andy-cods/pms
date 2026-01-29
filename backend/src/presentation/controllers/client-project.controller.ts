@@ -40,7 +40,7 @@ export class ClientProjectController {
     const where: Record<string, unknown> = { clientId };
 
     if (status) {
-      where.status = status;
+      where.healthStatus = status;
     }
 
     if (search) {
@@ -181,7 +181,7 @@ export class ClientProjectController {
     id: string;
     name: string;
     description: string | null;
-    status: string;
+    healthStatus: string;
     stageProgress: number;
     startDate: Date | null;
     endDate: Date | null;
@@ -200,7 +200,7 @@ export class ClientProjectController {
       id: project.id,
       name: project.name,
       description: project.description,
-      status: project.status,
+      status: project.healthStatus as string,
       priority: 'MEDIUM',
       progress,
       startDate: project.startDate?.toISOString() || null,
@@ -220,7 +220,7 @@ export class ClientProjectController {
     id: string;
     name: string;
     description: string | null;
-    status: string;
+    healthStatus: string;
     stageProgress: number;
     startDate: Date | null;
     endDate: Date | null;

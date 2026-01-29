@@ -1,6 +1,6 @@
 import { api } from './index';
 
-export const ProjectStatusColors: Record<string, string> = {
+export const HealthStatusColors: Record<string, string> = {
   STABLE: 'bg-green-100 text-green-800',
   WARNING: 'bg-yellow-100 text-yellow-800',
   CRITICAL: 'bg-red-100 text-red-800',

@@ -17,12 +17,11 @@ import {
 
 import { useProjects } from '@/hooks/use-projects';
 import {
-  type ProjectStatus,
-  type ProjectStage,
-  ProjectStatusLabels,
-  ProjectStageLabels,
-  ProjectStatusDotColors,
+  HealthStatusLabels,
+  ProjectLifecycleLabels,
+  HealthStatusDotColors,
 } from '@/lib/api/projects';
+import { HealthStatus, ProjectLifecycle } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,22 +38,22 @@ import {
 import { cn } from '@/lib/utils';
 
 // Apple-style status badge component
-function StatusBadge({ status }: { status: ProjectStatus }) {
+function StatusBadge({ status }: { status: HealthStatus }) {
   return (
     <div className="inline-flex items-center gap-1.5">
-      <span className={cn('h-2 w-2 rounded-full', ProjectStatusDotColors[status])} />
+      <span className={cn('h-2 w-2 rounded-full', HealthStatusDotColors[status])} />
       <span className="text-footnote font-medium text-foreground">
-        {ProjectStatusLabels[status]}
+        {HealthStatusLabels[status]}
       </span>
     </div>
   );
 }
 
 // Apple-style pill badge for stage
-function StagePill({ stage }: { stage: ProjectStage }) {
+function StagePill({ stage }: { stage: ProjectLifecycle }) {
   return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface text-footnote text-muted-foreground font-medium">
-      {ProjectStageLabels[stage]}
+      {ProjectLifecycleLabels[stage]}
     </span>
   );
 }
@@ -158,38 +157,39 @@ function ProjectSkeleton({ viewMode }: { viewMode: 'table' | 'grid' }) {
 }
 
 // Stage order for Kanban view
-const STAGE_ORDER: ProjectStage[] = [
-  'INTAKE',
-  'DISCOVERY',
-  'PLANNING',
-  'UNDER_REVIEW',
-  'PROPOSAL_PITCH',
-  'ONGOING',
-  'OPTIMIZATION',
-  'COMPLETED',
-  'CLOSED',
+const STAGE_ORDER: ProjectLifecycle[] = [
+  ProjectLifecycle.LEAD,
+  ProjectLifecycle.QUALIFIED,
+  ProjectLifecycle.EVALUATION,
+  ProjectLifecycle.NEGOTIATION,
+  ProjectLifecycle.WON,
+  ProjectLifecycle.LOST,
+  ProjectLifecycle.PLANNING,
+  ProjectLifecycle.ONGOING,
+  ProjectLifecycle.OPTIMIZING,
+  ProjectLifecycle.CLOSED,
 ];
 
 export default function ProjectsPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  const [stageFilter, setStageFilter] = useState<ProjectStage | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<HealthStatus | 'all'>('all');
+  const [stageFilter, setStageFilter] = useState<ProjectLifecycle | 'all'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'stage'>('grid');
 
   const { data, isLoading } = useProjects({
     search: search || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    stage: stageFilter !== 'all' ? stageFilter : undefined,
+    healthStatus: statusFilter !== 'all' ? statusFilter : undefined,
+    lifecycle: stageFilter !== 'all' ? [stageFilter] : undefined,
     limit: 100, // Load more for stage view
   });
 
   // Group projects by stage for Kanban view
   const projectsByStage = data?.projects
     ? STAGE_ORDER.reduce((acc, stage) => {
-        acc[stage] = data.projects.filter((p) => p.stage === stage);
+        acc[stage] = data.projects.filter((p) => p.lifecycle === stage);
         return acc;
-      }, {} as Record<ProjectStage, typeof data.projects>)
+      }, {} as Record<ProjectLifecycle, typeof data.projects>)
     : null;
 
   const formatDate = (date: string | null) => {
@@ -241,18 +241,18 @@ export default function ProjectsPage() {
           />
           <FilterPill
             label="On Track"
-            active={statusFilter === 'STABLE'}
-            onClick={() => setStatusFilter('STABLE')}
+            active={statusFilter === HealthStatus.STABLE}
+            onClick={() => setStatusFilter(HealthStatus.STABLE)}
           />
           <FilterPill
             label="At Risk"
-            active={statusFilter === 'WARNING'}
-            onClick={() => setStatusFilter('WARNING')}
+            active={statusFilter === HealthStatus.WARNING}
+            onClick={() => setStatusFilter(HealthStatus.WARNING)}
           />
           <FilterPill
             label="Critical"
-            active={statusFilter === 'CRITICAL'}
-            onClick={() => setStatusFilter('CRITICAL')}
+            active={statusFilter === HealthStatus.CRITICAL}
+            onClick={() => setStatusFilter(HealthStatus.CRITICAL)}
           />
         </div>
 
@@ -312,14 +312,14 @@ export default function ProjectsPage() {
           {STAGE_ORDER.slice(0, 6).map((stage) => (
             <FilterPill
               key={stage}
-              label={ProjectStageLabels[stage]}
+              label={ProjectLifecycleLabels[stage]}
               active={stageFilter === stage}
               onClick={() => setStageFilter(stage)}
             />
           ))}
           {stageFilter !== 'all' && !STAGE_ORDER.slice(0, 6).includes(stageFilter) && (
             <FilterPill
-              label={ProjectStageLabels[stageFilter]}
+              label={ProjectLifecycleLabels[stageFilter]}
               active={true}
               onClick={() => setStageFilter('all')}
             />
@@ -337,7 +337,7 @@ export default function ProjectsPage() {
                   onClick={() => setStageFilter(stage)}
                   className="rounded-lg"
                 >
-                  {ProjectStageLabels[stage]}
+                  {ProjectLifecycleLabels[stage]}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -368,7 +368,7 @@ export default function ProjectsPage() {
                   <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-2">
                       <span className="text-footnote font-semibold">
-                        {ProjectStageLabels[stage]}
+                        {ProjectLifecycleLabels[stage]}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-background text-caption font-medium text-muted-foreground">
                         {stageProjects.length}
@@ -394,7 +394,7 @@ export default function ProjectsPage() {
                                 {project.name}
                               </h4>
                               <p className="text-caption text-muted-foreground truncate">
-                                {project.code}
+                                {project.dealCode}
                               </p>
                             </div>
                           </div>
@@ -402,7 +402,7 @@ export default function ProjectsPage() {
                           {/* Progress */}
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
-                              <StatusBadge status={project.status} />
+                              <StatusBadge status={project.healthStatus} />
                               <span className="text-caption font-medium tabular-nums">
                                 {project.stageProgress}%
                               </span>
@@ -418,11 +418,11 @@ export default function ProjectsPage() {
                                   key={member.id}
                                   className="h-6 w-6 border-2 border-background ring-0"
                                 >
-                                  {member.user.avatar && (
-                                    <AvatarImage src={member.user.avatar} />
+                                  {member.user?.avatar && (
+                                    <AvatarImage src={member.user?.avatar} />
                                   )}
                                   <AvatarFallback className="text-[9px] font-medium bg-muted">
-                                    {member.user.name.charAt(0).toUpperCase()}
+                                    {member.user?.name.charAt(0).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
@@ -468,7 +468,7 @@ export default function ProjectsPage() {
                           {project.name}
                         </h3>
                         <p className="text-footnote text-muted-foreground truncate">
-                          {project.code}
+                          {project.dealCode}
                           {project.client && ` · ${project.client.companyName}`}
                         </p>
                       </div>
@@ -521,8 +521,8 @@ export default function ProjectsPage() {
 
                   {/* Status & Stage */}
                   <div className="flex items-center gap-3">
-                    <StatusBadge status={project.status} />
-                    <StagePill stage={project.stage} />
+                    <StatusBadge status={project.healthStatus} />
+                    <StagePill stage={project.lifecycle} />
                   </div>
 
                   {/* Progress */}
@@ -549,11 +549,11 @@ export default function ProjectsPage() {
                             key={member.id}
                             className="h-7 w-7 border-2 border-background ring-0"
                           >
-                            {member.user.avatar && (
-                              <AvatarImage src={member.user.avatar} />
+                            {member.user?.avatar && (
+                              <AvatarImage src={member.user?.avatar} />
                             )}
                             <AvatarFallback className="text-[10px] font-medium bg-muted">
-                              {member.user.name.charAt(0).toUpperCase()}
+                              {member.user?.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                         ))}
@@ -591,19 +591,19 @@ export default function ProjectsPage() {
                     </h3>
                   </div>
                   <p className="text-footnote text-muted-foreground truncate">
-                    {project.code}
+                    {project.dealCode}
                     {project.client && ` · ${project.client.companyName}`}
                   </p>
                 </div>
 
                 {/* Status */}
                 <div className="hidden sm:block">
-                  <StatusBadge status={project.status} />
+                  <StatusBadge status={project.healthStatus} />
                 </div>
 
                 {/* Stage */}
                 <div className="hidden md:block">
-                  <StagePill stage={project.stage} />
+                  <StagePill stage={project.lifecycle} />
                 </div>
 
                 {/* Progress */}
@@ -627,9 +627,9 @@ export default function ProjectsPage() {
                       key={member.id}
                       className="h-7 w-7 border-2 border-background ring-0"
                     >
-                      {member.user.avatar && <AvatarImage src={member.user.avatar} />}
+                      {member.user?.avatar && <AvatarImage src={member.user?.avatar} />}
                       <AvatarFallback className="text-[10px] font-medium bg-muted">
-                        {member.user.name.charAt(0).toUpperCase()}
+                        {member.user?.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   ))}

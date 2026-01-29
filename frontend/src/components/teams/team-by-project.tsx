@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProjects } from '@/hooks/use-projects';
-import { ProjectStageLabels } from '@/types';
-import type { ProjectStage } from '@/types';
+import { ProjectLifecycleLabels } from '@/types';
+import type { ProjectLifecycle } from '@/types';
 
 export function TeamByProject() {
   const { data, isLoading } = useProjects({ limit: 100 });
@@ -52,7 +52,7 @@ export function TeamByProject() {
                 <FolderKanban className="h-4 w-4 text-primary" />
                 <CardTitle className="text-sm font-medium">{project.name}</CardTitle>
                 <Badge variant="outline" className="text-[10px] ml-auto">
-                  {ProjectStageLabels[project.stage as ProjectStage] || project.stage}
+                  {ProjectLifecycleLabels[project.lifecycle as ProjectLifecycle] || project.lifecycle}
                 </Badge>
                 <Badge variant="secondary" className="text-[10px]">
                   {members.length} thành viên

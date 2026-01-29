@@ -420,8 +420,9 @@ export class UpdateBudgetDto {
   otherFee?: number;
 
   @IsOptional()
-  @IsString()
-  budgetPacing?: string;
+  @Type(() => Number)
+  @IsNumber()
+  budgetPacing?: number;
 }
 
 // ─── Response DTOs ───

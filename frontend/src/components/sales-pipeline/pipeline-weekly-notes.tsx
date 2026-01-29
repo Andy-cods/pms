@@ -5,11 +5,11 @@ import { MessageSquarePlus, Calendar, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import type { SalesPipeline, WeeklyNote } from '@/types';
-import { useAddWeeklyNote } from '@/hooks/use-sales-pipeline';
+import type { Project, WeeklyNote } from '@/types';
+import { useAddWeeklyNote } from '@/hooks/use-projects';
 
 interface PipelineWeeklyNotesProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
   readOnly?: boolean;
 }
 

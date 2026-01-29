@@ -110,7 +110,7 @@ export default function FilesPage() {
   const groupedByProject = useMemo(() => {
     const groups: Record<string, typeof files> = {};
     files.forEach((f) => {
-      const key = f.project?.id ? `${f.project.code} — ${f.project.name}` : 'Không gắn dự án';
+      const key = f.project?.id ? `${f.project.dealCode} — ${f.project.name}` : 'Không gắn dự án';
       if (!groups[key]) groups[key] = [];
       groups[key].push(f);
     });
@@ -151,7 +151,7 @@ export default function FilesPage() {
                 <SelectContent>
                   {projectsData?.projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.code} · {p.name}
+                      {p.dealCode} · {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -303,7 +303,7 @@ export default function FilesPage() {
                       className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                       onClick={() => router.push(`/dashboard/projects/${file.project?.id}`)}
                     >
-                      {file.project.code} · {file.project.name}
+                      {file.project.dealCode} · {file.project.name}
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   )}

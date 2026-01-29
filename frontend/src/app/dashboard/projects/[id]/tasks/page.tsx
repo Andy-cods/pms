@@ -194,7 +194,7 @@ export default function ProjectTasksPage() {
           <div>
             <h1 className="text-headline font-semibold tracking-tight">Tasks</h1>
             <p className="text-[14px] text-muted-foreground">
-              {project?.code} - {project?.name}
+              {project?.dealCode} - {project?.name}
             </p>
           </div>
         </div>

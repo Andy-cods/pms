@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { SalesPipeline } from '@/types';
-import { useUpdatePipelineSale } from '@/hooks/use-sales-pipeline';
+import type { Project } from '@/types';
+import { useUpdateProjectSale } from '@/hooks/use-projects';
 
 const saleFormSchema = z.object({
   projectName: z.string().min(1, 'Tên dự án là bắt buộc'),
@@ -34,17 +34,17 @@ const saleFormSchema = z.object({
 type SaleFormValues = z.infer<typeof saleFormSchema>;
 
 interface PipelineSaleFormProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
   readOnly?: boolean;
 }
 
 export function PipelineSaleForm({ pipeline, readOnly = false }: PipelineSaleFormProps) {
-  const updateSale = useUpdatePipelineSale();
+  const updateSale = useUpdateProjectSale();
 
   const form = useForm<SaleFormValues>({
     resolver: zodResolver(saleFormSchema) as any,
     defaultValues: {
-      projectName: pipeline.projectName,
+      projectName: pipeline.name,
       clientType: pipeline.clientType ?? '',
       productType: pipeline.productType ?? '',
       licenseLink: pipeline.licenseLink ?? '',

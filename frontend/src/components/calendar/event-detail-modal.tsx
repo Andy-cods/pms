@@ -138,7 +138,7 @@ export function EventDetailModal({
                     <DialogTitle className="text-xl">{event.title}</DialogTitle>
                     {event.project && (
                       <p className="text-sm text-muted-foreground">
-                        {event.project.code} - {event.project.name}
+                        {event.project.dealCode} - {event.project.name}
                       </p>
                     )}
                   </div>

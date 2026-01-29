@@ -102,7 +102,7 @@ export class EventController {
       this.prisma.event.findMany({
         where,
         include: {
-          project: { select: { id: true, code: true, name: true } },
+          project: { select: { id: true, dealCode: true, name: true } },
           createdBy: {
             select: { id: true, name: true, email: true, avatar: true },
           },
@@ -212,7 +212,7 @@ export class EventController {
     const tasks = await this.prisma.task.findMany({
       where,
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         assignees: {
           include: {
             user: {
@@ -265,7 +265,7 @@ export class EventController {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -340,7 +340,7 @@ export class EventController {
         },
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -427,7 +427,7 @@ export class EventController {
             : undefined,
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -501,7 +501,7 @@ export class EventController {
     const updated = await this.prisma.event.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
@@ -583,7 +583,7 @@ export class EventController {
     projectId: string | null;
     taskId: string | null;
     reminderBefore: number | null;
-    project?: { id: string; code: string; name: string } | null;
+    project?: { id: string; dealCode: string; name: string } | null;
     createdBy: {
       id: string;
       name: string;

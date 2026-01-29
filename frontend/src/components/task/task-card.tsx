@@ -117,7 +117,7 @@ export function TaskCard({
           {task.project && (
             <div className="flex flex-wrap gap-1.5">
               <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full bg-secondary text-secondary-foreground">
-                {task.project.code}
+                {task.project.dealCode}
               </span>
               <span
                 className={cn(
@@ -233,7 +233,7 @@ export function TaskCard({
               {/* Project code */}
               {task.project && (
                 <span className="text-[13px] text-muted-foreground">
-                  {task.project.code}
+                  {task.project.dealCode}
                 </span>
               )}
 

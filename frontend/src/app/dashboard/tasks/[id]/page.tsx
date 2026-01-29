@@ -114,7 +114,7 @@ export default function TaskDetailPage() {
                   onClick={() => router.push(`/dashboard/projects/${task.projectId}`)}
                   className="text-primary hover:underline"
                 >
-                  {task.project.code} – {task.project.name}
+                  {task.project.dealCode} – {task.project.name}
                 </button>
               </span>
             </div>

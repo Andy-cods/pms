@@ -4,7 +4,7 @@ import { History, ArrowRight, Loader2, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useStageHistory } from '@/hooks/use-stage-history';
-import { ProjectStageLabels } from '@/lib/api/projects';
+import { ProjectLifecycleLabels } from '@/lib/api/projects';
 
 interface StageHistoryTimelineProps {
   projectId: string;
@@ -24,7 +24,7 @@ export function StageHistoryTimeline({ projectId }: StageHistoryTimelineProps) {
   };
 
   const getStageLabel = (stage: string) => {
-    return ProjectStageLabels[stage as keyof typeof ProjectStageLabels] || stage;
+    return ProjectLifecycleLabels[stage as keyof typeof ProjectLifecycleLabels] || stage;
   };
 
   if (isLoading) {

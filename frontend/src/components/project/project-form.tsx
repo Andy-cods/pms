@@ -9,7 +9,9 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { useCreateProject, useUpdateProject } from '@/hooks/use-projects';
-import { type Project, type ProjectStage, ProjectStageLabels } from '@/lib/api/projects';
+import { type Project, ProjectLifecycleLabels } from '@/lib/api/projects';
+import { HealthStatus, ProjectLifecycle } from '@/types';
+import type { UpdateProjectInput, CreateProjectInput } from '@/types';
 import { StageProgressSlider } from '@/components/project/stage-progress-slider';
 
 import { Button } from '@/components/ui/button';
@@ -40,24 +42,12 @@ import {
 import { cn } from '@/lib/utils';
 
 const projectFormSchema = z.object({
-  code: z.string().optional(),
+  dealCode: z.string().optional(),
   name: z.string().min(1, 'Tên dự án là bắt buộc'),
   description: z.string().optional(),
   productType: z.string().optional(),
-  status: z.enum(['STABLE', 'WARNING', 'CRITICAL']).optional(),
-  stage: z
-    .enum([
-      'INTAKE',
-      'DISCOVERY',
-      'PLANNING',
-      'UNDER_REVIEW',
-      'PROPOSAL_PITCH',
-      'ONGOING',
-      'OPTIMIZATION',
-      'COMPLETED',
-      'CLOSED',
-    ])
-    .optional(),
+  healthStatus: z.nativeEnum(HealthStatus).optional(),
+  lifecycle: z.nativeEnum(ProjectLifecycle).optional(),
   stageProgress: z.number().min(0).max(100).optional(),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
@@ -105,12 +95,12 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      code: project?.code ?? '',
+      dealCode: project?.dealCode ?? '',
       name: project?.name ?? '',
       description: project?.description ?? '',
       productType: project?.productType ?? '',
-      status: project?.status ?? 'STABLE',
-      stage: project?.stage ?? 'INTAKE',
+      healthStatus: project?.healthStatus ?? HealthStatus.STABLE,
+      lifecycle: project?.lifecycle ?? ProjectLifecycle.LEAD,
       stageProgress: project?.stageProgress ?? 0,
       startDate: project?.startDate ? new Date(project.startDate) : null,
       endDate: project?.endDate ? new Date(project.endDate) : null,
@@ -121,8 +111,9 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
   });
 
   const onSubmit = async (data: ProjectFormData) => {
-    const input = {
-      ...data,
+    const { lifecycle, dealCode, ...rest } = data;
+    const base = {
+      ...rest,
       startDate: data.startDate?.toISOString(),
       endDate: data.endDate?.toISOString(),
       driveLink: data.driveLink || undefined,
@@ -133,10 +124,14 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
     if (isEditing) {
       await updateMutation.mutateAsync({
         id: project.id,
-        input,
+        input: base as UpdateProjectInput,
       });
     } else {
-      await createMutation.mutateAsync(input);
+      await createMutation.mutateAsync({
+        name: data.name,
+        description: data.description,
+        productType: data.productType,
+      } as CreateProjectInput);
     }
 
     if (onSuccess) {
@@ -157,10 +152,10 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
           description="Các thông tin chính của dự án"
         >
           <div className="grid gap-6 sm:grid-cols-2">
-            {/* Code */}
+            {/* Deal Code */}
             <FormField
               control={form.control}
-              name="code"
+              name="dealCode"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-footnote font-medium">
@@ -251,10 +246,10 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
               )}
             />
 
-            {/* Status */}
+            {/* Health Status */}
             <FormField
               control={form.control}
-              name="status"
+              name="healthStatus"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-footnote font-medium">
@@ -292,10 +287,10 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
               )}
             />
 
-            {/* Stage */}
+            {/* Lifecycle */}
             <FormField
               control={form.control}
-              name="stage"
+              name="lifecycle"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-footnote font-medium">
@@ -308,7 +303,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-xl">
-                      {Object.entries(ProjectStageLabels).map(([value, label]) => (
+                      {Object.entries(ProjectLifecycleLabels).map(([value, label]) => (
                         <SelectItem key={value} value={value} className="rounded-lg">
                           {label}
                         </SelectItem>
@@ -330,7 +325,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
                 <FormItem>
                   <FormControl>
                     <StageProgressSlider
-                      stage={(form.watch('stage') ?? 'INTAKE') as ProjectStage}
+                      stage={(form.watch('lifecycle') ?? 'LEAD') as ProjectLifecycle}
                       progress={field.value ?? 0}
                       onChange={field.onChange}
                       showLabel={true}

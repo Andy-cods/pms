@@ -7,10 +7,10 @@ import { Plus, Search, TrendingUp, DollarSign, BarChart3, Users } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PipelineKanbanBoard } from '@/components/sales-pipeline/pipeline-kanban-board';
-import { usePipelines, useUpdatePipelineStage, useCreatePipeline } from '@/hooks/use-sales-pipeline';
+import { useProjects, useUpdateProjectLifecycle, useCreateProject } from '@/hooks/use-projects';
 import { useAuth } from '@/hooks/use-auth';
-import { UserRole, PipelineStage } from '@/types';
-import type { SalesPipeline } from '@/types';
+import { UserRole, ProjectLifecycle } from '@/types';
+import type { Project } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -30,23 +30,23 @@ function formatCompactValue(value: number): string {
 export default function SalesPipelinePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { data, isLoading } = usePipelines({ limit: 200 });
-  const updateStage = useUpdatePipelineStage();
+  const { data, isLoading } = useProjects({ limit: 200 });
+  const updateStage = useUpdateProjectLifecycle();
   const [search, setSearch] = useState('');
 
-  const pipelines = data?.data ?? [];
+  const pipelines = data?.projects ?? [];
   const filtered = search
     ? pipelines.filter((p) =>
-        p.projectName.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(search.toLowerCase())
       )
     : pipelines;
 
   const stats = useMemo(() => {
     const totalValue = pipelines.reduce((sum, p) => sum + (p.totalBudget ?? 0), 0);
     const activeCount = pipelines.filter(
-      (p) => p.status !== PipelineStage.WON && p.status !== PipelineStage.LOST
+      (p) => p.lifecycle !== ProjectLifecycle.WON && p.lifecycle !== ProjectLifecycle.LOST
     ).length;
-    const wonCount = pipelines.filter((p) => p.status === PipelineStage.WON).length;
+    const wonCount = pipelines.filter((p) => p.lifecycle === ProjectLifecycle.WON).length;
     const avgMargin = pipelines.filter((p) => p.profitMargin != null).length > 0
       ? pipelines.reduce((sum, p) => sum + (p.profitMargin ?? 0), 0) /
         pipelines.filter((p) => p.profitMargin != null).length
@@ -54,11 +54,11 @@ export default function SalesPipelinePage() {
     return { totalValue, activeCount, wonCount, avgMargin };
   }, [pipelines]);
 
-  const handleStageChange = (pipelineId: string, newStage: PipelineStage) => {
-    updateStage.mutate({ id: pipelineId, stage: newStage });
+  const handleStageChange = (pipelineId: string, newStage: ProjectLifecycle) => {
+    updateStage.mutate({ id: pipelineId, lifecycle: newStage });
   };
 
-  const handlePipelineClick = (pipeline: SalesPipeline) => {
+  const handlePipelineClick = (pipeline: Project) => {
     router.push(`/dashboard/sales-pipeline/${pipeline.id}`);
   };
 
@@ -166,12 +166,12 @@ function StatCard({
 function CreatePipelineDialog() {
   const [open, setOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
-  const create = useCreatePipeline();
+  const create = useCreateProject();
 
   const handleCreate = () => {
     if (!projectName.trim()) return;
     create.mutate(
-      { projectName: projectName.trim() },
+      { name: projectName.trim() },
       {
         onSuccess: () => {
           setProjectName('');

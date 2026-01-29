@@ -129,7 +129,7 @@ export default function ApprovalsPage() {
                 <div>
                   <div className="font-medium">{approval.project.name}</div>
                   <div className="text-sm text-muted-foreground">
-                    {approval.project.code}
+                    {approval.project.dealCode}
                   </div>
                 </div>
               </TableCell>

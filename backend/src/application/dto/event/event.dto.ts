@@ -230,7 +230,7 @@ export interface EventResponseDto {
   reminderBefore: number | null;
   project?: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   } | null;
   createdBy: {

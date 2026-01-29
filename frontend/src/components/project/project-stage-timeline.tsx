@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type ProjectStage, ProjectStageLabels } from '@/lib/api/projects';
+import { ProjectLifecycleLabels } from '@/lib/api/projects';
+import { ProjectLifecycle } from '@/types';
 import {
   Tooltip,
   TooltipContent,
@@ -22,38 +23,39 @@ import {
 } from '@/components/ui/alert-dialog';
 
 // Ordered stages for timeline
-const STAGE_ORDER: ProjectStage[] = [
-  'INTAKE',
-  'DISCOVERY',
-  'PLANNING',
-  'UNDER_REVIEW',
-  'PROPOSAL_PITCH',
-  'ONGOING',
-  'OPTIMIZATION',
-  'COMPLETED',
-  'CLOSED',
+const STAGE_ORDER: ProjectLifecycle[] = [
+  ProjectLifecycle.LEAD,
+  ProjectLifecycle.QUALIFIED,
+  ProjectLifecycle.EVALUATION,
+  ProjectLifecycle.NEGOTIATION,
+  ProjectLifecycle.WON,
+  ProjectLifecycle.LOST,
+  ProjectLifecycle.PLANNING,
+  ProjectLifecycle.ONGOING,
+  ProjectLifecycle.OPTIMIZING,
+  ProjectLifecycle.CLOSED,
 ];
 
-interface ProjectStageTimelineProps {
-  currentStage: ProjectStage;
+interface ProjectLifecycleTimelineProps {
+  currentStage: ProjectLifecycle;
   stageProgress: number;
-  onStageChange?: (stage: ProjectStage, reason?: string) => void;
+  onStageChange?: (stage: ProjectLifecycle, reason?: string) => void;
   onProgressChange?: (progress: number) => void;
   isEditable?: boolean;
   compact?: boolean;
 }
 
-export function ProjectStageTimeline({
+export function ProjectLifecycleTimeline({
   currentStage,
   stageProgress,
   onStageChange,
   onProgressChange,
   isEditable = false,
   compact = false,
-}: ProjectStageTimelineProps) {
+}: ProjectLifecycleTimelineProps) {
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
-    stage: ProjectStage | null;
+    stage: ProjectLifecycle | null;
   }>({ open: false, stage: null });
   const [stageReason, setStageReason] = useState('');
 
@@ -94,7 +96,7 @@ export function ProjectStageTimeline({
 
   const currentIndex = STAGE_ORDER.indexOf(currentStage);
 
-  const handleStageClick = (stage: ProjectStage, index: number) => {
+  const handleStageClick = (stage: ProjectLifecycle, index: number) => {
     if (!isEditable || !onStageChange) return;
     if (stage === currentStage) return;
 
@@ -139,7 +141,7 @@ export function ProjectStageTimeline({
                   />
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
-                  <p className="font-medium">{ProjectStageLabels[stage]}</p>
+                  <p className="font-medium">{ProjectLifecycleLabels[stage]}</p>
                   {status === 'current' && (
                     <p className="text-muted-foreground">{stageProgress}% complete</p>
                   )}
@@ -215,7 +217,7 @@ export function ProjectStageTimeline({
                           status === 'upcoming' && 'text-gray-400 dark:text-gray-500'
                         )}
                       >
-                        {ProjectStageLabels[stage]}
+                        {ProjectLifecycleLabels[stage]}
                       </span>
 
                       {/* Progress indicator for current stage */}
@@ -230,7 +232,7 @@ export function ProjectStageTimeline({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="font-medium">{ProjectStageLabels[stage]}</p>
+                    <p className="font-medium">{ProjectLifecycleLabels[stage]}</p>
                     {status === 'current' && (
                       <p className="text-muted-foreground text-xs">{stageProgress}% complete</p>
                     )}
@@ -252,7 +254,7 @@ export function ProjectStageTimeline({
           <div className="mt-6 px-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-muted-foreground">
-                {ProjectStageLabels[currentStage]} Progress
+                {ProjectLifecycleLabels[currentStage]} Progress
               </span>
               <span className="text-sm font-semibold text-[#007aff] dark:text-[#0a84ff]">
                 {localProgress}%
@@ -302,9 +304,9 @@ export function ProjectStageTimeline({
                 <div>
                   <p>
                     Chuyển từ{' '}
-                    <span className="font-semibold text-foreground">{ProjectStageLabels[currentStage]}</span> sang{' '}
+                    <span className="font-semibold text-foreground">{ProjectLifecycleLabels[currentStage]}</span> sang{' '}
                     <span className="font-semibold text-foreground">
-                      {confirmDialog.stage ? ProjectStageLabels[confirmDialog.stage] : ''}
+                      {confirmDialog.stage ? ProjectLifecycleLabels[confirmDialog.stage] : ''}
                     </span>
                     ?
                   </p>

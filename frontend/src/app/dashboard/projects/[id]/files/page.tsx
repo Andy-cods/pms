@@ -135,7 +135,7 @@ export default function ProjectFilesPage() {
           <div>
             <h1 className="text-2xl font-bold">Tài liệu dự án</h1>
             <p className="text-muted-foreground">
-              {project?.code} - {project?.name}
+              {project?.dealCode} - {project?.name}
             </p>
           </div>
         </div>

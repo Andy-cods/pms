@@ -4,8 +4,10 @@ import { DollarSign, TrendingDown, TrendingUp, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { ProjectBudget } from '@/lib/api/budget';
-import { formatCurrency, formatCompactCurrency, FeeLabels } from '@/lib/api/budget';
+import type { Project } from '@/lib/api/projects';
+import { formatCurrency, formatCompactCurrency, FeeLabels } from '@/lib/api/projects';
+
+type ProjectBudget = Project;
 
 interface BudgetCardProps {
   budget: ProjectBudget | null;
@@ -37,12 +39,15 @@ export function BudgetCard({ budget, onEdit, compact = false }: BudgetCardProps)
     );
   }
 
+  const totalBudget = budget.totalBudget ?? 0;
+  const spentAmount = budget.spentAmount ?? 0;
+
   const spentPercent =
-    budget.totalBudget > 0
-      ? Math.round((budget.spentAmount / budget.totalBudget) * 100)
+    totalBudget > 0
+      ? Math.round((spentAmount / totalBudget) * 100)
       : 0;
 
-  const remaining = budget.totalBudget - budget.spentAmount;
+  const remaining = totalBudget - spentAmount;
   const isOverBudget = remaining < 0;
 
   // Fee breakdown data
@@ -76,10 +81,10 @@ export function BudgetCard({ budget, onEdit, compact = false }: BudgetCardProps)
         <CardContent className="space-y-3">
           <div className="flex items-baseline justify-between">
             <span className="text-2xl font-bold tabular-nums">
-              {formatCompactCurrency(budget.spentAmount)}
+              {formatCompactCurrency(spentAmount)}
             </span>
             <span className="text-footnote text-muted-foreground tabular-nums">
-              / {formatCompactCurrency(budget.totalBudget)}
+              / {formatCompactCurrency(totalBudget)}
             </span>
           </div>
           {/* Progress bar */}
@@ -138,7 +143,7 @@ export function BudgetCard({ budget, onEdit, compact = false }: BudgetCardProps)
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-4 rounded-xl bg-surface/50">
             <div className="text-2xl font-bold tabular-nums text-foreground">
-              {formatCompactCurrency(budget.totalBudget)}
+              {formatCompactCurrency(totalBudget)}
             </div>
             <div className="text-caption text-muted-foreground mt-1">
               Tổng ngân sách
@@ -153,7 +158,7 @@ export function BudgetCard({ budget, onEdit, compact = false }: BudgetCardProps)
                   : 'text-[#0071e3] dark:text-[#0a84ff]'
               )}
             >
-              {formatCompactCurrency(budget.spentAmount)}
+              {formatCompactCurrency(spentAmount)}
             </div>
             <div className="text-caption text-muted-foreground mt-1">
               Đã chi

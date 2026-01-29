@@ -21,7 +21,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { cn } from '@/lib/utils';
-import { PipelineStage, PipelineStageLabels, type SalesPipeline } from '@/types';
+import { ProjectLifecycle, ProjectLifecycleLabels, type Project } from '@/types';
 import { PipelineCard, PipelineCardSkeleton } from './pipeline-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -34,13 +34,13 @@ const STAGE_COLORS: Record<string, { accent: string; bg: string; text: string }>
   LOST: { accent: 'bg-rose-500', bg: 'bg-rose-500/8', text: 'text-rose-600' },
 };
 
-const STAGE_ORDER: PipelineStage[] = [
-  PipelineStage.LEAD,
-  PipelineStage.QUALIFIED,
-  PipelineStage.EVALUATION,
-  PipelineStage.NEGOTIATION,
-  PipelineStage.WON,
-  PipelineStage.LOST,
+const STAGE_ORDER: ProjectLifecycle[] = [
+  ProjectLifecycle.LEAD,
+  ProjectLifecycle.QUALIFIED,
+  ProjectLifecycle.EVALUATION,
+  ProjectLifecycle.NEGOTIATION,
+  ProjectLifecycle.WON,
+  ProjectLifecycle.LOST,
 ];
 
 function formatColumnValue(value: number): string {
@@ -51,9 +51,9 @@ function formatColumnValue(value: number): string {
 }
 
 interface PipelineKanbanBoardProps {
-  pipelines: SalesPipeline[];
-  onStageChange?: (pipelineId: string, newStage: PipelineStage) => void;
-  onPipelineClick?: (pipeline: SalesPipeline) => void;
+  pipelines: Project[];
+  onStageChange?: (pipelineId: string, newStage: ProjectLifecycle) => void;
+  onPipelineClick?: (pipeline: Project) => void;
   isLoading?: boolean;
 }
 
@@ -63,7 +63,7 @@ export function PipelineKanbanBoard({
   onPipelineClick,
   isLoading = false,
 }: PipelineKanbanBoardProps) {
-  const [activePipeline, setActivePipeline] = React.useState<SalesPipeline | null>(null);
+  const [activePipeline, setActivePipeline] = React.useState<Project | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -72,11 +72,11 @@ export function PipelineKanbanBoard({
 
   const columns = React.useMemo(() => {
     return STAGE_ORDER.map((stage) => {
-      const items = pipelines.filter((p) => p.status === stage);
+      const items = pipelines.filter((p) => p.lifecycle === stage);
       const totalValue = items.reduce((sum, p) => sum + (p.totalBudget ?? 0), 0);
       return {
         stage,
-        label: PipelineStageLabels[stage],
+        label: ProjectLifecycleLabels[stage],
         colors: STAGE_COLORS[stage],
         items,
         totalValue,
@@ -156,12 +156,12 @@ export function PipelineKanbanBoard({
 }
 
 interface PipelineColumnProps {
-  stage: PipelineStage;
+  stage: ProjectLifecycle;
   label: string;
   colors: { accent: string; bg: string; text: string };
-  items: SalesPipeline[];
+  items: Project[];
   totalValue: number;
-  onPipelineClick?: (pipeline: SalesPipeline) => void;
+  onPipelineClick?: (pipeline: Project) => void;
 }
 
 function PipelineColumn({ stage, label, colors, items, totalValue, onPipelineClick }: PipelineColumnProps) {
@@ -234,7 +234,7 @@ function PipelineColumn({ stage, label, colors, items, totalValue, onPipelineCli
 }
 
 interface SortablePipelineCardProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
   onClick?: () => void;
 }
 

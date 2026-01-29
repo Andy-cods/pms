@@ -159,7 +159,7 @@ export class ApprovalResponseDto {
   projectId!: string;
   project!: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   };
   type!: ApprovalType;

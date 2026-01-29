@@ -70,8 +70,8 @@ export class DashboardController {
       files,
     ] = await Promise.all([
       this.prisma.project.count(),
-      this.prisma.project.count({ where: { status: 'WARNING' } }),
-      this.prisma.project.count({ where: { status: 'CRITICAL' } }),
+      this.prisma.project.count({ where: { healthStatus: 'WARNING' } }),
+      this.prisma.project.count({ where: { healthStatus: 'CRITICAL' } }),
       this.prisma.task.count(),
       this.prisma.task.count({ where: { status: 'IN_PROGRESS' } }),
       this.prisma.task.count({ where: { status: 'DONE' } }),
@@ -142,7 +142,7 @@ export class DashboardController {
         status: { notIn: ['DONE', 'CANCELLED'] },
       },
       include: {
-        project: { select: { code: true, name: true } },
+        project: { select: { dealCode: true, name: true } },
       },
       orderBy: [{ priority: 'desc' }, { deadline: 'asc' }],
       take: 20,
@@ -162,7 +162,7 @@ export class DashboardController {
       tasks: tasks.map((t) => ({
         id: t.id,
         title: t.title,
-        projectCode: t.project.code,
+        projectCode: t.project.dealCode,
         projectName: t.project.name,
         status: t.status,
         priority: t.priority,

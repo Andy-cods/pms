@@ -37,7 +37,7 @@ export class ApprovalEscalationService {
             select: {
               id: true,
               name: true,
-              code: true,
+              dealCode: true,
               team: {
                 include: {
                   user: { select: { id: true, name: true, email: true } },

@@ -132,7 +132,7 @@ export default function EditProjectPage() {
                 Chỉnh sửa dự án
               </h1>
               <p className="text-callout text-muted-foreground">
-                {project.code} · {project.name}
+                {project.dealCode} · {project.name}
               </p>
             </div>
           </div>

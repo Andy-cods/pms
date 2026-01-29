@@ -101,7 +101,7 @@ export class TaskController {
       this.prisma.task.findMany({
         where,
         include: {
-          project: { select: { id: true, code: true, name: true } },
+          project: { select: { id: true, dealCode: true, name: true } },
           reviewer: { select: { id: true, name: true, avatar: true } },
           createdBy: { select: { id: true, name: true, avatar: true } },
           assignees: {
@@ -153,7 +153,7 @@ export class TaskController {
     const tasks = await this.prisma.task.findMany({
       where: { projectId, parentId: null },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -206,7 +206,7 @@ export class TaskController {
     const task = await this.prisma.task.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -267,7 +267,7 @@ export class TaskController {
           : undefined,
       },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -324,7 +324,7 @@ export class TaskController {
       where: { id },
       data: updateData,
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -372,7 +372,7 @@ export class TaskController {
       where: { id },
       data: updateData,
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -419,7 +419,7 @@ export class TaskController {
     const task = await this.prisma.task.findUnique({
       where: { id },
       include: {
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         reviewer: { select: { id: true, name: true, avatar: true } },
         createdBy: { select: { id: true, name: true, avatar: true } },
         assignees: {
@@ -523,7 +523,7 @@ export class TaskController {
       this.prisma.task.findMany({
         where,
         include: {
-          project: { select: { id: true, code: true, name: true } },
+          project: { select: { id: true, dealCode: true, name: true } },
           reviewer: { select: { id: true, name: true, avatar: true } },
           createdBy: { select: { id: true, name: true, avatar: true } },
           assignees: {
@@ -613,7 +613,7 @@ export class TaskController {
           avatar: string | null;
         };
       }>;
-      project: { id: string; code: string; name: string };
+      project: { id: string; dealCode: string; name: string };
       createdAt: Date;
       updatedAt: Date;
       _count: { subtasks: number };

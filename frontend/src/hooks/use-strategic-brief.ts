@@ -4,7 +4,7 @@ import { strategicBriefApi } from '@/lib/api/strategic-brief';
 export const briefKeys = {
   all: ['strategic-briefs'] as const,
   detail: (id: string) => [...briefKeys.all, id] as const,
-  byPipeline: (pipelineId: string) => [...briefKeys.all, 'pipeline', pipelineId] as const,
+  byProject: (projectId: string) => [...briefKeys.all, 'project', projectId] as const,
 };
 
 export function useBrief(id: string) {
@@ -15,18 +15,18 @@ export function useBrief(id: string) {
   });
 }
 
-export function useBriefByPipeline(pipelineId: string) {
+export function useBriefByProject(projectId: string) {
   return useQuery({
-    queryKey: briefKeys.byPipeline(pipelineId),
-    queryFn: () => strategicBriefApi.getByPipeline(pipelineId),
-    enabled: !!pipelineId,
+    queryKey: briefKeys.byProject(projectId),
+    queryFn: () => strategicBriefApi.getByProject(projectId),
+    enabled: !!projectId,
   });
 }
 
 export function useCreateBrief() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { pipelineId?: string; projectId?: string }) =>
+    mutationFn: (input: { projectId: string }) =>
       strategicBriefApi.create(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: briefKeys.all });

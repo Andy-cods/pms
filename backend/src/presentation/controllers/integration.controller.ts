@@ -52,7 +52,7 @@ export class IntegrationController {
     }
 
     const project = await this.prisma.project.findUnique({
-      where: { code: body.projectCode },
+      where: { dealCode: body.projectCode },
       select: { id: true },
     });
     if (!project) throw new BadRequestException('Project not found');
@@ -113,7 +113,7 @@ export class IntegrationController {
     }
 
     const project = await this.prisma.project.findUnique({
-      where: { code: body.projectCode },
+      where: { dealCode: body.projectCode },
       select: { id: true },
     });
     if (!project) throw new BadRequestException('Project not found');

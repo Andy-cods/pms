@@ -13,8 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useUpsertBudget } from '@/hooks/use-project-budget';
-import type { ProjectBudget, UpsertBudgetInput } from '@/lib/api/budget';
+import { useUpdateProjectBudget } from '@/hooks/use-projects';
+import type { Project } from '@/lib/api/projects';
+import type { UpdateBudgetInput } from '@/lib/api/projects';
+
+type ProjectBudget = Project;
+type UpsertBudgetInput = UpdateBudgetInput;
 
 interface BudgetFormModalProps {
   projectId: string;
@@ -29,7 +33,7 @@ export function BudgetFormModal({
   open,
   onOpenChange,
 }: BudgetFormModalProps) {
-  const upsertBudget = useUpsertBudget();
+  const upsertBudget = useUpdateProjectBudget();
 
   const [form, setForm] = useState<UpsertBudgetInput>({
     totalBudget: 0,
@@ -48,9 +52,9 @@ export function BudgetFormModal({
     if (budget) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
-        totalBudget: budget.totalBudget,
+        totalBudget: budget.totalBudget ?? 0,
         monthlyBudget: budget.monthlyBudget ?? undefined,
-        spentAmount: budget.spentAmount,
+        spentAmount: budget.spentAmount ?? 0,
         fixedAdFee: budget.fixedAdFee ?? undefined,
         adServiceFee: budget.adServiceFee ?? undefined,
         contentFee: budget.contentFee ?? undefined,
@@ -78,7 +82,7 @@ export function BudgetFormModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (form.totalBudget <= 0) {
+    if (!form.totalBudget || form.totalBudget <= 0) {
       toast.error('Tổng ngân sách phải lớn hơn 0');
       return;
     }

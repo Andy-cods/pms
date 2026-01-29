@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { ProjectStatus, ProjectStage, ProjectStageLabels, TaskStatus, TaskPriority } from '@/types';
+import { HealthStatus, ProjectLifecycle, ProjectLifecycleLabels, TaskStatus, TaskPriority } from '@/types';
 
 const statusBadgeVariants = cva(
   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
@@ -49,15 +49,15 @@ export function StatusBadge({ className, variant, children }: StatusBadgeProps) 
   return <span className={cn(statusBadgeVariants({ variant }), className)}>{children}</span>;
 }
 
-// Project Status Badge
-const projectStatusMap: Record<ProjectStatus, { variant: VariantProps<typeof statusBadgeVariants>['variant']; label: string }> = {
-  [ProjectStatus.STABLE]: { variant: 'stable', label: 'Ổn định' },
-  [ProjectStatus.WARNING]: { variant: 'warning', label: 'Cảnh báo' },
-  [ProjectStatus.CRITICAL]: { variant: 'critical', label: 'Nghiêm trọng' },
+// Health Status Badge
+const healthStatusMap: Record<HealthStatus, { variant: VariantProps<typeof statusBadgeVariants>['variant']; label: string }> = {
+  [HealthStatus.STABLE]: { variant: 'stable', label: 'Ổn định' },
+  [HealthStatus.WARNING]: { variant: 'warning', label: 'Cảnh báo' },
+  [HealthStatus.CRITICAL]: { variant: 'critical', label: 'Nghiêm trọng' },
 };
 
-export function ProjectStatusBadge({ status, className }: { status: ProjectStatus; className?: string }) {
-  const config = projectStatusMap[status];
+export function ProjectStatusBadge({ status, className }: { status: HealthStatus; className?: string }) {
+  const config = healthStatusMap[status];
   return (
     <StatusBadge variant={config.variant} className={className}>
       {config.label}
@@ -101,22 +101,23 @@ export function TaskPriorityBadge({ priority, className }: { priority: TaskPrior
   );
 }
 
-// Project Stage Badge
-const projectStageVariantMap: Record<ProjectStage, VariantProps<typeof statusBadgeVariants>['variant']> = {
-  [ProjectStage.INTAKE]: 'todo',
-  [ProjectStage.DISCOVERY]: 'in_progress',
-  [ProjectStage.PLANNING]: 'in_progress',
-  [ProjectStage.UNDER_REVIEW]: 'review',
-  [ProjectStage.PROPOSAL_PITCH]: 'review',
-  [ProjectStage.ONGOING]: 'primary',
-  [ProjectStage.OPTIMIZATION]: 'high',
-  [ProjectStage.COMPLETED]: 'done',
-  [ProjectStage.CLOSED]: 'cancelled',
+// Project Lifecycle Badge
+const projectLifecycleVariantMap: Record<ProjectLifecycle, VariantProps<typeof statusBadgeVariants>['variant']> = {
+  [ProjectLifecycle.LEAD]: 'todo',
+  [ProjectLifecycle.QUALIFIED]: 'in_progress',
+  [ProjectLifecycle.EVALUATION]: 'review',
+  [ProjectLifecycle.NEGOTIATION]: 'high',
+  [ProjectLifecycle.WON]: 'done',
+  [ProjectLifecycle.LOST]: 'destructive',
+  [ProjectLifecycle.PLANNING]: 'in_progress',
+  [ProjectLifecycle.ONGOING]: 'primary',
+  [ProjectLifecycle.OPTIMIZING]: 'high',
+  [ProjectLifecycle.CLOSED]: 'cancelled',
 };
 
-export function ProjectStageBadge({ stage, className }: { stage: ProjectStage; className?: string }) {
-  const variant = projectStageVariantMap[stage];
-  const label = ProjectStageLabels[stage];
+export function ProjectStageBadge({ stage, className }: { stage: ProjectLifecycle; className?: string }) {
+  const variant = projectLifecycleVariantMap[stage];
+  const label = ProjectLifecycleLabels[stage];
   return (
     <StatusBadge variant={variant} className={className}>
       {label}

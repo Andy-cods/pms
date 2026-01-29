@@ -66,7 +66,7 @@ export default function NewMediaPlanPage() {
             Tạo kế hoạch media
           </h1>
           <p className="text-[14px] text-muted-foreground">
-            {project?.code} - {project?.name}
+            {project?.dealCode} - {project?.name}
           </p>
         </div>
       </div>

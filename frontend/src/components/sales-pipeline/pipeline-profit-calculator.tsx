@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
-import type { SalesPipeline } from '@/types';
+import type { Project } from '@/types';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('vi-VN', {
@@ -19,7 +19,7 @@ function formatCompact(value: number): string {
 }
 
 interface PipelineProfitCalculatorProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
 }
 
 export function PipelineProfitCalculator({ pipeline }: PipelineProfitCalculatorProps) {

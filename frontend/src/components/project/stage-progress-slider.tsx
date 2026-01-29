@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { type ProjectStage, ProjectStageLabels } from '@/lib/api/projects';
+import { ProjectLifecycleLabels } from '@/lib/api/projects';
+import type { ProjectLifecycle } from '@/types';
 
 interface StageProgressSliderProps {
-  stage: ProjectStage;
+  stage: ProjectLifecycle;
   progress: number;
   onChange: (progress: number) => void;
   disabled?: boolean;
@@ -51,7 +52,7 @@ export function StageProgressSlider({
       {showLabel && (
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            {ProjectStageLabels[stage]} Progress
+            {ProjectLifecycleLabels[stage]} Progress
           </span>
           <span
             className={cn(

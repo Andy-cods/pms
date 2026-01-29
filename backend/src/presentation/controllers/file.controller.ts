@@ -103,7 +103,7 @@ export class FileController {
       },
       include: {
         uploadedBy: { select: { id: true, name: true, email: true } },
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         task: { select: { id: true, title: true } },
       },
     });
@@ -167,7 +167,7 @@ export class FileController {
         orderBy: { uploadedAt: 'desc' },
         include: {
           uploadedBy: { select: { id: true, name: true, email: true } },
-          project: { select: { id: true, code: true, name: true } },
+          project: { select: { id: true, dealCode: true, name: true } },
           task: { select: { id: true, title: true } },
         },
       }),
@@ -195,7 +195,7 @@ export class FileController {
       where: { id },
       include: {
         uploadedBy: { select: { id: true, name: true, email: true } },
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         task: { select: { id: true, title: true } },
       },
     });
@@ -315,7 +315,7 @@ export class FileController {
       },
       include: {
         uploadedBy: { select: { id: true, name: true, email: true } },
-        project: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, dealCode: true, name: true } },
         task: { select: { id: true, title: true } },
       },
     });
@@ -443,7 +443,7 @@ export class FileController {
     tags: string[];
     uploadedAt: Date;
     uploadedBy: { id: string; name: string; email: string };
-    project?: { id: string; code: string; name: string } | null;
+    project?: { id: string; dealCode: string; name: string } | null;
     task?: { id: string; title: string } | null;
   }): FileResponseDto {
     return {

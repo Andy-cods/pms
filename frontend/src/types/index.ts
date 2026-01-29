@@ -1,5 +1,5 @@
 // Type definitions for BC Agency PMS
-// Aligned with backend Prisma schema
+// Aligned with backend Prisma schema (unified Project entity)
 
 // ============================================
 // USER & AUTH
@@ -45,38 +45,59 @@ export const UserRoleLabels: Record<UserRole, string> = {
 };
 
 // ============================================
-// PROJECT
+// PROJECT - Unified Lifecycle & Health
 // ============================================
 
-export enum ProjectStatus {
+export enum HealthStatus {
   STABLE = 'STABLE',       // Green - On track
   WARNING = 'WARNING',     // Yellow - At risk
   CRITICAL = 'CRITICAL',   // Red - Delayed/Critical
 }
 
-export enum ProjectStage {
-  INTAKE = 'INTAKE',                     // Tiep nhan brief
-  DISCOVERY = 'DISCOVERY',               // Discovery & Audit
-  PLANNING = 'PLANNING',                 // Lap ke hoach
-  UNDER_REVIEW = 'UNDER_REVIEW',         // Cho duyet
-  PROPOSAL_PITCH = 'PROPOSAL_PITCH',     // Proposal/Pitch
-  ONGOING = 'ONGOING',                   // Dang trien khai
-  OPTIMIZATION = 'OPTIMIZATION',         // Toi uu
-  COMPLETED = 'COMPLETED',               // Hoan thanh
-  CLOSED = 'CLOSED',                     // Dong
+export const HealthStatusLabels: Record<HealthStatus, string> = {
+  [HealthStatus.STABLE]: 'On Track',
+  [HealthStatus.WARNING]: 'At Risk',
+  [HealthStatus.CRITICAL]: 'Critical',
+};
+
+export enum ProjectLifecycle {
+  LEAD = 'LEAD',
+  QUALIFIED = 'QUALIFIED',
+  EVALUATION = 'EVALUATION',
+  NEGOTIATION = 'NEGOTIATION',
+  WON = 'WON',
+  LOST = 'LOST',
+  PLANNING = 'PLANNING',
+  ONGOING = 'ONGOING',
+  OPTIMIZING = 'OPTIMIZING',
+  CLOSED = 'CLOSED',
 }
 
-export const ProjectStageLabels: Record<ProjectStage, string> = {
-  [ProjectStage.INTAKE]: 'Tiếp nhận brief',
-  [ProjectStage.DISCOVERY]: 'Discovery & Audit',
-  [ProjectStage.PLANNING]: 'Lập kế hoạch',
-  [ProjectStage.UNDER_REVIEW]: 'Chờ duyệt',
-  [ProjectStage.PROPOSAL_PITCH]: 'Proposal/Pitch',
-  [ProjectStage.ONGOING]: 'Đang triển khai',
-  [ProjectStage.OPTIMIZATION]: 'Tối ưu',
-  [ProjectStage.COMPLETED]: 'Hoàn thành',
-  [ProjectStage.CLOSED]: 'Đóng',
+export const ProjectLifecycleLabels: Record<ProjectLifecycle, string> = {
+  [ProjectLifecycle.LEAD]: 'Lead',
+  [ProjectLifecycle.QUALIFIED]: 'Qualified',
+  [ProjectLifecycle.EVALUATION]: 'Evaluation',
+  [ProjectLifecycle.NEGOTIATION]: 'Negotiation',
+  [ProjectLifecycle.WON]: 'Won',
+  [ProjectLifecycle.LOST]: 'Lost',
+  [ProjectLifecycle.PLANNING]: 'Planning',
+  [ProjectLifecycle.ONGOING]: 'Ongoing',
+  [ProjectLifecycle.OPTIMIZING]: 'Optimizing',
+  [ProjectLifecycle.CLOSED]: 'Closed',
 };
+
+export enum PipelineDecision {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+}
+
+export interface WeeklyNote {
+  week: number;
+  date: string;
+  note: string;
+  authorId: string;
+}
 
 // ============================================
 // TASK
@@ -188,7 +209,7 @@ export interface ApiResponse<T> {
 }
 
 // ============================================
-// PROJECT TYPES
+// PROJECT TYPES (Unified)
 // ============================================
 
 export interface ProjectTeamMember {
@@ -196,76 +217,141 @@ export interface ProjectTeamMember {
   userId: string;
   role: string;
   isPrimary: boolean;
-  assignedAt: Date;
+  joinedAt?: string;
   user?: {
     id: string;
     name: string;
     email: string;
     avatar?: string | null;
   };
+  workload?: {
+    projectTasks: number;
+    projectTasksDone: number;
+    projectTasksOverdue: number;
+    totalTasks: number;
+  };
 }
 
 export interface Project {
   id: string;
-  code: string;
+  dealCode: string;
+  projectCode: string | null;
   name: string;
-  description?: string | null;
-  status: ProjectStatus;
-  stage: ProjectStage;
-  startDate?: Date | null;
-  endDate?: Date | null;
-  clientId?: string | null;
-  client?: {
-    id: string;
-    companyName: string;
-    contactName?: string | null;
-  } | null;
-  team?: ProjectTeamMember[];
-  metadata?: Record<string, unknown> | null;
-  isArchived: boolean;
-  createdById: string;
-  createdBy?: {
-    id: string;
-    name: string;
-    email: string;
+  description: string | null;
+  productType: string | null;
+  lifecycle: ProjectLifecycle;
+  healthStatus: HealthStatus;
+  stageProgress: number;
+  startDate: string | null;
+  endDate: string | null;
+  timelineProgress: number;
+  driveLink: string | null;
+  planLink: string | null;
+  trackingLink: string | null;
+  clientId: string | null;
+  client: { id: string; companyName: string } | null;
+  // Team refs
+  nvkdId: string;
+  nvkd?: { id: string; name: string } | null;
+  pmId: string | null;
+  pm?: { id: string; name: string } | null;
+  plannerId: string | null;
+  planner?: { id: string; name: string } | null;
+  // Sales data
+  clientType: string | null;
+  campaignObjective: string | null;
+  initialGoal: string | null;
+  upsellOpportunity: string | null;
+  licenseLink: string | null;
+  // Budget/Fees
+  totalBudget: number | null;
+  monthlyBudget: number | null;
+  spentAmount: number | null;
+  fixedAdFee: number | null;
+  adServiceFee: number | null;
+  contentFee: number | null;
+  designFee: number | null;
+  mediaFee: number | null;
+  otherFee: number | null;
+  budgetPacing: number | null;
+  // PM Evaluation / Cost
+  costNSQC: number | null;
+  costDesign: number | null;
+  costMedia: number | null;
+  costKOL: number | null;
+  costOther: number | null;
+  cogs: number | null;
+  grossProfit: number | null;
+  profitMargin: number | null;
+  // Evaluation fields
+  marketSize: string | null;
+  competitionLevel: string | null;
+  productUSP: string | null;
+  averageScore: number | null;
+  audienceSize: string | null;
+  productLifecycle: string | null;
+  scalePotential: string | null;
+  clientTier: string | null;
+  // Decision
+  decision: PipelineDecision;
+  decisionDate: string | null;
+  decisionNote: string | null;
+  weeklyNotes: WeeklyNote[] | null;
+  // Relations
+  team: ProjectTeamMember[];
+  taskStats: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  strategicBrief?: { id: string; status: string; completionPct: number } | null;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
 }
 
 export interface ProjectListResponse {
-  data: Project[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  projects: Project[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface CreateProjectInput {
   name: string;
-  code?: string;
   description?: string;
-  status?: ProjectStatus;
-  stage?: ProjectStage;
-  startDate?: string;
-  endDate?: string;
+  clientType?: string;
+  productType?: string;
+  licenseLink?: string;
+  campaignObjective?: string;
+  initialGoal?: string;
+  totalBudget?: number;
+  monthlyBudget?: number;
+  fixedAdFee?: number;
+  adServiceFee?: number;
+  contentFee?: number;
+  designFee?: number;
+  mediaFee?: number;
+  otherFee?: number;
+  upsellOpportunity?: string;
   clientId?: string;
-  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateProjectInput {
   name?: string;
-  description?: string | null;
-  status?: ProjectStatus;
-  stage?: ProjectStage;
-  startDate?: string | null;
-  endDate?: string | null;
-  clientId?: string | null;
-  metadata?: Record<string, unknown>;
+  description?: string;
+  productType?: string;
+  healthStatus?: HealthStatus;
+  stageProgress?: number;
+  startDate?: string;
+  endDate?: string;
+  clientId?: string;
+  driveLink?: string;
+  planLink?: string;
+  trackingLink?: string;
+  stageChangeReason?: string;
 }
 
 export interface ProjectListQuery {
@@ -273,11 +359,12 @@ export interface ProjectListQuery {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  status?: ProjectStatus;
-  stage?: ProjectStage;
+  healthStatus?: HealthStatus;
+  lifecycle?: ProjectLifecycle[];
   search?: string;
   clientId?: string;
-  isArchived?: boolean;
+  nvkdId?: string;
+  decision?: PipelineDecision;
 }
 
 export interface AddTeamMemberInput {
@@ -339,7 +426,7 @@ export interface Task {
   updatedAt: Date;
   project?: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   };
   parent?: {
@@ -453,89 +540,18 @@ export enum BudgetEventStatus {
 }
 
 // ============================================
-// SALES PIPELINE
+// STAGE HISTORY
 // ============================================
 
-export enum PipelineStage {
-  LEAD = 'LEAD',
-  QUALIFIED = 'QUALIFIED',
-  EVALUATION = 'EVALUATION',
-  NEGOTIATION = 'NEGOTIATION',
-  WON = 'WON',
-  LOST = 'LOST',
-}
-
-export const PipelineStageLabels: Record<PipelineStage, string> = {
-  [PipelineStage.LEAD]: 'Lead',
-  [PipelineStage.QUALIFIED]: 'Qualified',
-  [PipelineStage.EVALUATION]: 'Evaluation',
-  [PipelineStage.NEGOTIATION]: 'Negotiation',
-  [PipelineStage.WON]: 'Won',
-  [PipelineStage.LOST]: 'Lost',
-};
-
-export enum PipelineDecision {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  DECLINED = 'DECLINED',
-}
-
-export interface WeeklyNote {
-  week: number;
-  date: string;
-  note: string;
-  authorId: string;
-}
-
-export interface SalesPipeline {
+export interface StageHistoryEntry {
   id: string;
-  projectName: string;
-  status: PipelineStage;
-  currentStage: ProjectStage;
-  nvkdId: string;
-  nvkd: { id: string; name: string; email: string; avatar: string | null };
-  clientType: string | null;
-  productType: string | null;
-  licenseLink: string | null;
-  campaignObjective: string | null;
-  initialGoal: string | null;
-  totalBudget: number | null;
-  monthlyBudget: number | null;
-  spentAmount: number | null;
-  fixedAdFee: number | null;
-  adServiceFee: number | null;
-  contentFee: number | null;
-  designFee: number | null;
-  mediaFee: number | null;
-  otherFee: number | null;
-  upsellOpportunity: string | null;
-  pmId: string | null;
-  pm: { id: string; name: string; email: string; avatar: string | null } | null;
-  plannerId: string | null;
-  planner: { id: string; name: string } | null;
-  costNSQC: number | null;
-  costDesign: number | null;
-  costMedia: number | null;
-  costKOL: number | null;
-  costOther: number | null;
-  cogs: number | null;
-  grossProfit: number | null;
-  profitMargin: number | null;
-  clientTier: string | null;
-  marketSize: string | null;
-  competitionLevel: string | null;
-  productUSP: string | null;
-  averageScore: number | null;
-  audienceSize: string | null;
-  productLifecycle: string | null;
-  scalePotential: string | null;
-  weeklyNotes: WeeklyNote[] | null;
-  decision: PipelineDecision;
-  decisionDate: string | null;
-  decisionNote: string | null;
-  projectId: string | null;
-  project: { id: string; code: string; name: string } | null;
-  strategicBrief: { id: string; status: string; completionPct: number } | null;
+  projectId: string;
+  fromStage: ProjectLifecycle | null;
+  toStage: ProjectLifecycle;
+  fromProgress: number;
+  toProgress: number;
+  changedById: string;
+  changedBy?: { id: string; name: string };
+  reason: string | null;
   createdAt: string;
-  updatedAt: string;
 }

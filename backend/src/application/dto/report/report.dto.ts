@@ -38,10 +38,10 @@ export class GenerateReportDto {
 // Report Data Interfaces (for internal use)
 export interface ProjectReportData {
   id: string;
-  code: string;
+  dealCode: string;
   name: string;
-  status: string;
-  stage: string;
+  healthStatus: string;
+  lifecycle: string;
   stageProgress: number;
   startDate: Date | null;
   endDate: Date | null;
@@ -64,7 +64,7 @@ export interface TaskReportData {
   status: string;
   priority: string;
   projectName: string;
-  projectCode: string;
+  projectDealCode: string;
   assignees: string[];
   deadline: Date | null;
   estimatedHours: number | null;

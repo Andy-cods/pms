@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { TrendingUp, User2, Briefcase } from 'lucide-react';
-import type { SalesPipeline } from '@/types';
+import type { Project } from '@/types';
 
 const DECISION_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   PENDING: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
@@ -25,7 +25,7 @@ function formatCompact(value: number | null): string {
 }
 
 interface PipelineCardProps {
-  pipeline: SalesPipeline;
+  pipeline: Project;
   onClick?: () => void;
   isDragging?: boolean;
 }
@@ -63,7 +63,7 @@ export function PipelineCard({ pipeline, onClick, isDragging }: PipelineCardProp
       {/* Top: Project Name + Decision Badge */}
       <div className="flex items-start justify-between gap-2 mb-2.5">
         <h4 className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2 flex-1">
-          {pipeline.projectName}
+          {pipeline.name}
         </h4>
         <span className={cn(
           'inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide',

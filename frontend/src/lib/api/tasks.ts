@@ -54,7 +54,7 @@ export interface Task {
   completedSubtaskCount: number;
   project: {
     id: string;
-    code: string;
+    dealCode: string;
     name: string;
   };
   createdAt: string;

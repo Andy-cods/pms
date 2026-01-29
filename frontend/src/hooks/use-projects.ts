@@ -9,7 +9,12 @@ import {
   type AddTeamMemberInput,
   type UpdateTeamMemberInput,
   type ProjectTeamMember,
+  type UpdateSaleFieldsInput,
+  type EvaluateProjectInput,
+  type UpdateBudgetInput,
+  type StageHistoryEntry,
 } from '@/lib/api/projects';
+import type { ProjectLifecycle } from '@/types';
 
 // Query Keys
 export const projectKeys = {
@@ -19,7 +24,11 @@ export const projectKeys = {
   details: () => [...projectKeys.all, 'detail'] as const,
   detail: (id: string) => [...projectKeys.details(), id] as const,
   team: (id: string) => [...projectKeys.detail(id), 'team'] as const,
+  stageHistory: (id: string) => [...projectKeys.detail(id), 'stage-history'] as const,
+  budget: (id: string) => [...projectKeys.detail(id), 'budget'] as const,
 };
+
+// ─── Queries ─────────────────────────────────────────
 
 // List projects
 export function useProjects(params?: ProjectListParams) {
@@ -47,7 +56,27 @@ export function useProjectTeam(projectId: string) {
   });
 }
 
-// Create project mutation
+// Get stage history
+export function useProjectStageHistory(projectId: string) {
+  return useQuery<StageHistoryEntry[]>({
+    queryKey: projectKeys.stageHistory(projectId),
+    queryFn: () => projectsApi.getStageHistory(projectId),
+    enabled: !!projectId,
+  });
+}
+
+// Get project budget
+export function useProjectBudget(projectId: string) {
+  return useQuery<Project>({
+    queryKey: projectKeys.budget(projectId),
+    queryFn: () => projectsApi.getBudget(projectId),
+    enabled: !!projectId,
+  });
+}
+
+// ─── Mutations ───────────────────────────────────────
+
+// Create project (NVKD creates deal)
 export function useCreateProject() {
   const queryClient = useQueryClient();
 
@@ -59,7 +88,7 @@ export function useCreateProject() {
   });
 }
 
-// Update project mutation
+// Update project (general)
 export function useUpdateProject() {
   const queryClient = useQueryClient();
 
@@ -73,7 +102,7 @@ export function useUpdateProject() {
   });
 }
 
-// Archive project mutation
+// Archive project
 export function useArchiveProject() {
   const queryClient = useQueryClient();
 
@@ -85,7 +114,93 @@ export function useArchiveProject() {
   });
 }
 
-// Add team member mutation
+// Update sale fields (NVKD)
+export function useUpdateProjectSale() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateSaleFieldsInput }) =>
+      projectsApi.updateSaleFields(id, input),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
+// Evaluate project (PM/Planner)
+export function useEvaluateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EvaluateProjectInput }) =>
+      projectsApi.evaluate(id, input),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
+// Update lifecycle stage
+export function useUpdateProjectLifecycle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, lifecycle, reason }: { id: string; lifecycle: ProjectLifecycle; reason?: string }) =>
+      projectsApi.updateLifecycle(id, lifecycle, reason),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+      queryClient.invalidateQueries({ queryKey: projectKeys.stageHistory(vars.id) });
+    },
+  });
+}
+
+// Add weekly note
+export function useAddWeeklyNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string }) =>
+      projectsApi.addWeeklyNote(id, note),
+    onSuccess: (data, vars) => {
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
+// Decide (Accept/Decline deal)
+export function useDecideProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, decision, note }: { id: string; decision: string; note?: string }) =>
+      projectsApi.decide(id, decision, note),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
+// Update budget
+export function useUpdateProjectBudget() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, input }: { projectId: string; input: UpdateBudgetInput }) =>
+      projectsApi.updateBudget(projectId, input),
+    onSuccess: (data, vars) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.budget(vars.projectId) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(vars.projectId) });
+    },
+  });
+}
+
+// ─── Team Mutations ──────────────────────────────────
+
+// Add team member
 export function useAddTeamMember() {
   const queryClient = useQueryClient();
 
@@ -108,7 +223,7 @@ export function useAddTeamMember() {
   });
 }
 
-// Update team member mutation
+// Update team member
 export function useUpdateTeamMember() {
   const queryClient = useQueryClient();
 
@@ -133,7 +248,7 @@ export function useUpdateTeamMember() {
   });
 }
 
-// Remove team member mutation
+// Remove team member
 export function useRemoveTeamMember() {
   const queryClient = useQueryClient();
 
