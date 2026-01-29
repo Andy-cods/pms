@@ -779,12 +779,6 @@ export default function ProjectDetailPage() {
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Decision Panel - show for NEGOTIATION projects or already decided */}
-          {(project.lifecycle === ProjectLifecycle.NEGOTIATION ||
-            project.decision !== PipelineDecision.PENDING) && (
-            <ProjectDecisionPanel project={project} />
-          )}
-
           <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -994,6 +988,12 @@ export default function ProjectDetailPage() {
               onEdit={() => setShowBudgetForm(true)}
               compact
             />
+
+            {/* Decision Panel - show for NEGOTIATION projects or already decided */}
+            {(project.lifecycle === ProjectLifecycle.NEGOTIATION ||
+              project.decision !== PipelineDecision.PENDING) && (
+              <ProjectDecisionPanel project={project} />
+            )}
           </div>
         </div>
         </div>
