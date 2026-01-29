@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, XCircle, Clock, Shield, FileCheck2, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, Shield, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { useDecideProject, useUpdateProjectLifecycle } from '@/hooks/use-projects';
-import { PipelineDecision, ProjectLifecycle, UserRole } from '@/types';
+import { useDecideProject } from '@/hooks/use-projects';
+import { PipelineDecision, UserRole } from '@/types';
 import type { Project } from '@/types';
 
 const ALLOWED_ROLES: UserRole[] = [UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN];
@@ -32,17 +32,12 @@ interface ProjectDecisionPanelProps {
 export function ProjectDecisionPanel({ project }: ProjectDecisionPanelProps) {
   const { user } = useAuth();
   const decideMutation = useDecideProject();
-  const lifecycleMutation = useUpdateProjectLifecycle();
   const [note, setNote] = useState('');
 
   // Only show for PM, Admin, Super Admin
   if (!user || !ALLOWED_ROLES.includes(user.role as UserRole)) {
     return null;
   }
-
-  const isPending = project.decision === PipelineDecision.PENDING;
-  const isNegotiation = project.lifecycle === ProjectLifecycle.NEGOTIATION;
-  const canDecide = isPending && isNegotiation;
 
   // Already accepted
   if (project.decision === PipelineDecision.ACCEPTED) {
@@ -108,48 +103,7 @@ export function ProjectDecisionPanel({ project }: ProjectDecisionPanelProps) {
     );
   }
 
-  // Pending but not yet in NEGOTIATION — show advance button
-  if (!canDecide) {
-    const handleAdvanceToNegotiation = () => {
-      lifecycleMutation.mutate(
-        { id: project.id, lifecycle: ProjectLifecycle.NEGOTIATION },
-        {
-          onSuccess: () => toast.success('Đã chuyển sang giai đoạn Đàm phán'),
-          onError: () => toast.error('Không thể chuyển giai đoạn'),
-        },
-      );
-    };
-
-    return (
-      <Card className="rounded-2xl border-amber-500/30 bg-amber-500/5 shadow-apple-sm">
-        <CardContent className="pt-5 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-              <Clock className="h-5 w-5 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-semibold text-amber-700 dark:text-amber-400">
-                Chờ duyệt tiếp nhận
-              </p>
-              <p className="text-[12px] text-muted-foreground">
-                Chuyển sang Đàm phán để duyệt tiếp nhận dự án
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleAdvanceToNegotiation}
-            disabled={lifecycleMutation.isPending}
-            className="mt-3 w-full h-9 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-[13px] font-semibold gap-2"
-          >
-            <ArrowRight className="h-4 w-4" />
-            Chuyển sang Đàm phán
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // NEGOTIATION + PENDING — show accept/decline
+  // PENDING — show accept/decline
   const handleDecide = (decision: 'ACCEPTED' | 'DECLINED') => {
     decideMutation.mutate(
       { id: project.id, decision, note: note.trim() || undefined },
@@ -197,10 +151,6 @@ export function ProjectDecisionPanel({ project }: ProjectDecisionPanelProps) {
             <div>
               <span className="text-muted-foreground">NVKD:</span>{' '}
               <span className="font-medium">{project.nvkd?.name ?? '—'}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Giai đoạn:</span>{' '}
-              <span className="font-medium text-amber-600">Đàm phán</span>
             </div>
           </div>
         </div>

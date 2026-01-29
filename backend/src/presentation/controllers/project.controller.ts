@@ -678,9 +678,6 @@ export class ProjectController {
         where: { id: projectId },
       });
 
-      if (project.lifecycle !== ProjectLifecycle.NEGOTIATION) {
-        throw new BadRequestException('Project must be in NEGOTIATION to accept');
-      }
       if (project.decision !== PipelineDecision.PENDING) {
         throw new BadRequestException(`Project already decided: ${project.decision}`);
       }
@@ -745,7 +742,7 @@ export class ProjectController {
       await tx.stageHistory.create({
         data: {
           projectId,
-          fromStage: ProjectLifecycle.NEGOTIATION,
+          fromStage: project.lifecycle,
           toStage: ProjectLifecycle.WON,
           fromProgress: project.stageProgress,
           toProgress: 0,
