@@ -526,14 +526,7 @@ export default function ProjectDetailPage() {
     });
   };
 
-  // Handler for progress change from timeline (debounced in component)
-  const handleProgressChange = async (newProgress: number) => {
-    if (!project) return;
-    await updateMutation.mutateAsync({
-      id: projectId,
-      input: { stageProgress: newProgress },
-    });
-  };
+  // Progress is driven by phase item completion only (no manual adjustment)
 
   const formatDate = (date: string | null) => {
     if (!date) return '-';
@@ -814,40 +807,39 @@ export default function ProjectDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Phase Progress (4 giai đoạn lớn) */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-callout font-medium">
-                      Giai đoạn dự án
-                    </span>
-                    <span className="text-footnote text-muted-foreground">
-                      {PhaseGroupLabels[LIFECYCLE_TO_PHASE[project.lifecycle as ProjectLifecycle]]} · {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
-                    </span>
+                {/* Phase-based Progress (linked to Plan tab) */}
+                {phases && phases.length > 0 && (
+                  <PhaseProgressBar phases={phases} />
+                )}
+                {(!phases || phases.length === 0) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-callout font-medium">
+                        Giai đoạn dự án
+                      </span>
+                      <span className="text-footnote text-muted-foreground">
+                        {PhaseGroupLabels[LIFECYCLE_TO_PHASE[project.lifecycle as ProjectLifecycle]]} · {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
+                      </span>
+                    </div>
+                    <LifecyclePhaseBar
+                      lifecycle={project.lifecycle as ProjectLifecycle}
+                      stageProgress={project.stageProgress}
+                      compact
+                      showSubStage
+                    />
                   </div>
-                  <LifecyclePhaseBar
-                    lifecycle={project.lifecycle as ProjectLifecycle}
-                    stageProgress={project.stageProgress}
-                    compact
-                    showSubStage
-                  />
-                </div>
+                )}
 
-                {/* Task Progress */}
+                {/* Task Stats (informational, does not affect project progress) */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-callout font-medium">
-                      Tasks hoàn thành
+                      Tasks
                     </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-footnote text-muted-foreground tabular-nums">
-                        {project.taskStats.done}/{project.taskStats.total} tasks
-                      </span>
-                      <span className="text-callout font-semibold tabular-nums">
-                        {taskProgress}%
-                      </span>
-                    </div>
+                    <span className="text-footnote text-muted-foreground tabular-nums">
+                      {project.taskStats.done}/{project.taskStats.total} hoàn thành
+                    </span>
                   </div>
-                  <ProgressBar value={taskProgress} size="lg" />
                 </div>
 
                 {/* Stats Grid */}

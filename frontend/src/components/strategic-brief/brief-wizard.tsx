@@ -52,7 +52,8 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
   const [revisionComment, setRevisionComment] = useState('');
 
   const currentSection = brief.sections.find((s) => s.sectionNum === currentStep);
-  const currentConfig = SECTION_CONFIGS.find((c) => c.sectionKey === currentSection?.sectionKey);
+  // Match by sectionNum index (1-based) for robustness across config versions
+  const currentConfig = SECTION_CONFIGS[currentStep - 1] ?? SECTION_CONFIGS.find((c) => c.sectionKey === currentSection?.sectionKey);
 
   const isReadOnly = brief.status === 'APPROVED';
   const canSubmit = brief.completionPct === 100 && brief.status === 'DRAFT';
@@ -126,6 +127,7 @@ export function BriefWizard({ brief, currentStep, onStepChange }: BriefWizardPro
               {/* Section Content */}
               <div className="p-6">
                 <BriefSectionRenderer
+                  key={currentSection.id}
                   section={currentSection}
                   config={currentConfig}
                   onSave={handleSave}
