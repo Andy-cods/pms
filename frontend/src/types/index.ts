@@ -92,6 +92,23 @@ export enum PipelineDecision {
   DECLINED = 'DECLINED',
 }
 
+// ============================================
+// PROJECT PHASE GROUP (4 giai đoạn lớn)
+// ============================================
+
+export enum ProjectPhaseGroup {
+  INTAKE = 'INTAKE',           // Tiếp nhận (LEAD, QUALIFIED)
+  EVALUATION = 'EVALUATION',   // Đánh giá (EVALUATION, NEGOTIATION)
+  OPERATIONS = 'OPERATIONS',   // Vận hành (WON, PLANNING, ONGOING, OPTIMIZING)
+  COMPLETED = 'COMPLETED',     // Hoàn thành (CLOSED)
+  LOST = 'LOST',               // Từ chối (LOST)
+}
+
+export type ProjectTab =
+  | 'overview' | 'brief' | 'plan'
+  | 'tasks' | 'files' | 'media-plans' | 'team'
+  | 'budget' | 'kpis' | 'ads-report' | 'journal' | 'history';
+
 export interface WeeklyNote {
   week: number;
   date: string;

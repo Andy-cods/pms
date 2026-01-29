@@ -845,18 +845,21 @@ model ProjectPhase {
 }
 
 model ProjectPhaseItem {
-  id          String       @id @default(cuid())
-  phaseId     String
-  phase       ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  weight      Int          @default(0)
-  isComplete  Boolean      @default(false)
-  taskId      String?      @unique
-  task        Task?        @relation(fields: [taskId], references: [id])
-  orderIndex  Int          @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  phaseId        String
+  phase          ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  weight         Int          @default(0)
+  isComplete     Boolean      @default(false)
+  taskId         String?      @unique
+  task           Task?        @relation(fields: [taskId], references: [id])
+  orderIndex     Int          @default(0)
+  pic            String?      // Person in charge role (e.g., "Sale", "Planner")
+  support        String?      // Support role (e.g., "Account/Team")
+  expectedOutput String?      // Expected deliverable
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([phaseId])
   @@index([taskId])

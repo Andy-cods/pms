@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -20,8 +20,14 @@ import {
   HealthStatusLabels,
   ProjectLifecycleLabels,
   HealthStatusDotColors,
+  PhaseGroupLabels,
+  PhaseGroupDotColors,
+  LIFECYCLE_TO_PHASE,
+  PHASE_GROUP_ORDER,
+  PHASE_LIFECYCLES,
+  formatCompactCurrency,
 } from '@/lib/api/projects';
-import { HealthStatus, ProjectLifecycle } from '@/types';
+import { HealthStatus, ProjectLifecycle, ProjectPhaseGroup, type Project } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +44,7 @@ import {
 import { cn } from '@/lib/utils';
 
 // Apple-style status badge component
-function StatusBadge({ status }: { status: HealthStatus }) {
+function StatusDot({ status }: { status: HealthStatus }) {
   return (
     <div className="inline-flex items-center gap-1.5">
       <span className={cn('h-2 w-2 rounded-full', HealthStatusDotColors[status])} />
@@ -49,16 +55,32 @@ function StatusBadge({ status }: { status: HealthStatus }) {
   );
 }
 
-// Apple-style pill badge for stage
-function StagePill({ stage }: { stage: ProjectLifecycle }) {
+// Phase group badge (small pill)
+function PhaseGroupPill({ phase }: { phase: ProjectPhaseGroup }) {
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface text-footnote text-muted-foreground font-medium">
-      {ProjectLifecycleLabels[stage]}
+    <span className={cn(
+      'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-footnote font-medium',
+      phase === ProjectPhaseGroup.INTAKE && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      phase === ProjectPhaseGroup.EVALUATION && 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      phase === ProjectPhaseGroup.OPERATIONS && 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      phase === ProjectPhaseGroup.COMPLETED && 'bg-gray-100 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400',
+      phase === ProjectPhaseGroup.LOST && 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    )}>
+      {PhaseGroupLabels[phase]}
     </span>
   );
 }
 
-// Apple-style thin progress bar
+// Lifecycle sub-stage pill (smaller, muted)
+function LifecyclePill({ lifecycle }: { lifecycle: ProjectLifecycle }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface text-caption text-muted-foreground font-medium">
+      {ProjectLifecycleLabels[lifecycle]}
+    </span>
+  );
+}
+
+// Thin progress bar
 function ProgressBar({ value, className }: { value: number; className?: string }) {
   return (
     <div className={cn('h-1 w-full rounded-full bg-surface overflow-hidden', className)}>
@@ -70,13 +92,59 @@ function ProgressBar({ value, className }: { value: number; className?: string }
   );
 }
 
-// Apple-style filter pill button
+// Filter pill button
 function FilterPill({
   label,
+  active,
+  count,
+  dotColor,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  count?: number;
+  dotColor?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-footnote font-medium transition-all duration-200',
+        active
+          ? 'bg-foreground text-background'
+          : 'bg-surface text-muted-foreground hover:bg-muted hover:text-foreground'
+      )}
+    >
+      {dotColor && !active && (
+        <span className={cn('h-2 w-2 rounded-full', dotColor)} />
+      )}
+      {label}
+      {count !== undefined && (
+        <span className={cn(
+          'text-caption tabular-nums',
+          active ? 'opacity-70' : 'opacity-50',
+        )}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// Stats card
+function StatCard({
+  label,
+  count,
+  value,
+  dotColor,
   active,
   onClick,
 }: {
   label: string;
+  count: number;
+  value?: number;
+  dotColor: string;
   active: boolean;
   onClick: () => void;
 }) {
@@ -84,27 +152,33 @@ function FilterPill({
     <button
       onClick={onClick}
       className={cn(
-        'px-4 py-1.5 rounded-full text-footnote font-medium transition-all duration-200',
+        'flex flex-col gap-1 p-4 rounded-2xl border transition-all duration-200 text-left min-w-[140px]',
         active
-          ? 'bg-foreground text-background'
-          : 'bg-surface text-muted-foreground hover:bg-muted hover:text-foreground'
+          ? 'border-primary/30 bg-primary/5 shadow-sm'
+          : 'border-border/50 bg-card hover:border-border hover:shadow-sm'
       )}
     >
-      {label}
+      <div className="flex items-center gap-2">
+        <span className={cn('h-2.5 w-2.5 rounded-full', dotColor)} />
+        <span className="text-footnote font-medium text-muted-foreground">{label}</span>
+      </div>
+      <span className="text-headline font-semibold tabular-nums">{count}</span>
+      {value !== undefined && value > 0 && (
+        <span className="text-caption text-muted-foreground tabular-nums">
+          {formatCompactCurrency(value)}
+        </span>
+      )}
     </button>
   );
 }
 
-// Loading skeleton with Apple styling
+// Loading skeleton
 function ProjectSkeleton({ viewMode }: { viewMode: 'table' | 'grid' }) {
   if (viewMode === 'grid') {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl bg-card border border-border/50 p-5 space-y-4"
-          >
+          <div key={i} className="rounded-2xl bg-card border border-border/50 p-5 space-y-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-11 w-11 rounded-xl" />
@@ -133,10 +207,7 @@ function ProjectSkeleton({ viewMode }: { viewMode: 'table' | 'grid' }) {
   return (
     <div className="space-y-2">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 rounded-xl bg-card border border-border/50 p-4"
-        >
+        <div key={i} className="flex items-center gap-4 rounded-xl bg-card border border-border/50 p-4">
           <Skeleton className="h-10 w-10 rounded-lg" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-48" />
@@ -145,52 +216,72 @@ function ProjectSkeleton({ viewMode }: { viewMode: 'table' | 'grid' }) {
           <Skeleton className="h-5 w-20 rounded-full" />
           <Skeleton className="h-5 w-24 rounded-full" />
           <Skeleton className="h-1 w-24 rounded-full" />
-          <div className="flex -space-x-2">
-            {[1, 2, 3].map((j) => (
-              <Skeleton key={j} className="h-7 w-7 rounded-full" />
-            ))}
-          </div>
         </div>
       ))}
     </div>
   );
 }
 
-// Stage order for Kanban view
-const STAGE_ORDER: ProjectLifecycle[] = [
-  ProjectLifecycle.LEAD,
-  ProjectLifecycle.QUALIFIED,
-  ProjectLifecycle.EVALUATION,
-  ProjectLifecycle.NEGOTIATION,
-  ProjectLifecycle.WON,
-  ProjectLifecycle.LOST,
-  ProjectLifecycle.PLANNING,
-  ProjectLifecycle.ONGOING,
-  ProjectLifecycle.OPTIMIZING,
-  ProjectLifecycle.CLOSED,
-];
-
 export default function ProjectsPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<HealthStatus | 'all'>('all');
-  const [stageFilter, setStageFilter] = useState<ProjectLifecycle | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'stage'>('grid');
+  const [phaseFilter, setPhaseFilter] = useState<ProjectPhaseGroup | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'kanban'>('grid');
 
+  // Load all projects
   const { data, isLoading } = useProjects({
     search: search || undefined,
     healthStatus: statusFilter !== 'all' ? statusFilter : undefined,
-    lifecycle: stageFilter !== 'all' ? [stageFilter] : undefined,
-    limit: 100, // Load more for stage view
+    lifecycle: phaseFilter !== 'all' ? PHASE_LIFECYCLES[phaseFilter] : undefined,
+    limit: 200,
   });
 
-  // Group projects by stage for Kanban view
-  const projectsByStage = data?.projects
-    ? STAGE_ORDER.reduce((acc, stage) => {
-        acc[stage] = data.projects.filter((p) => p.lifecycle === stage);
-        return acc;
-      }, {} as Record<ProjectLifecycle, typeof data.projects>)
-    : null;
+  const projects = data?.projects ?? [];
+
+  // Compute stats per phase group
+  const phaseStats = useMemo(() => {
+    if (!data?.projects) return null;
+    const allProjects = data.projects;
+
+    const stats: Record<ProjectPhaseGroup | 'all', { count: number; value: number }> = {
+      all: { count: allProjects.length, value: 0 },
+      [ProjectPhaseGroup.INTAKE]: { count: 0, value: 0 },
+      [ProjectPhaseGroup.EVALUATION]: { count: 0, value: 0 },
+      [ProjectPhaseGroup.OPERATIONS]: { count: 0, value: 0 },
+      [ProjectPhaseGroup.COMPLETED]: { count: 0, value: 0 },
+      [ProjectPhaseGroup.LOST]: { count: 0, value: 0 },
+    };
+
+    for (const p of allProjects) {
+      const phase = LIFECYCLE_TO_PHASE[p.lifecycle];
+      const budget = p.totalBudget ?? 0;
+      stats[phase].count++;
+      stats[phase].value += budget;
+      stats.all.value += budget;
+    }
+
+    return stats;
+  }, [data?.projects]);
+
+  // Group projects by phase for kanban
+  const projectsByPhase = useMemo(() => {
+    if (!projects.length) return null;
+    const grouped: Record<string, Project[]> = {};
+    for (const pg of PHASE_GROUP_ORDER) {
+      grouped[pg] = [];
+    }
+    // Also add LOST
+    grouped[ProjectPhaseGroup.LOST] = [];
+
+    for (const p of projects) {
+      const phase = LIFECYCLE_TO_PHASE[p.lifecycle];
+      if (grouped[phase]) {
+        grouped[phase].push(p);
+      }
+    }
+    return grouped;
+  }, [projects]);
 
   const formatDate = (date: string | null) => {
     if (!date) return '-';
@@ -201,13 +292,13 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header - Apple style with generous spacing */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-title font-semibold tracking-tight">Dự án</h1>
           <p className="text-callout text-muted-foreground">
-            Quản lý và theo dõi tất cả dự án của bạn
+            Quản lý và theo dõi tất cả dự án
           </p>
         </div>
         <Button
@@ -219,9 +310,36 @@ export default function ProjectsPage() {
         </Button>
       </div>
 
-      {/* Filters - Apple style with pill buttons */}
+      {/* Stats Row */}
+      {phaseStats && (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {PHASE_GROUP_ORDER.map((pg) => (
+            <StatCard
+              key={pg}
+              label={PhaseGroupLabels[pg]}
+              count={phaseStats[pg].count}
+              value={phaseStats[pg].value}
+              dotColor={PhaseGroupDotColors[pg]}
+              active={phaseFilter === pg}
+              onClick={() => setPhaseFilter(phaseFilter === pg ? 'all' : pg)}
+            />
+          ))}
+          {phaseStats[ProjectPhaseGroup.LOST].count > 0 && (
+            <StatCard
+              label={PhaseGroupLabels[ProjectPhaseGroup.LOST]}
+              count={phaseStats[ProjectPhaseGroup.LOST].count}
+              value={phaseStats[ProjectPhaseGroup.LOST].value}
+              dotColor={PhaseGroupDotColors[ProjectPhaseGroup.LOST]}
+              active={phaseFilter === ProjectPhaseGroup.LOST}
+              onClick={() => setPhaseFilter(phaseFilter === ProjectPhaseGroup.LOST ? 'all' : ProjectPhaseGroup.LOST)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* Search Input - Apple style */}
+        {/* Search */}
         <div className="relative flex-1 min-w-[280px] max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -232,7 +350,7 @@ export default function ProjectsPage() {
           />
         </div>
 
-        {/* Status Filter Pills */}
+        {/* Health status filter */}
         <div className="flex items-center gap-2">
           <FilterPill
             label="Tất cả"
@@ -242,21 +360,24 @@ export default function ProjectsPage() {
           <FilterPill
             label="On Track"
             active={statusFilter === HealthStatus.STABLE}
+            dotColor={HealthStatusDotColors[HealthStatus.STABLE]}
             onClick={() => setStatusFilter(HealthStatus.STABLE)}
           />
           <FilterPill
             label="At Risk"
             active={statusFilter === HealthStatus.WARNING}
+            dotColor={HealthStatusDotColors[HealthStatus.WARNING]}
             onClick={() => setStatusFilter(HealthStatus.WARNING)}
           />
           <FilterPill
             label="Critical"
             active={statusFilter === HealthStatus.CRITICAL}
+            dotColor={HealthStatusDotColors[HealthStatus.CRITICAL]}
             onClick={() => setStatusFilter(HealthStatus.CRITICAL)}
           />
         </div>
 
-        {/* View Mode Toggle - Apple segment control style */}
+        {/* View toggle */}
         <div className="ml-auto flex items-center p-1 rounded-lg bg-surface">
           <button
             onClick={() => setViewMode('grid')}
@@ -283,103 +404,56 @@ export default function ProjectsPage() {
             <List className="h-4 w-4" />
           </button>
           <button
-            onClick={() => {
-              setViewMode('stage');
-              setStageFilter('all'); // Reset stage filter for stage view
-            }}
+            onClick={() => setViewMode('kanban')}
             className={cn(
               'p-2 rounded-md transition-all duration-200',
-              viewMode === 'stage'
+              viewMode === 'kanban'
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
-            title="Stage view"
+            title="Kanban view"
           >
             <Columns3 className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Stage Filter Pills - only show when not in stage view */}
-      {viewMode !== 'stage' && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-footnote text-muted-foreground mr-1">Giai đoạn:</span>
-          <FilterPill
-            label="Tất cả"
-            active={stageFilter === 'all'}
-            onClick={() => setStageFilter('all')}
-          />
-          {STAGE_ORDER.slice(0, 6).map((stage) => (
-            <FilterPill
-              key={stage}
-              label={ProjectLifecycleLabels[stage]}
-              active={stageFilter === stage}
-              onClick={() => setStageFilter(stage)}
-            />
-          ))}
-          {stageFilter !== 'all' && !STAGE_ORDER.slice(0, 6).includes(stageFilter) && (
-            <FilterPill
-              label={ProjectLifecycleLabels[stageFilter]}
-              active={true}
-              onClick={() => setStageFilter('all')}
-            />
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="px-3 py-1.5 rounded-full text-footnote font-medium bg-surface text-muted-foreground hover:bg-muted transition-all duration-200">
-                Khác...
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="rounded-xl">
-              {STAGE_ORDER.slice(6).map((stage) => (
-                <DropdownMenuItem
-                  key={stage}
-                  onClick={() => setStageFilter(stage)}
-                  className="rounded-lg"
-                >
-                  {ProjectLifecycleLabels[stage]}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-
       {/* Content */}
       {isLoading ? (
-        <ProjectSkeleton viewMode={viewMode === 'stage' ? 'grid' : viewMode} />
-      ) : viewMode === 'stage' && projectsByStage ? (
-        // Stage View - Kanban style columns
+        <ProjectSkeleton viewMode={viewMode === 'kanban' ? 'grid' : viewMode} />
+      ) : viewMode === 'kanban' && projectsByPhase ? (
+        /* ========== KANBAN VIEW - 4 Phase Group Columns ========== */
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
-            {STAGE_ORDER.map((stage) => {
-              const stageProjects = projectsByStage[stage] || [];
-              const hasProjects = stageProjects.length > 0;
+            {[...PHASE_GROUP_ORDER, ProjectPhaseGroup.LOST].map((pg) => {
+              const phaseProjects = projectsByPhase[pg] || [];
+              if (pg === ProjectPhaseGroup.LOST && phaseProjects.length === 0) return null;
 
               return (
                 <div
-                  key={stage}
+                  key={pg}
                   className={cn(
-                    'w-72 shrink-0 rounded-2xl p-3',
-                    hasProjects ? 'bg-surface/50' : 'bg-surface/30'
+                    'w-80 shrink-0 rounded-2xl p-3',
+                    phaseProjects.length > 0 ? 'bg-surface/50' : 'bg-surface/30'
                   )}
                 >
-                  {/* Stage Header */}
+                  {/* Column Header */}
                   <div className="flex items-center justify-between mb-3 px-1">
                     <div className="flex items-center gap-2">
+                      <span className={cn('h-2.5 w-2.5 rounded-full', PhaseGroupDotColors[pg])} />
                       <span className="text-footnote font-semibold">
-                        {ProjectLifecycleLabels[stage]}
+                        {PhaseGroupLabels[pg]}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-background text-caption font-medium text-muted-foreground">
-                        {stageProjects.length}
+                        {phaseProjects.length}
                       </span>
                     </div>
                   </div>
 
-                  {/* Stage Projects */}
+                  {/* Column Cards */}
                   <div className="space-y-2">
-                    {stageProjects.length > 0 ? (
-                      stageProjects.map((project) => (
+                    {phaseProjects.length > 0 ? (
+                      phaseProjects.map((project) => (
                         <div
                           key={project.id}
                           onClick={() => router.push(`/dashboard/projects/${project.id}`)}
@@ -395,14 +469,21 @@ export default function ProjectsPage() {
                               </h4>
                               <p className="text-caption text-muted-foreground truncate">
                                 {project.dealCode}
+                                {project.client && ` · ${project.client.companyName}`}
                               </p>
                             </div>
+                          </div>
+
+                          {/* Sub-stage + status */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <LifecyclePill lifecycle={project.lifecycle} />
+                            <StatusDot status={project.healthStatus} />
                           </div>
 
                           {/* Progress */}
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
-                              <StatusBadge status={project.healthStatus} />
+                              <span className="text-caption text-muted-foreground">Tiến độ</span>
                               <span className="text-caption font-medium tabular-nums">
                                 {project.stageProgress}%
                               </span>
@@ -410,17 +491,12 @@ export default function ProjectsPage() {
                             <ProgressBar value={project.stageProgress} />
                           </div>
 
-                          {/* Team avatars */}
+                          {/* Team */}
                           {project.team.length > 0 && (
                             <div className="flex -space-x-1.5 mt-2">
                               {project.team.slice(0, 4).map((member) => (
-                                <Avatar
-                                  key={member.id}
-                                  className="h-6 w-6 border-2 border-background ring-0"
-                                >
-                                  {member.user?.avatar && (
-                                    <AvatarImage src={member.user?.avatar} />
-                                  )}
+                                <Avatar key={member.id} className="h-6 w-6 border-2 border-background ring-0">
+                                  {member.user?.avatar && <AvatarImage src={member.user?.avatar} />}
                                   <AvatarFallback className="text-[9px] font-medium bg-muted">
                                     {member.user?.name.charAt(0).toUpperCase()}
                                   </AvatarFallback>
@@ -446,112 +522,92 @@ export default function ProjectsPage() {
             })}
           </div>
         </div>
-      ) : data?.projects && data.projects.length > 0 ? (
+      ) : projects.length > 0 ? (
         viewMode === 'grid' ? (
-          // Grid View - Apple card style
+          /* ========== GRID VIEW ========== */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.projects.map((project) => (
-              <Card
-                key={project.id}
-                className="group cursor-pointer rounded-2xl border-border/50 shadow-apple-sm hover:shadow-apple hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-              >
-                <CardContent className="p-5 space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <FolderKanban className="h-5 w-5 text-primary" />
+            {projects.map((project) => {
+              const phaseGroup = LIFECYCLE_TO_PHASE[project.lifecycle];
+              return (
+                <Card
+                  key={project.id}
+                  className="group cursor-pointer rounded-2xl border-border/50 shadow-apple-sm hover:shadow-apple hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                  onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                >
+                  <CardContent className="p-5 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <FolderKanban className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-callout truncate group-hover:text-primary transition-colors">
+                            {project.name}
+                          </h3>
+                          <p className="text-footnote text-muted-foreground truncate">
+                            {project.dealCode}
+                            {project.client && ` · ${project.client.companyName}`}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-callout truncate group-hover:text-primary transition-colors">
-                          {project.name}
-                        </h3>
-                        <p className="text-footnote text-muted-foreground truncate">
-                          {project.dealCode}
-                          {project.client && ` · ${project.client.companyName}`}
-                        </p>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/dashboard/projects/${project.id}`);
-                          }}
-                          className="rounded-lg"
-                        >
-                          Xem chi tiết
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/dashboard/projects/${project.id}/tasks`);
-                          }}
-                          className="rounded-lg"
-                        >
-                          Xem tasks
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {project.driveLink && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
                           <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(project.driveLink!, '_blank');
-                            }}
+                            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/projects/${project.id}`); }}
                             className="rounded-lg"
                           >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Mở Drive
+                            Xem chi tiết
                           </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Status & Stage */}
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={project.healthStatus} />
-                    <StagePill stage={project.lifecycle} />
-                  </div>
-
-                  {/* Progress */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-footnote">
-                      <span className="text-muted-foreground">Tiến độ</span>
-                      <span className="font-medium tabular-nums">
-                        {project.stageProgress}%
-                      </span>
+                          <DropdownMenuSeparator />
+                          {project.driveLink && (
+                            <DropdownMenuItem
+                              onClick={(e) => { e.stopPropagation(); window.open(project.driveLink!, '_blank'); }}
+                              className="rounded-lg"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Mở Drive
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <ProgressBar value={project.stageProgress} />
-                  </div>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    <div className="flex items-center gap-1.5 text-footnote text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{formatDate(project.endDate)}</span>
+                    {/* Phase + Status */}
+                    <div className="flex items-center gap-2">
+                      <PhaseGroupPill phase={phaseGroup} />
+                      <LifecyclePill lifecycle={project.lifecycle} />
+                      <StatusDot status={project.healthStatus} />
                     </div>
-                    <div className="flex items-center">
+
+                    {/* Progress */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-footnote">
+                        <span className="text-muted-foreground">Tiến độ</span>
+                        <span className="font-medium tabular-nums">{project.stageProgress}%</span>
+                      </div>
+                      <ProgressBar value={project.stageProgress} />
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <div className="flex items-center gap-1.5 text-footnote text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{formatDate(project.endDate)}</span>
+                      </div>
                       <div className="flex -space-x-2">
                         {project.team.slice(0, 3).map((member) => (
-                          <Avatar
-                            key={member.id}
-                            className="h-7 w-7 border-2 border-background ring-0"
-                          >
-                            {member.user?.avatar && (
-                              <AvatarImage src={member.user?.avatar} />
-                            )}
+                          <Avatar key={member.id} className="h-7 w-7 border-2 border-background ring-0">
+                            {member.user?.avatar && <AvatarImage src={member.user?.avatar} />}
                             <AvatarFallback className="text-[10px] font-medium bg-muted">
                               {member.user?.name.charAt(0).toUpperCase()}
                             </AvatarFallback>
@@ -564,90 +620,92 @@ export default function ProjectsPage() {
                         )}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
-          // Table/List View - Apple style
+          /* ========== TABLE VIEW ========== */
           <div className="space-y-2">
-            {data.projects.map((project) => (
-              <div
-                key={project.id}
-                className="group flex items-center gap-4 rounded-xl bg-card border border-border/50 p-4 cursor-pointer hover:bg-muted/30 hover:shadow-sm transition-all duration-200"
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-              >
-                {/* Icon */}
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FolderKanban className="h-5 w-5 text-primary" />
-                </div>
+            {projects.map((project) => {
+              const phaseGroup = LIFECYCLE_TO_PHASE[project.lifecycle];
+              return (
+                <div
+                  key={project.id}
+                  className="group flex items-center gap-4 rounded-xl bg-card border border-border/50 p-4 cursor-pointer hover:bg-muted/30 hover:shadow-sm transition-all duration-200"
+                  onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                >
+                  {/* Icon */}
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <FolderKanban className="h-5 w-5 text-primary" />
+                  </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-callout truncate group-hover:text-primary transition-colors">
                       {project.name}
                     </h3>
+                    <p className="text-footnote text-muted-foreground truncate">
+                      {project.dealCode}
+                      {project.client && ` · ${project.client.companyName}`}
+                    </p>
                   </div>
-                  <p className="text-footnote text-muted-foreground truncate">
-                    {project.dealCode}
-                    {project.client && ` · ${project.client.companyName}`}
-                  </p>
-                </div>
 
-                {/* Status */}
-                <div className="hidden sm:block">
-                  <StatusBadge status={project.healthStatus} />
-                </div>
+                  {/* Phase Group */}
+                  <div className="hidden sm:block">
+                    <PhaseGroupPill phase={phaseGroup} />
+                  </div>
 
-                {/* Stage */}
-                <div className="hidden md:block">
-                  <StagePill stage={project.lifecycle} />
-                </div>
+                  {/* Lifecycle sub-stage */}
+                  <div className="hidden md:block">
+                    <LifecyclePill lifecycle={project.lifecycle} />
+                  </div>
 
-                {/* Progress */}
-                <div className="hidden lg:flex items-center gap-3 w-32">
-                  <ProgressBar value={project.stageProgress} className="flex-1" />
-                  <span className="text-footnote font-medium tabular-nums w-8 text-right">
-                    {project.stageProgress}%
-                  </span>
-                </div>
+                  {/* Health status */}
+                  <div className="hidden md:block">
+                    <StatusDot status={project.healthStatus} />
+                  </div>
 
-                {/* Timeline */}
-                <div className="hidden xl:flex items-center gap-1.5 text-footnote text-muted-foreground w-20">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>{formatDate(project.endDate)}</span>
-                </div>
+                  {/* Progress */}
+                  <div className="hidden lg:flex items-center gap-3 w-32">
+                    <ProgressBar value={project.stageProgress} className="flex-1" />
+                    <span className="text-footnote font-medium tabular-nums w-8 text-right">
+                      {project.stageProgress}%
+                    </span>
+                  </div>
 
-                {/* Team */}
-                <div className="flex -space-x-2">
-                  {project.team.slice(0, 3).map((member) => (
-                    <Avatar
-                      key={member.id}
-                      className="h-7 w-7 border-2 border-background ring-0"
-                    >
-                      {member.user?.avatar && <AvatarImage src={member.user?.avatar} />}
-                      <AvatarFallback className="text-[10px] font-medium bg-muted">
-                        {member.user?.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {project.team.length > 3 && (
-                    <div className="h-7 w-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-medium text-muted-foreground">
-                      +{project.team.length - 3}
-                    </div>
-                  )}
-                </div>
+                  {/* Date */}
+                  <div className="hidden xl:flex items-center gap-1.5 text-footnote text-muted-foreground w-20">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{formatDate(project.endDate)}</span>
+                  </div>
 
-                {/* Arrow */}
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            ))}
+                  {/* Team */}
+                  <div className="flex -space-x-2">
+                    {project.team.slice(0, 3).map((member) => (
+                      <Avatar key={member.id} className="h-7 w-7 border-2 border-background ring-0">
+                        {member.user?.avatar && <AvatarImage src={member.user?.avatar} />}
+                        <AvatarFallback className="text-[10px] font-medium bg-muted">
+                          {member.user?.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {project.team.length > 3 && (
+                      <div className="h-7 w-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                        +{project.team.length - 3}
+                      </div>
+                    )}
+                  </div>
+
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              );
+            })}
           </div>
         )
       ) : (
-        // Empty State - Apple style
+        /* ========== EMPTY STATE ========== */
         <Card className="rounded-2xl border-border/50 shadow-apple-sm">
           <CardContent className="flex flex-col items-center justify-center py-20">
             <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
@@ -655,7 +713,7 @@ export default function ProjectsPage() {
             </div>
             <h3 className="text-headline font-semibold mb-2">Chưa có dự án nào</h3>
             <p className="text-callout text-muted-foreground text-center max-w-sm mb-6">
-              Bắt đầu bằng cách tạo dự án đầu tiên của bạn để quản lý công việc hiệu quả hơn.
+              Bắt đầu bằng cách tạo dự án đầu tiên để quản lý công việc hiệu quả hơn.
             </p>
             <Button
               onClick={() => router.push('/dashboard/projects/new')}
@@ -668,7 +726,7 @@ export default function ProjectsPage() {
         </Card>
       )}
 
-      {/* Pagination info - Apple style */}
+      {/* Pagination info */}
       {data && data.total > 0 && (
         <div className="flex items-center justify-between text-footnote text-muted-foreground">
           <span>

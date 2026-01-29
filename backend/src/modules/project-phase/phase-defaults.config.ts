@@ -7,10 +7,14 @@ export const DEFAULT_PHASES = [
     weight: 50,
     orderIndex: 0,
     defaultItems: [
-      { name: 'Intake', weight: 5, orderIndex: 0 },
-      { name: 'Discovery', weight: 5, orderIndex: 1 },
-      { name: 'Planning', weight: 25, orderIndex: 2 },
-      { name: 'Pitching', weight: 15, orderIndex: 3 },
+      { name: 'Intake & Brief', weight: 5, orderIndex: 0,
+        pic: 'Sale', support: 'Leader/Team MKT', expectedOutput: 'Brief hoàn chỉnh' },
+      { name: 'Discovery & Audit', weight: 5, orderIndex: 1,
+        pic: 'Sale/Leader', support: 'Account/Planner', expectedOutput: 'Audit report' },
+      { name: 'Proposal & Presentation', weight: 25, orderIndex: 2,
+        pic: 'Planner', support: 'Account/Team', expectedOutput: 'Proposal deck' },
+      { name: 'Pitching Round', weight: 15, orderIndex: 3,
+        pic: 'Sale', support: 'Account/Planner', expectedOutput: 'Client approval' },
     ],
   },
   {
@@ -19,9 +23,12 @@ export const DEFAULT_PHASES = [
     weight: 10,
     orderIndex: 1,
     defaultItems: [
-      { name: 'Internal Kick-off', weight: 2, orderIndex: 0 },
-      { name: 'Client Kick-off', weight: 2, orderIndex: 1 },
-      { name: 'System Setup', weight: 6, orderIndex: 2 },
+      { name: 'Internal Kick-off', weight: 2, orderIndex: 0,
+        pic: 'Planner', support: 'Team', expectedOutput: 'Kick-off notes' },
+      { name: 'Client Kick-off', weight: 2, orderIndex: 1,
+        pic: 'Sale', support: 'Account/Team', expectedOutput: 'Meeting minutes' },
+      { name: 'Campaign Planning & Setup', weight: 6, orderIndex: 2,
+        pic: 'Media/Creative', support: 'Account', expectedOutput: 'Campaign setup complete' },
     ],
   },
   {
@@ -30,7 +37,14 @@ export const DEFAULT_PHASES = [
     weight: 30,
     orderIndex: 2,
     defaultItems: [
-      { name: 'Performance & Reporting', weight: 30, orderIndex: 0 },
+      { name: 'Realtime Dashboard', weight: 7.5, orderIndex: 0,
+        pic: 'Media', support: 'Planner', expectedOutput: 'Dashboard live' },
+      { name: 'Data Analysis', weight: 7.5, orderIndex: 1,
+        pic: 'Account', support: 'Planner', expectedOutput: 'Analysis report' },
+      { name: 'Weekly Sync', weight: 7.5, orderIndex: 2,
+        pic: 'Account', support: 'Sale', expectedOutput: 'Weekly report' },
+      { name: 'Client Reporting', weight: 7.5, orderIndex: 3,
+        pic: 'Account', support: 'Team', expectedOutput: 'Client report' },
     ],
   },
   {
@@ -39,7 +53,10 @@ export const DEFAULT_PHASES = [
     weight: 10,
     orderIndex: 3,
     defaultItems: [
-      { name: 'Closure & BBNT', weight: 10, orderIndex: 0 },
+      { name: 'Performance Review', weight: 5, orderIndex: 0,
+        pic: 'Media', support: 'Planner', expectedOutput: 'Review report' },
+      { name: 'BBNT & Renewal', weight: 5, orderIndex: 1,
+        pic: 'Planner', support: 'Account', expectedOutput: 'BBNT signed' },
     ],
   },
 ];

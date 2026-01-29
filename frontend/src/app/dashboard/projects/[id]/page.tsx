@@ -37,10 +37,13 @@ import {
   HealthStatusLabels,
   ProjectLifecycleLabels,
   HealthStatusDotColors,
+  getAvailableTabs,
+  PhaseGroupLabels,
+  LIFECYCLE_TO_PHASE,
 } from '@/lib/api/projects';
-import type { ProjectLifecycle } from '@/types';
+import { ProjectLifecycle, ProjectPhaseGroup, type ProjectTab } from '@/types';
 import type { UserRole } from '@/lib/api/admin-users';
-import { ProjectLifecycleTimeline } from '@/components/project/project-stage-timeline';
+import { PhaseProgressBar as LifecyclePhaseBar } from '@/components/project/phase-progress-bar';
 import { TeamMemberModal } from '@/components/project/team-member-modal';
 import { BudgetCard } from '@/components/project/budget-card';
 import { BudgetFormModal } from '@/components/project/budget-form-modal';
@@ -469,7 +472,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'budget' | 'kpi' | 'logs' | 'history' | 'ads' | 'phases'>('overview');
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
@@ -731,21 +734,44 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* Segment Control Tabs */}
-      <SegmentControl
-        value={activeTab}
-        onChange={(v) => setActiveTab(v as typeof activeTab)}
-        items={[
+      {/* Phase Progress Bar */}
+      <LifecyclePhaseBar
+        lifecycle={project.lifecycle as ProjectLifecycle}
+        stageProgress={project.stageProgress}
+      />
+
+      {/* Segment Control Tabs - Progressive Unlock */}
+      {(() => {
+        const availableTabs = getAvailableTabs(project.lifecycle as ProjectLifecycle);
+        const phaseGroup = LIFECYCLE_TO_PHASE[project.lifecycle as ProjectLifecycle];
+        const allTabs: { value: string; label: string; count?: number }[] = [
           { value: 'overview', label: 'Tổng quan' },
+          { value: 'brief', label: 'Brief' },
+          { value: 'plan', label: 'Kế hoạch' },
           { value: 'team', label: 'Team', count: project.team.length },
           { value: 'budget', label: 'Ngân sách' },
-          { value: 'kpi', label: 'KPIs' },
-          { value: 'phases', label: 'Phases' },
-          { value: 'ads', label: 'Báo cáo Ads' },
-          { value: 'logs', label: 'Nhật ký' },
+          { value: 'kpis', label: 'KPIs' },
+          { value: 'tasks', label: 'Tasks' },
+          { value: 'files', label: 'Tài liệu' },
+          { value: 'ads-report', label: 'Báo cáo Ads' },
+          { value: 'journal', label: 'Nhật ký' },
           { value: 'history', label: 'Lịch sử' },
-        ]}
-      />
+        ];
+        return (
+          <SegmentControl
+            value={activeTab}
+            onChange={(v) => {
+              if (availableTabs.includes(v as ProjectTab)) {
+                setActiveTab(v);
+              }
+            }}
+            items={allTabs.map((t) => ({
+              ...t,
+              disabled: !availableTabs.includes(t.value as ProjectTab),
+            }))}
+          />
+        );
+      })()}
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
@@ -780,22 +806,21 @@ export default function ProjectDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Stage Timeline */}
+                {/* Phase Progress (4 giai đoạn lớn) */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-callout font-medium">
                       Giai đoạn dự án
                     </span>
                     <span className="text-footnote text-muted-foreground">
-                      {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
+                      {PhaseGroupLabels[LIFECYCLE_TO_PHASE[project.lifecycle as ProjectLifecycle]]} · {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
                     </span>
                   </div>
-                  <ProjectLifecycleTimeline
-                    currentStage={project.lifecycle as ProjectLifecycle}
+                  <LifecyclePhaseBar
+                    lifecycle={project.lifecycle as ProjectLifecycle}
                     stageProgress={project.stageProgress}
-                    isEditable={true}
-                    onStageChange={handleStageChange}
-                    onProgressChange={handleProgressChange}
+                    compact
+                    showSubStage
                   />
                 </div>
 
@@ -1182,6 +1207,73 @@ export default function ProjectDetailPage() {
         </>
       )}
 
+      {activeTab === 'tasks' && (
+        <div className="text-center py-12">
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => router.push(`/dashboard/projects/${projectId}/tasks`)}
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            Xem Tasks
+          </Button>
+        </div>
+      )}
+
+      {activeTab === 'files' && (
+        <div className="text-center py-12">
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => router.push(`/dashboard/projects/${projectId}/files`)}
+          >
+            <Files className="h-4 w-4 mr-2" />
+            Xem Tài liệu
+          </Button>
+        </div>
+      )}
+
+      {activeTab === 'brief' && (
+        <div className="text-center py-12 text-muted-foreground">
+          {project.strategicBrief ? (
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => router.push(`/dashboard/strategic-briefs/${project.strategicBrief!.id}`)}
+            >
+              Xem Strategic Brief ({project.strategicBrief.completionPct}%)
+            </Button>
+          ) : (
+            <p className="text-footnote">Chưa có Strategic Brief cho dự án này.</p>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'plan' && (
+        <div className="space-y-4">
+          {phases && phases.length > 0 && (
+            <PhaseProgressBar phases={phases} />
+          )}
+          {phases?.map((phase) => (
+            <PhaseCard
+              key={phase.id}
+              phase={phase}
+              projectId={projectId}
+              tasks={tasksData?.tasks?.map((t) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+              })) ?? []}
+            />
+          ))}
+          {(!phases || phases.length === 0) && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-[14px]">Chưa có kế hoạch cho dự án này.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'budget' && (
         <BudgetTabContent
           projectId={projectId}
@@ -1203,11 +1295,11 @@ export default function ProjectDetailPage() {
         />
       )}
 
-      {activeTab === 'kpi' && (
+      {activeTab === 'kpis' && (
         <KpiCard projectId={projectId} />
       )}
 
-      {activeTab === 'logs' && (
+      {activeTab === 'journal' && (
         <ActivityTimeline projectId={projectId} />
       )}
 
@@ -1215,32 +1307,7 @@ export default function ProjectDetailPage() {
         <StageHistoryTimeline projectId={projectId} />
       )}
 
-      {activeTab === 'phases' && (
-        <div className="space-y-4">
-          {phases && phases.length > 0 && (
-            <PhaseProgressBar phases={phases} />
-          )}
-          {phases?.map((phase) => (
-            <PhaseCard
-              key={phase.id}
-              phase={phase}
-              projectId={projectId}
-              tasks={tasksData?.tasks?.map((t) => ({
-                id: t.id,
-                title: t.title,
-                status: t.status,
-              })) ?? []}
-            />
-          ))}
-          {(!phases || phases.length === 0) && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-[14px]">Chưa có phase nào cho dự án này.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'ads' && (
+      {activeTab === 'ads-report' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-subheadline font-semibold">Báo cáo Quảng cáo</h3>

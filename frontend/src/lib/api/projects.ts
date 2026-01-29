@@ -1,15 +1,17 @@
 import { api } from './index';
-import type {
-  Project,
-  ProjectListResponse,
-  ProjectListQuery,
-  CreateProjectInput,
-  UpdateProjectInput,
-  AddTeamMemberInput,
-  ProjectTeamMember,
-  StageHistoryEntry,
-  HealthStatus,
+import {
+  type Project,
+  type ProjectListResponse,
+  type ProjectListQuery,
+  type CreateProjectInput,
+  type UpdateProjectInput,
+  type AddTeamMemberInput,
+  type ProjectTeamMember,
+  type StageHistoryEntry,
+  type HealthStatus,
   ProjectLifecycle,
+  ProjectPhaseGroup,
+  type ProjectTab,
 } from '@/types';
 
 // Re-export types for convenience
@@ -290,18 +292,117 @@ export function formatCompactCurrency(amount: number): string {
 
 // Deal stages (pre-WON) for kanban
 export const DEAL_STAGES: ProjectLifecycle[] = [
-  'LEAD' as ProjectLifecycle,
-  'QUALIFIED' as ProjectLifecycle,
-  'EVALUATION' as ProjectLifecycle,
-  'NEGOTIATION' as ProjectLifecycle,
-  'WON' as ProjectLifecycle,
-  'LOST' as ProjectLifecycle,
+  ProjectLifecycle.LEAD,
+  ProjectLifecycle.QUALIFIED,
+  ProjectLifecycle.EVALUATION,
+  ProjectLifecycle.NEGOTIATION,
+  ProjectLifecycle.WON,
+  ProjectLifecycle.LOST,
 ];
 
 // Project stages (post-WON) for project list
 export const PROJECT_STAGES: ProjectLifecycle[] = [
-  'PLANNING' as ProjectLifecycle,
-  'ONGOING' as ProjectLifecycle,
-  'OPTIMIZING' as ProjectLifecycle,
-  'CLOSED' as ProjectLifecycle,
+  ProjectLifecycle.PLANNING,
+  ProjectLifecycle.ONGOING,
+  ProjectLifecycle.OPTIMIZING,
+  ProjectLifecycle.CLOSED,
 ];
+
+// ============================================
+// PHASE GROUP MAPPING & CONFIG
+// ============================================
+
+// Map each lifecycle stage → phase group
+export const LIFECYCLE_TO_PHASE: Record<ProjectLifecycle, ProjectPhaseGroup> = {
+  [ProjectLifecycle.LEAD]: ProjectPhaseGroup.INTAKE,
+  [ProjectLifecycle.QUALIFIED]: ProjectPhaseGroup.INTAKE,
+  [ProjectLifecycle.EVALUATION]: ProjectPhaseGroup.EVALUATION,
+  [ProjectLifecycle.NEGOTIATION]: ProjectPhaseGroup.EVALUATION,
+  [ProjectLifecycle.WON]: ProjectPhaseGroup.OPERATIONS,
+  [ProjectLifecycle.PLANNING]: ProjectPhaseGroup.OPERATIONS,
+  [ProjectLifecycle.ONGOING]: ProjectPhaseGroup.OPERATIONS,
+  [ProjectLifecycle.OPTIMIZING]: ProjectPhaseGroup.OPERATIONS,
+  [ProjectLifecycle.CLOSED]: ProjectPhaseGroup.COMPLETED,
+  [ProjectLifecycle.LOST]: ProjectPhaseGroup.LOST,
+};
+
+// Lifecycle stages belonging to each phase group
+export const PHASE_LIFECYCLES: Record<ProjectPhaseGroup, ProjectLifecycle[]> = {
+  [ProjectPhaseGroup.INTAKE]: [ProjectLifecycle.LEAD, ProjectLifecycle.QUALIFIED],
+  [ProjectPhaseGroup.EVALUATION]: [ProjectLifecycle.EVALUATION, ProjectLifecycle.NEGOTIATION],
+  [ProjectPhaseGroup.OPERATIONS]: [ProjectLifecycle.WON, ProjectLifecycle.PLANNING, ProjectLifecycle.ONGOING, ProjectLifecycle.OPTIMIZING],
+  [ProjectPhaseGroup.COMPLETED]: [ProjectLifecycle.CLOSED],
+  [ProjectPhaseGroup.LOST]: [ProjectLifecycle.LOST],
+};
+
+// Tab unlock rules per phase group
+export const PHASE_TABS: Record<ProjectPhaseGroup, ProjectTab[]> = {
+  [ProjectPhaseGroup.INTAKE]: ['overview', 'brief'],
+  [ProjectPhaseGroup.EVALUATION]: ['overview', 'brief', 'plan'],
+  [ProjectPhaseGroup.OPERATIONS]: [
+    'overview', 'brief', 'plan', 'tasks', 'files', 'media-plans',
+    'team', 'budget', 'kpis', 'ads-report', 'journal', 'history',
+  ],
+  [ProjectPhaseGroup.COMPLETED]: [
+    'overview', 'brief', 'plan', 'tasks', 'files', 'media-plans',
+    'team', 'budget', 'kpis', 'ads-report', 'journal', 'history',
+  ],
+  [ProjectPhaseGroup.LOST]: ['overview', 'brief'],
+};
+
+// Vietnamese labels for phase groups
+export const PhaseGroupLabels: Record<ProjectPhaseGroup, string> = {
+  [ProjectPhaseGroup.INTAKE]: 'Tiếp nhận',
+  [ProjectPhaseGroup.EVALUATION]: 'Đánh giá',
+  [ProjectPhaseGroup.OPERATIONS]: 'Vận hành',
+  [ProjectPhaseGroup.COMPLETED]: 'Hoàn thành',
+  [ProjectPhaseGroup.LOST]: 'Từ chối',
+};
+
+// Phase group colors (Tailwind classes)
+export const PhaseGroupColors: Record<ProjectPhaseGroup, string> = {
+  [ProjectPhaseGroup.INTAKE]: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  [ProjectPhaseGroup.EVALUATION]: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  [ProjectPhaseGroup.OPERATIONS]: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  [ProjectPhaseGroup.COMPLETED]: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+  [ProjectPhaseGroup.LOST]: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+};
+
+// Phase group dot colors (for indicators)
+export const PhaseGroupDotColors: Record<ProjectPhaseGroup, string> = {
+  [ProjectPhaseGroup.INTAKE]: 'bg-blue-500 dark:bg-blue-400',
+  [ProjectPhaseGroup.EVALUATION]: 'bg-amber-500 dark:bg-amber-400',
+  [ProjectPhaseGroup.OPERATIONS]: 'bg-green-500 dark:bg-green-400',
+  [ProjectPhaseGroup.COMPLETED]: 'bg-gray-400 dark:bg-gray-500',
+  [ProjectPhaseGroup.LOST]: 'bg-red-500 dark:bg-red-400',
+};
+
+// Ordered phase groups (for kanban columns, progress bar)
+export const PHASE_GROUP_ORDER: ProjectPhaseGroup[] = [
+  ProjectPhaseGroup.INTAKE,
+  ProjectPhaseGroup.EVALUATION,
+  ProjectPhaseGroup.OPERATIONS,
+  ProjectPhaseGroup.COMPLETED,
+];
+
+// Helper: get phase group from lifecycle
+export function getProjectPhaseGroup(lifecycle: ProjectLifecycle): ProjectPhaseGroup {
+  return LIFECYCLE_TO_PHASE[lifecycle];
+}
+
+// Helper: get available tabs for a lifecycle stage
+export function getAvailableTabs(lifecycle: ProjectLifecycle): ProjectTab[] {
+  const phase = LIFECYCLE_TO_PHASE[lifecycle];
+  return PHASE_TABS[phase];
+}
+
+// Helper: check if a tab is available
+export function isTabAvailable(tab: ProjectTab, lifecycle: ProjectLifecycle): boolean {
+  return getAvailableTabs(lifecycle).includes(tab);
+}
+
+// Helper: get phase group index (0-3) for progress bar
+export function getPhaseGroupIndex(phaseGroup: ProjectPhaseGroup): number {
+  const idx = PHASE_GROUP_ORDER.indexOf(phaseGroup);
+  return idx >= 0 ? idx : -1;
+}

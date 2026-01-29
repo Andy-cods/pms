@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { HealthStatus, ProjectLifecycle, ProjectLifecycleLabels, TaskStatus, TaskPriority } from '@/types';
+import { HealthStatus, ProjectLifecycle, ProjectLifecycleLabels, ProjectPhaseGroup, TaskStatus, TaskPriority } from '@/types';
+import { PhaseGroupLabels } from '@/lib/api/projects';
 
 const statusBadgeVariants = cva(
   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
@@ -25,6 +26,13 @@ const statusBadgeVariants = cva(
         medium: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
         high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
         urgent: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+
+        // Phase Groups
+        intake: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+        evaluation: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+        operations: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+        completed: 'bg-gray-200 text-gray-600 dark:bg-gray-700/30 dark:text-gray-400',
+        lost: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 
         // Generic
         default: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
@@ -118,6 +126,25 @@ const projectLifecycleVariantMap: Record<ProjectLifecycle, VariantProps<typeof s
 export function ProjectStageBadge({ stage, className }: { stage: ProjectLifecycle; className?: string }) {
   const variant = projectLifecycleVariantMap[stage];
   const label = ProjectLifecycleLabels[stage];
+  return (
+    <StatusBadge variant={variant} className={className}>
+      {label}
+    </StatusBadge>
+  );
+}
+
+// Phase Group Badge (4 giai đoạn lớn)
+const phaseGroupVariantMap: Record<ProjectPhaseGroup, VariantProps<typeof statusBadgeVariants>['variant']> = {
+  [ProjectPhaseGroup.INTAKE]: 'intake',
+  [ProjectPhaseGroup.EVALUATION]: 'evaluation',
+  [ProjectPhaseGroup.OPERATIONS]: 'operations',
+  [ProjectPhaseGroup.COMPLETED]: 'completed',
+  [ProjectPhaseGroup.LOST]: 'lost',
+};
+
+export function PhaseGroupBadge({ phase, className }: { phase: ProjectPhaseGroup; className?: string }) {
+  const variant = phaseGroupVariantMap[phase];
+  const label = PhaseGroupLabels[phase];
   return (
     <StatusBadge variant={variant} className={className}>
       {label}
