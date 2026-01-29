@@ -75,6 +75,7 @@ import { PhaseProgressBar } from '@/components/project-phase/phase-progress-bar'
 import { PhaseCard } from '@/components/project-phase/phase-card';
 import { useBriefByProject, useCreateBrief } from '@/hooks/use-strategic-brief';
 import { BriefWizard } from '@/components/strategic-brief/brief-wizard';
+import { ProjectTasksTab } from '@/components/project/project-tasks-tab';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1203,16 +1204,7 @@ export default function ProjectDetailPage() {
       )}
 
       {activeTab === 'tasks' && (
-        <div className="text-center py-12">
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => router.push(`/dashboard/projects/${projectId}/tasks`)}
-          >
-            <CheckSquare className="h-4 w-4 mr-2" />
-            Xem Tasks
-          </Button>
-        </div>
+        <ProjectTasksTab projectId={projectId} />
       )}
 
       {activeTab === 'files' && (
