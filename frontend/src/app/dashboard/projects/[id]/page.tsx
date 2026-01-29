@@ -799,51 +799,37 @@ export default function ProjectDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Progress Card */}
+            {/* Phase Progress (linked to Plan tab - driven by item completion only) */}
+            {phases && phases.length > 0 ? (
+              <PhaseProgressBar phases={phases} />
+            ) : (
+              <Card className="rounded-2xl border-border/50 shadow-apple-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-subheadline font-semibold">Tiến độ</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LifecyclePhaseBar
+                    lifecycle={project.lifecycle as ProjectLifecycle}
+                    stageProgress={project.stageProgress}
+                    compact
+                    showSubStage
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Task Stats (informational, does not affect project progress) */}
             <Card className="rounded-2xl border-border/50 shadow-apple-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-subheadline font-semibold">
-                  Tiến độ
+                <CardTitle className="text-subheadline font-semibold flex items-center justify-between">
+                  <span>Tasks</span>
+                  <span className="text-footnote font-normal text-muted-foreground tabular-nums">
+                    {project.taskStats.done}/{project.taskStats.total} hoàn thành
+                  </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Phase-based Progress (linked to Plan tab) */}
-                {phases && phases.length > 0 && (
-                  <PhaseProgressBar phases={phases} />
-                )}
-                {(!phases || phases.length === 0) && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-callout font-medium">
-                        Giai đoạn dự án
-                      </span>
-                      <span className="text-footnote text-muted-foreground">
-                        {PhaseGroupLabels[LIFECYCLE_TO_PHASE[project.lifecycle as ProjectLifecycle]]} · {ProjectLifecycleLabels[project.lifecycle]} · {project.stageProgress}%
-                      </span>
-                    </div>
-                    <LifecyclePhaseBar
-                      lifecycle={project.lifecycle as ProjectLifecycle}
-                      stageProgress={project.stageProgress}
-                      compact
-                      showSubStage
-                    />
-                  </div>
-                )}
-
-                {/* Task Stats (informational, does not affect project progress) */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-callout font-medium">
-                      Tasks
-                    </span>
-                    <span className="text-footnote text-muted-foreground tabular-nums">
-                      {project.taskStats.done}/{project.taskStats.total} hoàn thành
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-4 gap-2 pt-4 border-t border-border/50">
+              <CardContent>
+                <div className="grid grid-cols-4 gap-2">
                   <StatCard
                     label="Tổng"
                     value={project.taskStats.total}
