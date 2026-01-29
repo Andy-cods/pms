@@ -33,7 +33,6 @@ import {
   useUpdateTeamMember,
   useRemoveTeamMember,
 } from '@/hooks/use-projects';
-import { useAuth } from '@/hooks/use-auth';
 import {
   HealthStatusLabels,
   ProjectLifecycleLabels,
@@ -42,7 +41,7 @@ import {
   PhaseGroupLabels,
   LIFECYCLE_TO_PHASE,
 } from '@/lib/api/projects';
-import { ProjectLifecycle, ProjectPhaseGroup, PipelineDecision, UserRole, type ProjectTab } from '@/types';
+import { ProjectLifecycle, ProjectPhaseGroup, UserRole, type ProjectTab } from '@/types';
 import { PhaseProgressBar as LifecyclePhaseBar } from '@/components/project/phase-progress-bar';
 import { TeamMemberModal } from '@/components/project/team-member-modal';
 import { BudgetCard } from '@/components/project/budget-card';
@@ -487,7 +486,6 @@ export default function ProjectDetailPage() {
   const [filterCategory, setFilterCategory] = useState<BudgetEventCategory | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<BudgetEventStatus | 'ALL'>('ALL');
 
-  const { user: currentUser } = useAuth();
   const { data: project, isLoading, error } = useProject(projectId);
   const { data: teamWithWorkload } = useProjectTeam(projectId);
   const { data: budget } = useProjectBudget(projectId);
@@ -990,10 +988,8 @@ export default function ProjectDetailPage() {
               compact
             />
 
-            {/* Decision Panel - PM & Admin only */}
-            {currentUser && [UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role as UserRole) && (
-              <ProjectDecisionPanel project={project} />
-            )}
+            {/* Decision Panel - role check handled internally */}
+            <ProjectDecisionPanel project={project} />
           </div>
         </div>
         </div>
