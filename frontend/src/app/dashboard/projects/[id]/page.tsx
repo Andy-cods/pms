@@ -41,7 +41,7 @@ import {
   PhaseGroupLabels,
   LIFECYCLE_TO_PHASE,
 } from '@/lib/api/projects';
-import { ProjectLifecycle, ProjectPhaseGroup, type ProjectTab } from '@/types';
+import { ProjectLifecycle, ProjectPhaseGroup, PipelineDecision, type ProjectTab } from '@/types';
 import type { UserRole } from '@/lib/api/admin-users';
 import { PhaseProgressBar as LifecyclePhaseBar } from '@/components/project/phase-progress-bar';
 import { TeamMemberModal } from '@/components/project/team-member-modal';
@@ -76,6 +76,7 @@ import { PhaseCard } from '@/components/project-phase/phase-card';
 import { useBriefByProject, useCreateBrief } from '@/hooks/use-strategic-brief';
 import { BriefWizard } from '@/components/strategic-brief/brief-wizard';
 import { ProjectTasksTab } from '@/components/project/project-tasks-tab';
+import { ProjectDecisionPanel } from '@/components/project/project-decision-panel';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -777,7 +778,14 @@ export default function ProjectDetailPage() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
+          {/* Decision Panel - show for NEGOTIATION projects or already decided */}
+          {(project.lifecycle === ProjectLifecycle.NEGOTIATION ||
+            project.decision !== PipelineDecision.PENDING) && (
+            <ProjectDecisionPanel project={project} />
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Description Card */}
@@ -987,6 +995,7 @@ export default function ProjectDetailPage() {
               compact
             />
           </div>
+        </div>
         </div>
       )}
 
