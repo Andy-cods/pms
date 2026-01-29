@@ -1120,26 +1120,146 @@ async function main() {
   // ═══════════════════════════════════════════════════════
   // STRATEGIC BRIEFS - for accepted pipelines
   // ═══════════════════════════════════════════════════════
+  // Must match BRIEF_SECTIONS in brief-sections.config.ts
   const SECTION_DEFS = [
-    { num: 1, key: 'brand_overview', title: 'Tổng quan thương hiệu' },
-    { num: 2, key: 'market_analysis', title: 'Phân tích thị trường' },
-    { num: 3, key: 'target_audience', title: 'Đối tượng mục tiêu' },
-    { num: 4, key: 'campaign_objectives', title: 'Mục tiêu chiến dịch' },
-    { num: 5, key: 'key_messages', title: 'Thông điệp chính' },
-    { num: 6, key: 'creative_direction', title: 'Định hướng sáng tạo' },
-    { num: 7, key: 'media_strategy', title: 'Chiến lược truyền thông' },
-    { num: 8, key: 'content_strategy', title: 'Chiến lược nội dung' },
-    { num: 9, key: 'kol_influencer', title: 'KOL/Influencer' },
-    { num: 10, key: 'budget_allocation', title: 'Phân bổ ngân sách' },
-    { num: 11, key: 'timeline', title: 'Timeline' },
-    { num: 12, key: 'kpi_metrics', title: 'KPI & Metrics' },
-    { num: 13, key: 'competitors', title: 'Đối thủ cạnh tranh' },
-    { num: 14, key: 'deliverables', title: 'Sản phẩm bàn giao' },
-    { num: 15, key: 'approval_process', title: 'Quy trình duyệt' },
-    { num: 16, key: 'additional_notes', title: 'Ghi chú bổ sung' },
+    { num: 1, key: 'objectives', title: 'Mục tiêu chiến dịch' },
+    { num: 2, key: 'market_research', title: 'Nghiên cứu thị trường' },
+    { num: 3, key: 'customer_research', title: 'Nghiên cứu khách hàng' },
+    { num: 4, key: 'competitor_analysis', title: 'Phân tích đối thủ' },
+    { num: 5, key: 'internal_swot', title: 'SWOT nội bộ' },
+    { num: 6, key: 'strategic_recommendation', title: 'Đề xuất chiến lược' },
+    { num: 7, key: 'channel_strategy', title: 'Chiến lược kênh' },
+    { num: 8, key: 'creative_direction', title: 'Định hướng sáng tạo' },
+    { num: 9, key: 'media_execution', title: 'Media & Execution Logic' },
+    { num: 10, key: 'timeline', title: 'Timeline' },
+    { num: 11, key: 'budget_logic', title: 'Budget Logic' },
+    { num: 12, key: 'kpi_measurement', title: 'KPI & Measurement' },
+    { num: 13, key: 'risk_mitigation', title: 'Rủi ro & Giải pháp' },
+    { num: 14, key: 'governance', title: 'Governance' },
+    { num: 15, key: 'planner_notes', title: 'Ghi chú Planner' },
+    { num: 16, key: 'quotation', title: 'Báo giá' },
   ];
 
-  // Brief 1: For project 1 (APPROVED - mostly filled)
+  // Sample data matching frontend SECTION_CONFIGS field names
+  const BRIEF_DATA: Record<string, Record<string, unknown>> = {
+    objectives: {
+      businessObjective: 'Tăng doanh thu 30% trong Q1 2026, mở rộng thị phần khu vực miền Nam',
+      communicationObjective: 'Tăng nhận diện thương hiệu 50% trong target audience 25-40 tuổi',
+      marketingObjective: 'Tăng leads 40%, giảm CPA 20% so với Q4 2025',
+      primaryKPI: 'ROAS > 4x, CPA < 150,000 VND',
+      secondaryKPI: 'CTR > 2%, Engagement Rate > 5%',
+    },
+    market_research: {
+      industryOverview: 'Thị trường FMCG Việt Nam đạt 25 tỷ USD năm 2025, tăng trưởng 8%/năm. E-commerce chiếm 15% tổng doanh thu ngành.',
+      industryTrends: 'Xu hướng healthy living\nShoppertainment và livestream commerce\nPersonalization marketing\nSustainability & eco-friendly packaging',
+      ecommercePlatforms: 'Shopee (45% market share), TikTok Shop (25%), Lazada (20%), Tiki (10%)',
+      keyInsights: 'Người tiêu dùng Việt Nam ngày càng quan tâm đến chất lượng sản phẩm và trải nghiệm mua sắm online.',
+      userBehavior: 'Peak shopping: 19h-22h, Mobile-first (85%), Social commerce influence (65%)',
+      priceSensitivity: 'Medium-high, deal-driven trong segment mass market',
+      strategicImplication: 'Tập trung mobile-first content, leverage KOL/influencer, optimize cho peak hours.',
+    },
+    customer_research: {
+      personas: [
+        { role: 'Urban Professional', painPoint: 'Thiếu thời gian, cần convenience', goal: 'Tìm sản phẩm chất lượng nhanh', trigger: 'Review từ KOL tin tưởng' },
+        { role: 'Gen Z Student', painPoint: 'Budget hạn chế, FOMO', goal: 'Theo trend, tìm deal tốt', trigger: 'Flash sale, social proof' },
+      ],
+      journey: [
+        { stage: 'Awareness', description: 'Social media ads + KOL content' },
+        { stage: 'Consideration', description: 'Product review, comparison content' },
+        { stage: 'Purchase', description: 'E-commerce + voucher, free ship' },
+        { stage: 'Retention', description: 'Email marketing, loyalty program' },
+      ],
+    },
+    competitor_analysis: {
+      competitors: [
+        { name: 'Brand A', strengths: 'Market leader, strong distribution', weaknesses: 'Giá cao, ít innovation', strategy: 'Mass media + celebrity', marketShare: '35%' },
+        { name: 'Brand B', strengths: 'Giá cạnh tranh, social active', weaknesses: 'Brand perception thấp', strategy: 'Performance ads + influencer', marketShare: '20%' },
+      ],
+    },
+    internal_swot: {
+      strengths: 'Đội ngũ creative mạnh, 5 năm kinh nghiệm FMCG\nRelationship tốt với nền tảng quảng cáo\nData-driven approach',
+      weaknesses: 'Thiếu năng lực TikTok content\nTeam size nhỏ cho large-scale campaigns',
+      resourceReality: '5 members full-time. Tools: Meta Business Suite + Google Ads + TikTok Business Center.',
+    },
+    strategic_recommendation: {
+      strategyStatement: 'Tập trung Performance Marketing kết hợp Content Commerce, leverage TikTok Shop và Shopee Live.',
+      funnelStrategy: 'Awareness (30%): Social + Display\nConsideration (25%): Content + Retarget\nConversion (45%): Performance + E-commerce',
+      pillars: 'Performance Ads (Meta + Google)\nTikTok Content Commerce\nKOL/Influencer Collaboration\nE-commerce Activation',
+    },
+    channel_strategy: {
+      channels: [
+        { channel: 'Meta Ads', percentage: 30, funnelRole: 'Awareness + Retarget' },
+        { channel: 'Google Ads', percentage: 20, funnelRole: 'Search + Shopping' },
+        { channel: 'TikTok Ads', percentage: 25, funnelRole: 'Content Commerce' },
+        { channel: 'KOL/Influencer', percentage: 15, funnelRole: 'Social Proof' },
+        { channel: 'Email/CRM', percentage: 10, funnelRole: 'Retention' },
+      ],
+    },
+    creative_direction: {
+      coreInsight: 'Người tiêu dùng tin tưởng authentic review hơn quảng cáo, đặc biệt từ micro-influencer.',
+      keyMessage: 'Chất lượng thật, trải nghiệm thật - Không chỉ là sản phẩm, mà là phong cách sống.',
+      toneOfVoice: 'Authentic, Relatable, Energetic',
+      preferredFormats: 'Short-form video (15-30s) cho TikTok/Reels\nCarousel cho Facebook/Instagram\nUGC-style content\nLivestream shopping',
+    },
+    media_execution: {
+      awarenessStrategy: 'Phase 1 (Week 1-2): Video reach campaign Meta + TikTok. Budget: 40M VND.\nPhase 2 (Week 3-4): Retarget engaged + lookalike.',
+      leadStrategy: 'Meta dynamic product ads. Google Shopping cho high-intent keywords. TikTok Shop product showcase.',
+      retargetStrategy: 'Website visitors (7-14d) → Dynamic ads\nCart abandoners → Discount ads\nPast purchasers → Cross-sell campaigns',
+    },
+    timeline: {
+      phases: [
+        { name: 'Setup & Launch', start: '2026-01-06', end: '2026-01-19', milestones: 'Account setup, creative production, launch' },
+        { name: 'Optimize', start: '2026-01-20', end: '2026-02-09', milestones: 'A/B testing, audience refinement' },
+        { name: 'Scale', start: '2026-02-10', end: '2026-03-02', milestones: 'Scale winning creatives' },
+        { name: 'Review', start: '2026-03-03', end: '2026-03-15', milestones: 'Final report, BBNT' },
+      ],
+    },
+    budget_logic: {
+      items: [
+        { category: 'Meta Ads', amount: 45000000, percentage: 30 },
+        { category: 'Google Ads', amount: 30000000, percentage: 20 },
+        { category: 'TikTok Ads', amount: 37500000, percentage: 25 },
+        { category: 'KOL', amount: 22500000, percentage: 15 },
+        { category: 'Content', amount: 10000000, percentage: 7 },
+        { category: 'Contingency', amount: 5000000, percentage: 3 },
+      ],
+    },
+    kpi_measurement: {
+      kpis: [
+        { name: 'Reach', target: '5,000,000', unit: 'impressions' },
+        { name: 'Engagement Rate', target: '5', unit: '%' },
+        { name: 'CTR', target: '2.5', unit: '%' },
+        { name: 'Leads', target: '500', unit: 'leads/tháng' },
+        { name: 'ROAS', target: '4', unit: 'x' },
+        { name: 'CPA', target: '< 150,000', unit: 'VND' },
+      ],
+    },
+    risk_mitigation: {
+      risks: [
+        { risk: 'CPM tăng cao dịp Tết/lễ', mitigation: 'Adjust bidding, budget off-peak, backup creatives' },
+        { risk: 'TikTok policy thay đổi', mitigation: 'Diversify channels, monitor policy weekly' },
+        { risk: 'KOL không deliver đúng timeline', mitigation: 'Contract penalty clause, backup KOL list' },
+      ],
+    },
+    governance: {
+      approvalMatrix: [
+        { item: 'Creative Content', approver: 'PM + Client', sla: '2 ngày' },
+        { item: 'Budget Reallocation > 10%', approver: 'PM + AD', sla: '1 ngày' },
+        { item: 'New Channel Addition', approver: 'PM + Planner', sla: '3 ngày' },
+        { item: 'KOL Selection', approver: 'PM + Client', sla: '3 ngày' },
+      ],
+    },
+    planner_notes: {
+      prerequisites: 'Client cung cấp brand guidelines + product images HD.\nAccess GA4, Meta Business Suite, TikTok Business Center.\nXác nhận budget và payment schedule.',
+      specialNotes: 'Weekly report mỗi thứ 2.\nKhông sử dụng competitor brand name trong ads.\nPriority TikTok content tháng 1.',
+    },
+    quotation: {
+      quotationLink: 'https://docs.google.com/spreadsheets/d/example-quotation',
+      quotationStatus: 'approved',
+    },
+  };
+
+  // Brief 1: For project 1 (APPROVED - fully filled with sample data)
   await prisma.strategicBrief.create({
     data: {
       projectId: p1.id,
@@ -1154,22 +1274,14 @@ async function main() {
             sectionKey: s.key,
             title: s.title,
             isComplete: true,
-            data: s.key === 'brand_overview'
-              ? { brandName: 'ABC Corporation', industry: 'FMCG', brandStory: 'Thuong hieu 20 nam trong nganh FMCG' }
-              : s.key === 'target_audience'
-              ? { primaryAge: '25-45', gender: 'All', location: 'TP.HCM, Ha Noi, Da Nang', interests: 'Shopping, Social Media' }
-              : s.key === 'budget_allocation'
-              ? { items: [{ category: 'Media Ads', amount: 80000000, percentage: 53 }, { category: 'Content', amount: 30000000, percentage: 20 }, { category: 'Design', amount: 20000000, percentage: 13 }, { category: 'KOL', amount: 15000000, percentage: 10 }, { category: 'Other', amount: 5000000, percentage: 4 }] }
-              : s.key === 'kpi_metrics'
-              ? { kpis: [{ name: 'Reach', target: '5000000', unit: 'impressions' }, { name: 'Engagement Rate', target: '5', unit: '%' }, { name: 'Leads', target: '500', unit: 'leads/month' }, { name: 'ROAS', target: '4', unit: 'x' }] }
-              : { notes: `Da hoan thanh section ${s.key}` },
+            data: BRIEF_DATA[s.key] ?? {},
           })),
         },
       },
     },
   });
 
-  // Brief 2: For project 2 (DRAFT - partially filled)
+  // Brief 2: For project 2 (DRAFT - first 6 sections filled)
   await prisma.strategicBrief.create({
     data: {
       projectId: p2.id,
@@ -1182,11 +1294,7 @@ async function main() {
             sectionKey: s.key,
             title: s.title,
             isComplete: s.num <= 6,
-            data: s.num <= 6
-              ? s.key === 'brand_overview'
-                ? { brandName: 'XYZ Tech', industry: 'SaaS', brandStory: 'Startup AI-powered SaaS' }
-                : { notes: `Draft content for ${s.key}` }
-              : undefined,
+            data: s.num <= 6 ? (BRIEF_DATA[s.key] ?? {}) : undefined,
           })),
         },
       },
@@ -1211,7 +1319,7 @@ async function main() {
       },
     },
   });
-  console.log('Created 3 strategic briefs with sections');
+  console.log('Created 3 strategic briefs with sample data');
 
   // ═══════════════════════════════════════════════════════
   // PROJECT PHASES - for all 3 projects
@@ -1222,11 +1330,13 @@ async function main() {
       name: 'Khởi tạo & Lập kế hoạch',
       weight: 50,
       orderIndex: 0,
+      startDate: d('2026-01-06'),
+      endDate: d('2026-01-19'),
       items: [
-        { name: 'Intake', weight: 5, orderIndex: 0 },
-        { name: 'Discovery', weight: 5, orderIndex: 1 },
-        { name: 'Planning', weight: 25, orderIndex: 2 },
-        { name: 'Pitching', weight: 15, orderIndex: 3 },
+        { name: 'Intake & Brief', weight: 5, orderIndex: 0, pic: 'Sale', support: 'Leader/Team MKT', expectedOutput: 'Brief hoàn chỉnh' },
+        { name: 'Discovery & Audit', weight: 5, orderIndex: 1, pic: 'Sale/Leader', support: 'Account/Planner', expectedOutput: 'Audit report' },
+        { name: 'Proposal & Presentation', weight: 25, orderIndex: 2, pic: 'Planner', support: 'Account/Team', expectedOutput: 'Proposal deck' },
+        { name: 'Pitching Round', weight: 15, orderIndex: 3, pic: 'Sale', support: 'Account/Planner', expectedOutput: 'Client approval' },
       ],
     },
     {
@@ -1234,10 +1344,12 @@ async function main() {
       name: 'Setup & Chuẩn bị',
       weight: 10,
       orderIndex: 1,
+      startDate: d('2026-01-20'),
+      endDate: d('2026-01-26'),
       items: [
-        { name: 'Internal Kick-off', weight: 2, orderIndex: 0 },
-        { name: 'Client Kick-off', weight: 2, orderIndex: 1 },
-        { name: 'System Setup', weight: 6, orderIndex: 2 },
+        { name: 'Internal Kick-off', weight: 2, orderIndex: 0, pic: 'Planner', support: 'Team', expectedOutput: 'Kick-off notes' },
+        { name: 'Client Kick-off', weight: 2, orderIndex: 1, pic: 'Sale', support: 'Account/Team', expectedOutput: 'Meeting minutes' },
+        { name: 'Campaign Planning & Setup', weight: 6, orderIndex: 2, pic: 'Media/Creative', support: 'Account', expectedOutput: 'Campaign setup complete' },
       ],
     },
     {
@@ -1245,8 +1357,13 @@ async function main() {
       name: 'Vận hành & Tối ưu',
       weight: 30,
       orderIndex: 2,
+      startDate: d('2026-01-27'),
+      endDate: d('2026-03-02'),
       items: [
-        { name: 'Performance & Reporting', weight: 30, orderIndex: 0 },
+        { name: 'Realtime Dashboard', weight: 7, orderIndex: 0, pic: 'Media', support: 'Planner', expectedOutput: 'Dashboard live' },
+        { name: 'Data Analysis', weight: 8, orderIndex: 1, pic: 'Account', support: 'Planner', expectedOutput: 'Analysis report' },
+        { name: 'Weekly Sync', weight: 7, orderIndex: 2, pic: 'Account', support: 'Sale', expectedOutput: 'Weekly report' },
+        { name: 'Client Reporting', weight: 8, orderIndex: 3, pic: 'Account', support: 'Team', expectedOutput: 'Client report' },
       ],
     },
     {
@@ -1254,8 +1371,11 @@ async function main() {
       name: 'Tổng kết',
       weight: 10,
       orderIndex: 3,
+      startDate: d('2026-03-03'),
+      endDate: d('2026-03-15'),
       items: [
-        { name: 'Closure & BBNT', weight: 10, orderIndex: 0 },
+        { name: 'Performance Review', weight: 5, orderIndex: 0, pic: 'Media', support: 'Planner', expectedOutput: 'Review report' },
+        { name: 'BBNT & Renewal', weight: 5, orderIndex: 1, pic: 'Planner', support: 'Account', expectedOutput: 'BBNT signed' },
       ],
     },
   ];
@@ -1282,6 +1402,8 @@ async function main() {
           weight: phaseDef.weight,
           orderIndex: phaseDef.orderIndex,
           progress,
+          startDate: phaseDef.startDate,
+          endDate: phaseDef.endDate,
           items: {
             createMany: {
               data: phaseDef.items.map((item, idx) => ({
@@ -1290,6 +1412,9 @@ async function main() {
                 orderIndex: item.orderIndex,
                 isComplete: completions[idx] || false,
                 taskId: linkedTasks?.[`${phaseDef.phaseType}_${idx}`] || undefined,
+                pic: item.pic,
+                support: item.support,
+                expectedOutput: item.expectedOutput,
               })),
             },
           },
