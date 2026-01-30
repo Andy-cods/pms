@@ -7,10 +7,10 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: true, // Send httpOnly cookies automatically
 });
 
-// Helper to get cookie value
+// Helper to get cookie value (for CSRF token only)
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const value = `; ${document.cookie}`;
@@ -19,16 +19,10 @@ function getCookie(name: string): string | null {
   return null;
 }
 
-// Request interceptor to add auth token and CSRF token
+// Request interceptor to add CSRF token (auth is handled via httpOnly cookies)
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
-      // Add auth token
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-
       // Add CSRF token for state-changing requests
       const csrfToken = getCookie('XSRF-TOKEN');
       if (csrfToken && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase() || '')) {
@@ -45,10 +39,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Handle token refresh or redirect to login
+      // Redirect to login on auth failure - cookies are cleared by backend
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
       }
     }

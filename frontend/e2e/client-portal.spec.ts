@@ -43,7 +43,7 @@ test.describe('Client Portal', () => {
 
     // Navigate to projects and click on one
     await page.goto('/portal/projects');
-    await page.click('[data-testid="project-card"]').first();
+    await page.locator('[data-testid="project-card"]').first().click();
 
     // Verify project details page
     await expect(page.locator('[data-testid="project-details"]')).toBeVisible();
@@ -57,7 +57,7 @@ test.describe('Client Portal', () => {
 
     // Navigate to project details
     await page.goto('/portal/projects');
-    await page.click('[data-testid="project-card"]').first();
+    await page.locator('[data-testid="project-card"]').first().click();
 
     // Verify internal data is hidden
     await expect(page.locator('text=Chi phi noi bo')).not.toBeVisible();
@@ -86,7 +86,7 @@ test.describe('Client Portal', () => {
 
     // Navigate to project details
     await page.goto('/portal/projects');
-    await page.click('[data-testid="project-card"]').first();
+    await page.locator('[data-testid="project-card"]').first().click();
 
     // Verify progress indicator is visible
     await expect(page.locator('[data-testid="project-progress"]')).toBeVisible();

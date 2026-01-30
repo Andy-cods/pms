@@ -15,6 +15,7 @@ import {
   ForbiddenException,
   BadRequestException,
   Res,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
@@ -36,6 +37,8 @@ import {
 @Controller('files')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FileController {
+  private readonly logger = new Logger(FileController.name);
+
   constructor(
     private prisma: PrismaService,
     private minioService: MinioService,
@@ -353,7 +356,7 @@ export class FileController {
     try {
       await this.minioService.deleteFile(file.path);
     } catch (error) {
-      console.error('Failed to delete file from MinIO:', error);
+      this.logger.error('Failed to delete file from MinIO:', error);
       // Continue to delete DB record even if MinIO fails
     }
 

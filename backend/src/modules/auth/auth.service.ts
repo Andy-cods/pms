@@ -105,6 +105,9 @@ export class AuthService {
   }
 
   async refreshToken(dto: RefreshTokenDto): Promise<TokensDto> {
+    if (!dto.refreshToken) {
+      throw new BadRequestException('Refresh token is required');
+    }
     try {
       const payload = this.jwtService.verify<JwtPayload>(dto.refreshToken, {
         secret: this.configService.get<string>('JWT_SECRET'),

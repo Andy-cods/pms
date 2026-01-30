@@ -18,11 +18,11 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import type { RequestWithUser } from './guards/jwt-auth.guard.js';
 
 // Cookie configuration constants
-const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 1000; // 1 hour in milliseconds
+const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes in milliseconds
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-// Stricter rate limiting for auth endpoints: 5 requests per minute
-@Throttle({ default: { limit: 5, ttl: 60000 } })
+// Strict rate limiting for auth endpoints: 3 attempts per 15 minutes
+@Throttle({ default: { limit: 3, ttl: 900000 } })
 @Controller('auth')
 export class AuthController {
   private readonly isProduction: boolean;

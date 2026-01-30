@@ -45,11 +45,10 @@ export default function ClientLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-    const clientId = localStorage.getItem('clientId');
-    const clientName = localStorage.getItem('clientName');
+    const clientId = sessionStorage.getItem('clientId');
+    const clientName = sessionStorage.getItem('clientName');
 
-    if (!accessToken || !clientId) {
+    if (!clientId) {
       setLoading(false);
       router.push('/client-login');
       return;

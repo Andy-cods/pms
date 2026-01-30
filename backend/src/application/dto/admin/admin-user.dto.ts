@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsBoolean,
+  Matches,
 } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
@@ -17,7 +18,10 @@ export class CreateUserDto {
   name!: string;
 
   @IsString({ message: 'Mật khẩu là bắt buộc' })
-  @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
+  @MinLength(12, { message: 'Mật khẩu phải có ít nhất 12 ký tự' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/, {
+    message: 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt',
+  })
   password!: string;
 
   @IsEnum(UserRole, { message: 'Vai trò không hợp lệ' })

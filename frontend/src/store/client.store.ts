@@ -30,11 +30,11 @@ export const useClientStore = create<ClientState>((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   logout: () => {
+    // Tokens are cleared by backend via httpOnly cookies
+    // Only clear client display info from sessionStorage
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('clientId');
-      localStorage.removeItem('clientName');
+      sessionStorage.removeItem('clientId');
+      sessionStorage.removeItem('clientName');
     }
     set({
       client: null,

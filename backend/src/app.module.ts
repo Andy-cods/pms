@@ -1,5 +1,5 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -24,6 +24,7 @@ import { AdsReportModule } from './modules/ads-report/ads-report.module';
 import { StrategicBriefModule } from './modules/strategic-brief/strategic-brief.module';
 import { ProjectPhaseModule } from './modules/project-phase/project-phase.module';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
+import { CsrfMiddleware } from './shared/middleware/csrf.middleware';
 
 @Module({
   imports: [
@@ -75,11 +76,14 @@ import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
   ],
 })
 export class AppModule implements NestModule {
-  configure(_consumer: MiddlewareConsumer) {
-    // CSRF middleware temporarily disabled for development
-    // TODO: Re-enable and fix CSRF token handling for production
-    // consumer
-    //   .apply(CsrfMiddleware)
-    //   .forRoutes('*');
+  constructor(private configService: ConfigService) {}
+
+  configure(consumer: MiddlewareConsumer) {
+    // CSRF protection enabled for all state-changing routes
+    if (this.configService.get('NODE_ENV') !== 'test') {
+      consumer
+        .apply(CsrfMiddleware)
+        .forRoutes('*');
+    }
   }
 }

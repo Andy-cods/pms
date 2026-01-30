@@ -187,8 +187,12 @@ model Project {
   @@index([healthStatus])
   @@index([nvkdId])
   @@index([pmId])
+  @@index([plannerId])
   @@index([decision])
   @@index([clientId])
+  @@index([createdAt])
+  @@index([lifecycle, decision])
+  @@index([lifecycle, healthStatus])
   @@map("projects")
 }
 
@@ -229,6 +233,8 @@ model BudgetEvent {
   @@index([createdById])
   @@index([status])
   @@index([category])
+  @@index([projectId, category])
+  @@index([projectId, type])
   @@map("budget_events")
 }
 
@@ -279,6 +285,7 @@ model StageHistory {
 
   @@index([projectId])
   @@index([createdAt])
+  @@index([changedById])
   @@map("stage_histories")
 }
 
@@ -315,7 +322,11 @@ model Task {
   @@index([projectId])
   @@index([parentId])
   @@index([status])
+  @@index([priority])
   @@index([deadline])
+  @@index([createdById])
+  @@index([reviewerId])
+  @@index([projectId, status])
   @@map("tasks")
 }
 
@@ -368,6 +379,9 @@ model Approval {
   @@index([projectId])
   @@index([status])
   @@index([type])
+  @@index([submittedById])
+  @@index([approvedById])
+  @@index([projectId, status])
   @@map("approvals")
 }
 
@@ -382,6 +396,7 @@ model ApprovalHistory {
   approval    Approval       @relation(fields: [approvalId], references: [id], onDelete: Cascade)
 
   @@index([approvalId])
+  @@index([changedById])
   @@map("approval_histories")
 }
 
@@ -410,6 +425,8 @@ model File {
 
   @@index([projectId])
   @@index([taskId])
+  @@index([approvalId])
+  @@index([uploadedById])
   @@index([category])
   @@map("files")
 }
@@ -438,6 +455,7 @@ model Event {
   @@index([projectId])
   @@index([startTime])
   @@index([type])
+  @@index([createdById])
   @@map("events")
 }
 
@@ -492,6 +510,8 @@ model Comment {
 
   @@index([projectId])
   @@index([taskId])
+  @@index([authorId])
+  @@index([parentId])
   @@map("comments")
 }
 
@@ -512,6 +532,8 @@ model AuditLog {
   @@index([entityType])
   @@index([action])
   @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
   @@map("audit_logs")
 }
 
@@ -723,6 +745,9 @@ model AdsReport {
   @@index([reportDate])
   @@index([platform])
   @@index([period])
+  @@index([createdById])
+  @@index([projectId, reportDate])
+  @@index([projectId, platform])
   @@map("ads_reports")
 }
 
@@ -754,6 +779,7 @@ model MediaPlan {
   @@index([projectId])
   @@index([projectId, type])
   @@index([status])
+  @@index([createdById])
   @@map("media_plans")
 }
 

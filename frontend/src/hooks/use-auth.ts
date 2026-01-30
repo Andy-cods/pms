@@ -10,7 +10,6 @@ import type { AuthResponse, ClientAuthResponse } from '@/types';
 export function useAuth() {
   const {
     user,
-    tokens,
     isAuthenticated,
     isLoading,
     hasCheckedAuth,
@@ -22,40 +21,43 @@ export function useAuth() {
   } = useAuthStore();
   const router = useRouter();
 
-  // Initialize auth state on mount
+  // Initialize auth state on mount - verify via API, not localStorage
   useEffect(() => {
     if (hasCheckedAuth) return;
 
     const initAuth = async () => {
       setHasCheckedAuth(true);
 
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
-
-      // If user is already hydrated from storage, avoid extra API calls
+      // If user is already hydrated from sessionStorage, verify with API
       if (user) {
-        setLoading(false);
+        try {
+          const profile = await authApi.getProfile();
+          if (profile?.user) {
+            setUser(profile.user);
+          }
+        } catch {
+          storeLogout();
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
+      // Try to verify auth via httpOnly cookie (sent automatically)
       try {
         const profile = await authApi.getProfile();
         if (profile?.user) {
-          setUser(profile.user);
+          setAuth(profile.user);
+        } else {
+          setLoading(false);
         }
-      } catch (err) {
-        storeLogout();
-        return;
-      } finally {
+      } catch {
         setLoading(false);
       }
     };
 
     initAuth();
-  }, [hasCheckedAuth, setHasCheckedAuth, setLoading, setUser, storeLogout, user]);
+  }, [hasCheckedAuth, setHasCheckedAuth, setLoading, setAuth, setUser, storeLogout, user]);
 
   const logout = useCallback(async () => {
     try {
@@ -70,7 +72,6 @@ export function useAuth() {
 
   return {
     user,
-    tokens,
     isAuthenticated,
     isLoading,
     logout,
@@ -84,7 +85,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: (data: AuthResponse) => {
-      setAuth(data.user, data.tokens);
+      // Tokens are set as httpOnly cookies by the backend
+      setAuth(data.user);
       router.push('/dashboard');
     },
   });
@@ -96,12 +98,11 @@ export function useClientLogin() {
   return useMutation({
     mutationFn: (payload: ClientLoginPayload) => authApi.clientLogin(payload),
     onSuccess: (data: ClientAuthResponse) => {
-      // Store client tokens
+      // Tokens are set as httpOnly cookies by the backend
+      // Store client display info in sessionStorage (non-sensitive)
       if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', data.tokens.accessToken);
-        localStorage.setItem('refreshToken', data.tokens.refreshToken);
-        localStorage.setItem('clientId', data.client.id);
-        localStorage.setItem('clientName', data.client.companyName);
+        sessionStorage.setItem('clientId', data.client.id);
+        sessionStorage.setItem('clientName', data.client.companyName);
       }
       router.push('/client/dashboard');
     },
@@ -109,16 +110,12 @@ export function useClientLogin() {
 }
 
 export function useRefreshToken() {
-  const { setTokens, logout } = useAuthStore();
+  const { logout } = useAuthStore();
 
   return useMutation({
     mutationFn: () => {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) throw new Error('No refresh token');
-      return authApi.refreshToken({ refreshToken });
-    },
-    onSuccess: (data) => {
-      setTokens(data);
+      // Refresh token is sent via httpOnly cookie automatically
+      return authApi.refreshToken({});
     },
     onError: () => {
       logout();

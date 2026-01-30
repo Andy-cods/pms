@@ -34,7 +34,7 @@ services:
     image: redis:7-alpine
     container_name: bc-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass "${REDIS_PASSWORD:-Bc@Redis2026!Secure#Key}"
     volumes:
       - redis_data:/data
     ports:
@@ -57,8 +57,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-bcagency-minio-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-Tp7!nK3xR9@wQ1mV5#jL8bZ2}
     volumes:
       - minio_data:/data
     ports:

@@ -11,7 +11,7 @@ export interface ClientLoginPayload {
 }
 
 export interface RefreshTokenPayload {
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 export const authApi = {
