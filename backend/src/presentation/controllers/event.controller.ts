@@ -13,6 +13,12 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { RRuleService } from '../../modules/calendar/rrule.service.js';
@@ -26,6 +32,8 @@ import {
 } from '../../application/dto/event/event.dto.js';
 import { UserRole, TaskStatus, EventType } from '@prisma/client';
 
+@ApiTags('Calendar')
+@ApiBearerAuth('JWT-auth')
 @Controller('events')
 @UseGuards(JwtAuthGuard)
 export class EventController {
@@ -34,6 +42,11 @@ export class EventController {
     private rruleService: RRuleService,
   ) {}
 
+  @ApiOperation({ summary: 'List events with date range and filters' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated events including recurring occurrences',
+  })
   @Get()
   async listEvents(
     @Query() query: EventListQueryDto,
@@ -78,6 +91,7 @@ export class EventController {
       req.user.role === UserRole.ADMIN;
 
     if (!isAdmin) {
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment */
       where.AND = [
         ...(Array.isArray(where.AND)
           ? where.AND
@@ -96,6 +110,7 @@ export class EventController {
           ],
         },
       ];
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
     }
 
     const [events] = await Promise.all([
@@ -173,6 +188,11 @@ export class EventController {
     };
   }
 
+  @ApiOperation({ summary: 'Get task deadlines as calendar events' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns task deadlines in event format',
+  })
   @Get('deadlines')
   async getDeadlines(
     @Query() query: EventListQueryDto,
@@ -257,6 +277,9 @@ export class EventController {
     }));
   }
 
+  @ApiOperation({ summary: 'Get event by ID' })
+  @ApiResponse({ status: 200, description: 'Returns event details' })
+  @ApiResponse({ status: 404, description: 'Event not found' })
   @Get(':id')
   async getEvent(
     @Param('id') id: string,
@@ -288,6 +311,9 @@ export class EventController {
     return this.mapToResponse(event);
   }
 
+  @ApiOperation({ summary: 'Create a new calendar event' })
+  @ApiResponse({ status: 201, description: 'Event created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid event data' })
   @Post()
   async createEvent(
     @Body() dto: CreateEventDto,
@@ -357,6 +383,9 @@ export class EventController {
     return this.mapToResponse(event);
   }
 
+  @ApiOperation({ summary: 'Update an existing event' })
+  @ApiResponse({ status: 200, description: 'Event updated' })
+  @ApiResponse({ status: 403, description: 'Only creator can update' })
   @Patch(':id')
   async updateEvent(
     @Param('id') id: string,
@@ -444,6 +473,9 @@ export class EventController {
     return this.mapToResponse(updated);
   }
 
+  @ApiOperation({ summary: 'Delete an event' })
+  @ApiResponse({ status: 200, description: 'Event deleted' })
+  @ApiResponse({ status: 403, description: 'Only creator or admin can delete' })
   @Delete(':id')
   async deleteEvent(
     @Param('id') id: string,
@@ -470,6 +502,9 @@ export class EventController {
     await this.prisma.event.delete({ where: { id } });
   }
 
+  @ApiOperation({ summary: 'Respond to an event invitation (accept/decline)' })
+  @ApiResponse({ status: 200, description: 'Response recorded' })
+  @ApiResponse({ status: 403, description: 'Not an attendee' })
   @Post(':id/respond')
   async respondToEvent(
     @Param('id') id: string,

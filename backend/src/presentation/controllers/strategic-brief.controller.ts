@@ -10,6 +10,12 @@ import {
   Req,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
@@ -25,6 +31,8 @@ const BRIEF_INCLUDE = {
   project: { select: { id: true, dealCode: true, name: true } },
 };
 
+@ApiTags('Strategic Brief')
+@ApiBearerAuth('JWT-auth')
 @Controller('strategic-briefs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StrategicBriefController {
@@ -34,12 +42,17 @@ export class StrategicBriefController {
   ) {}
 
   /** POST /api/strategic-briefs - Create brief with 16 empty sections */
+  @ApiOperation({ summary: 'Create strategic brief with 16 default sections' })
+  @ApiResponse({ status: 201, description: 'Brief created' })
   @Post()
   async create(@Body() dto: CreateBriefDto) {
-    return this.briefService.create(dto.projectId!);
+    return this.briefService.create(dto.projectId);
   }
 
   /** GET /api/strategic-briefs/:id - Get full brief with sections */
+  @ApiOperation({ summary: 'Get strategic brief by ID with all sections' })
+  @ApiResponse({ status: 200, description: 'Returns brief with sections' })
+  @ApiResponse({ status: 404, description: 'Brief not found' })
   @Get(':id')
   async getById(@Param('id') id: string) {
     const brief = await this.prisma.strategicBrief.findUnique({
@@ -51,6 +64,9 @@ export class StrategicBriefController {
   }
 
   /** GET /api/strategic-briefs/by-project/:projectId */
+  @ApiOperation({ summary: 'Get strategic brief by project ID' })
+  @ApiResponse({ status: 200, description: 'Returns brief for project' })
+  @ApiResponse({ status: 404, description: 'Brief not found for project' })
   @Get('by-project/:projectId')
   async getByProject(@Param('projectId') projectId: string) {
     const brief = await this.prisma.strategicBrief.findUnique({
@@ -62,6 +78,8 @@ export class StrategicBriefController {
   }
 
   /** PATCH /api/strategic-briefs/:id/sections/:sectionNum - Update section data */
+  @ApiOperation({ summary: 'Update a brief section content' })
+  @ApiResponse({ status: 200, description: 'Section updated' })
   @Patch(':id/sections/:sectionNum')
   async updateSection(
     @Param('id') id: string,
@@ -72,12 +90,16 @@ export class StrategicBriefController {
   }
 
   /** POST /api/strategic-briefs/:id/submit - Submit for approval */
+  @ApiOperation({ summary: 'Submit brief for approval' })
+  @ApiResponse({ status: 200, description: 'Brief submitted' })
   @Post(':id/submit')
   async submit(@Param('id') id: string) {
     return this.briefService.submit(id);
   }
 
   /** POST /api/strategic-briefs/:id/approve - Approve brief */
+  @ApiOperation({ summary: 'Approve a strategic brief' })
+  @ApiResponse({ status: 200, description: 'Brief approved' })
   @Post(':id/approve')
   @Roles(UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async approve(
@@ -88,10 +110,13 @@ export class StrategicBriefController {
   }
 
   /** POST /api/strategic-briefs/:id/request-revision - Request revision */
+  @ApiOperation({ summary: 'Request revision on a strategic brief' })
+  @ApiResponse({ status: 200, description: 'Revision requested' })
   @Post(':id/request-revision')
   @Roles(UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async requestRevision(
     @Param('id') id: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     @Body() _dto: RequestRevisionDto,
   ) {
     return this.briefService.requestRevision(id);

@@ -12,6 +12,12 @@ import {
   ForbiddenException,
   Request,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
@@ -44,12 +50,19 @@ function generateTempPassword(): string {
   return password;
 }
 
+@ApiTags('Admin - Users')
+@ApiBearerAuth('JWT-auth')
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 export class AdminUserController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Get all active users with workload statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns users with task/project workload',
+  })
   @Get('workload')
   async getUsersWorkload(): Promise<
     Array<{
@@ -124,6 +137,8 @@ export class AdminUserController {
     });
   }
 
+  @ApiOperation({ summary: 'List users with search and filters' })
+  @ApiResponse({ status: 200, description: 'Returns paginated user list' })
   @Get()
   async listUsers(
     @Query('search') search?: string,
@@ -179,6 +194,9 @@ export class AdminUserController {
     };
   }
 
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiResponse({ status: 200, description: 'Returns user details' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   @Get(':id')
   async getUser(@Param('id') id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({
@@ -202,6 +220,9 @@ export class AdminUserController {
     return this.mapToResponse(user);
   }
 
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiResponse({ status: 201, description: 'User created' })
+  @ApiResponse({ status: 400, description: 'Email already in use' })
   @Post()
   async createUser(
     @Body() dto: CreateUserDto,
@@ -249,6 +270,9 @@ export class AdminUserController {
     return this.mapToResponse(user);
   }
 
+  @ApiOperation({ summary: 'Update user details' })
+  @ApiResponse({ status: 200, description: 'User updated' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   @Patch(':id')
   async updateUser(
     @Param('id') id: string,
@@ -303,6 +327,9 @@ export class AdminUserController {
     return this.mapToResponse(user);
   }
 
+  @ApiOperation({ summary: 'Deactivate a user account' })
+  @ApiResponse({ status: 200, description: 'User deactivated' })
+  @ApiResponse({ status: 400, description: 'Cannot deactivate yourself' })
   @Patch(':id/deactivate')
   async deactivateUser(
     @Param('id') id: string,
@@ -352,6 +379,14 @@ export class AdminUserController {
     return this.mapToResponse(user);
   }
 
+  @ApiOperation({
+    summary: 'Reset user password and return temporary password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset, returns temporary password',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
   @Post(':id/reset-password')
   async resetPassword(
     @Param('id') id: string,

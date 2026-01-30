@@ -10,6 +10,12 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import {
@@ -23,11 +29,15 @@ import {
   type NotificationType,
 } from '../../application/dto/notification/notification.dto.js';
 
+@ApiTags('Notifications')
+@ApiBearerAuth('JWT-auth')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List notifications for current user' })
+  @ApiResponse({ status: 200, description: 'Returns paginated notifications' })
   @Get()
   async listNotifications(
     @Query() query: NotificationListQueryDto,
@@ -68,6 +78,8 @@ export class NotificationController {
     };
   }
 
+  @ApiOperation({ summary: 'Get unread notification count' })
+  @ApiResponse({ status: 200, description: 'Returns unread count' })
   @Get('unread-count')
   async getUnreadCount(
     @Req() req: { user: { sub: string } },
@@ -79,6 +91,9 @@ export class NotificationController {
     return { count };
   }
 
+  @ApiOperation({ summary: 'Mark a notification as read' })
+  @ApiResponse({ status: 200, description: 'Notification marked as read' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
   @Patch(':id/read')
   async markAsRead(
     @Param('id') id: string,
@@ -109,6 +124,8 @@ export class NotificationController {
     return this.mapToResponse(updated);
   }
 
+  @ApiOperation({ summary: 'Mark all notifications as read' })
+  @ApiResponse({ status: 200, description: 'All notifications marked as read' })
   @Patch('read-all')
   async markAllAsRead(
     @Req() req: { user: { sub: string } },
@@ -127,6 +144,8 @@ export class NotificationController {
     return { count: result.count };
   }
 
+  @ApiOperation({ summary: 'Get notification preferences' })
+  @ApiResponse({ status: 200, description: 'Returns notification preferences' })
   @Get('preferences')
   async getPreferences(
     @Req() req: { user: { sub: string } },
@@ -151,6 +170,8 @@ export class NotificationController {
     return DefaultNotificationPreferences;
   }
 
+  @ApiOperation({ summary: 'Update notification preferences' })
+  @ApiResponse({ status: 200, description: 'Preferences updated' })
   @Patch('preferences')
   async updatePreferences(
     @Body() dto: UpdateNotificationPreferencesDto,
@@ -166,9 +187,9 @@ export class NotificationController {
     }
 
     // Merge with existing preferences
-    const currentPrefs =
+    const currentPrefs: Record<string, unknown> =
       user.notificationPrefs && typeof user.notificationPrefs === 'object'
-        ? (user.notificationPrefs as object)
+        ? (user.notificationPrefs as Record<string, unknown>)
         : {};
 
     const newPrefs = {
@@ -179,6 +200,7 @@ export class NotificationController {
 
     await this.prisma.user.update({
       where: { id: req.user.sub },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: { notificationPrefs: JSON.parse(JSON.stringify(newPrefs)) },
     });
 

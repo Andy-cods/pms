@@ -45,11 +45,36 @@ This directory contains comprehensive documentation for the BC Agency PMS system
 - Request/response formats
 - Error handling
 - Code examples
+- Interactive Swagger UI: `/api/docs` (development only)
+
+**[ARCHITECTURE.md](./ARCHITECTURE.md)** - Software Design Description (IEEE 1016)
+- System architecture & component design
+- Clean Architecture layers
+- Data design & entity relationships
+- Security design & deployment topology
 
 **[project-overview-pdr.md](./project-overview-pdr.md)** - Project Overview
 - System architecture
 - Tech stack
 - Feature roadmap
+
+### For Quality Assurance
+
+**[SQA_PLAN.md](./SQA_PLAN.md)** - Software Quality Assurance Plan (IEEE 730)
+- QA tasks, schedule & tools
+- Coding & testing standards
+- Quality metrics & targets
+- Risk management
+
+**[TEST_REPORT_TEMPLATE.md](./TEST_REPORT_TEMPLATE.md)** - Test Report Template (IEEE 829)
+- Reusable template for test execution reports
+- Unit test & E2E results tables
+- Quality gate verification checklist
+
+**[../backend/test/TEST_PLAN.md](../backend/test/TEST_PLAN.md)** - Test Plan (IEEE 829)
+- Test items & coverage goals
+- Pass/fail criteria
+- Test environment & schedule
 
 ## Quick Start
 
@@ -93,8 +118,8 @@ Use **[ADMIN_GUIDE.md](./ADMIN_GUIDE.md)** for administrative tasks.
 - Email: admin@bcagency.com
 
 **Documentation Updates:**
-- Last Updated: 2026-01-23
-- Version: 1.0.0
+- Last Updated: 2026-01-30
+- Version: 1.1.0
 
 ## Contributing
 

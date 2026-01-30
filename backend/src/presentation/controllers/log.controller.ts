@@ -12,10 +12,16 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
-import { UserRole } from '@prisma/client';
+import { UserRole, ProjectLog } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import {
   CreateLogDto,
@@ -23,11 +29,15 @@ import {
   type LogResponseDto,
 } from '../../application/dto/log/log.dto.js';
 
+@ApiTags('Project Logs')
+@ApiBearerAuth('JWT-auth')
 @Controller('projects/:projectId/logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class LogController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List project logs' })
+  @ApiResponse({ status: 200, description: 'Returns project logs' })
   @Get()
   async listLogs(
     @Param('projectId') projectId: string,
@@ -49,6 +59,8 @@ export class LogController {
     return logs.map((l) => this.mapToResponse(l));
   }
 
+  @ApiOperation({ summary: 'Create a project log entry' })
+  @ApiResponse({ status: 201, description: 'Log created' })
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async createLog(
@@ -72,6 +84,8 @@ export class LogController {
     return this.mapToResponse(log);
   }
 
+  @ApiOperation({ summary: 'Update a project log entry' })
+  @ApiResponse({ status: 200, description: 'Log updated' })
   @Patch(':logId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async updateLog(
@@ -103,6 +117,8 @@ export class LogController {
     return this.mapToResponse(log);
   }
 
+  @ApiOperation({ summary: 'Delete a project log entry' })
+  @ApiResponse({ status: 200, description: 'Log deleted' })
   @Delete(':logId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async deleteLog(
@@ -155,7 +171,7 @@ export class LogController {
     }
   }
 
-  private mapToResponse(log: any): LogResponseDto {
+  private mapToResponse(log: ProjectLog): LogResponseDto {
     return {
       id: log.id,
       projectId: log.projectId,

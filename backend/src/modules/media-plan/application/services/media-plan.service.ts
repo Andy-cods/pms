@@ -6,6 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
+import { PAGINATION_DEFAULTS } from '../../../../shared/constants/business-rules';
 import { PrismaService } from '../../../../infrastructure/persistence/prisma.service';
 import {
   MEDIA_PLAN_REPOSITORY,
@@ -34,6 +35,7 @@ export class MediaPlanService {
     private readonly prisma: PrismaService,
   ) {}
 
+  /** List media plans for a project with pagination, filtering, and sorting. */
   async findAll(
     projectId: string,
     query: MediaPlanListQueryDto,
@@ -41,8 +43,8 @@ export class MediaPlanService {
   ): Promise<MediaPlanListResponseDto> {
     await this.checkProjectAccess(projectId, user);
 
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const page = query.page ?? PAGINATION_DEFAULTS.PAGE;
+    const limit = query.limit ?? PAGINATION_DEFAULTS.LIMIT;
     const { data, total } = await this.repository.findAll({
       projectId,
       status: query.status,
@@ -65,6 +67,7 @@ export class MediaPlanService {
     };
   }
 
+  /** Retrieve a single media plan by ID within a project. */
   async findById(
     projectId: string,
     id: string,
@@ -80,6 +83,7 @@ export class MediaPlanService {
     return this.mapToResponse(plan);
   }
 
+  /** Create a new media plan and log an initial budget allocation event. */
   async create(
     projectId: string,
     dto: CreateMediaPlanDto,
@@ -116,6 +120,7 @@ export class MediaPlanService {
     return this.mapToResponse(plan);
   }
 
+  /** Update an existing media plan and log a budget adjustment event if the budget changed. */
   async update(
     projectId: string,
     id: string,
@@ -162,6 +167,7 @@ export class MediaPlanService {
     return this.mapToResponse(plan);
   }
 
+  /** Delete a media plan by ID after verifying project access. */
   async delete(
     projectId: string,
     id: string,
@@ -177,6 +183,7 @@ export class MediaPlanService {
     await this.repository.delete(id);
   }
 
+  /** Add a line item (channel/campaign) to an existing media plan. */
   async addItem(
     projectId: string,
     mediaPlanId: string,
@@ -213,6 +220,7 @@ export class MediaPlanService {
     return this.mapToResponse(updated!);
   }
 
+  /** Update a specific line item within a media plan. */
   async updateItem(
     projectId: string,
     mediaPlanId: string,
@@ -259,6 +267,7 @@ export class MediaPlanService {
     return this.mapToResponse(updated!);
   }
 
+  /** Remove a line item from a media plan. */
   async deleteItem(
     projectId: string,
     mediaPlanId: string,
@@ -280,6 +289,7 @@ export class MediaPlanService {
     await this.repository.deleteItem(itemId);
   }
 
+  /** Reorder line items within a media plan by providing a sorted list of item IDs. */
   async reorderItems(
     projectId: string,
     mediaPlanId: string,

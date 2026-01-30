@@ -12,6 +12,12 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { UserRole, TaskStatus } from '@prisma/client';
@@ -39,12 +45,16 @@ const TaskStatusLabels: Record<TaskStatus, string> = {
   CANCELLED: 'Cancelled',
 };
 
+@ApiTags('Tasks')
+@ApiBearerAuth('JWT-auth')
 @Controller('tasks')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TaskController {
   constructor(private prisma: PrismaService) {}
 
   // List all tasks (global or filtered by project)
+  @ApiOperation({ summary: 'List tasks with filters and pagination' })
+  @ApiResponse({ status: 200, description: 'Returns paginated task list' })
   @Get()
   async listTasks(
     @Query() query: TaskListQueryDto,
@@ -143,6 +153,11 @@ export class TaskController {
   }
 
   // Get tasks by project (kanban view)
+  @ApiOperation({ summary: 'Get kanban board view of project tasks' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns kanban columns with tasks',
+  })
   @Get('project/:projectId/kanban')
   async getKanbanView(
     @Param('projectId') projectId: string,
@@ -188,6 +203,7 @@ export class TaskController {
     ].map((status) => ({
       status: status as TaskStatusEnum,
       label: TaskStatusLabels[status],
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
       tasks: taskResponses.filter((t) => t.status === status),
     }));
 
@@ -198,6 +214,9 @@ export class TaskController {
   }
 
   // Get single task
+  @ApiOperation({ summary: 'Get task by ID' })
+  @ApiResponse({ status: 200, description: 'Returns task details' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   @Get(':id')
   async getTask(
     @Param('id') id: string,
@@ -234,6 +253,8 @@ export class TaskController {
   }
 
   // Create task
+  @ApiOperation({ summary: 'Create a new task' })
+  @ApiResponse({ status: 201, description: 'Task created successfully' })
   @Post()
   async createTask(
     @Body() dto: CreateTaskDto,
@@ -285,6 +306,9 @@ export class TaskController {
   }
 
   // Update task
+  @ApiOperation({ summary: 'Update task details' })
+  @ApiResponse({ status: 200, description: 'Task updated successfully' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   @Patch(':id')
   async updateTask(
     @Param('id') id: string,
@@ -346,6 +370,8 @@ export class TaskController {
   }
 
   // Update task status only
+  @ApiOperation({ summary: 'Update task status only' })
+  @ApiResponse({ status: 200, description: 'Task status updated' })
   @Patch(':id/status')
   async updateTaskStatus(
     @Param('id') id: string,
@@ -394,6 +420,8 @@ export class TaskController {
   }
 
   // Assign users to task
+  @ApiOperation({ summary: 'Assign users to a task' })
+  @ApiResponse({ status: 200, description: 'Users assigned to task' })
   @Post(':id/assign')
   async assignUsers(
     @Param('id') id: string,
@@ -441,6 +469,8 @@ export class TaskController {
   }
 
   // Reorder tasks (for drag and drop)
+  @ApiOperation({ summary: 'Reorder tasks for drag-and-drop kanban' })
+  @ApiResponse({ status: 200, description: 'Tasks reordered successfully' })
   @Patch('project/:projectId/reorder')
   async reorderTasks(
     @Param('projectId') projectId: string,
@@ -472,6 +502,9 @@ export class TaskController {
   }
 
   // Delete task
+  @ApiOperation({ summary: 'Delete a task' })
+  @ApiResponse({ status: 200, description: 'Task deleted' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   @Delete(':id')
   async deleteTask(
     @Param('id') id: string,
@@ -488,6 +521,8 @@ export class TaskController {
   }
 
   // My tasks - tasks assigned to current user
+  @ApiOperation({ summary: 'Get tasks assigned to current user' })
+  @ApiResponse({ status: 200, description: 'Returns user assigned tasks' })
   @Get('user/my-tasks')
   async getMyTasks(
     @Query() query: TaskListQueryDto,

@@ -12,12 +12,19 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
 import {
   UserRole,
   ApprovalStatus as PrismaApprovalStatus,
+  ApprovalType as PrismaApprovalType,
   ProjectLifecycle,
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
@@ -29,6 +36,7 @@ import {
   RequestChangesDto,
   ApprovalListQueryDto,
   ApprovalStatus,
+  ApprovalType,
   type ApprovalResponseDto,
   type ApprovalListResponseDto,
   type ApprovalStatsDto,
@@ -40,6 +48,44 @@ interface AuthUser {
   role: string;
 }
 
+/** Approval result shape from controller queries with all relations */
+interface ApprovalQueryResult {
+  id: string;
+  projectId: string;
+  type: PrismaApprovalType;
+  status: PrismaApprovalStatus;
+  title: string;
+  description: string | null;
+  comment: string | null;
+  deadline: Date | null;
+  escalationLevel: number;
+  escalatedAt: Date | null;
+  submittedAt: Date;
+  respondedAt: Date | null;
+  submittedById: string;
+  approvedById: string | null;
+  project: { id: string; dealCode: string; name: string };
+  submittedBy: {
+    id: string;
+    name: string;
+    email: string;
+    avatar: string | null;
+  };
+  approvedBy: { id: string; name: string; avatar: string | null } | null;
+  files?: { id: string; name: string; mimeType: string; size: number }[];
+  history?: Array<{
+    id: string;
+    fromStatus: PrismaApprovalStatus;
+    toStatus: PrismaApprovalStatus;
+    comment: string | null;
+    changedById: string;
+    changedAt: Date;
+    changedBy?: { id: string; name: string; avatar: string | null } | null;
+  }>;
+}
+
+@ApiTags('Approvals')
+@ApiBearerAuth('JWT-auth')
 @Controller('approvals')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ApprovalController {
@@ -62,7 +108,7 @@ export class ApprovalController {
   }
 
   // Helper: Map Prisma result to response DTO
-  private mapToResponse(approval: any): ApprovalResponseDto {
+  private mapToResponse(approval: ApprovalQueryResult): ApprovalResponseDto {
     return {
       id: approval.id,
       projectId: approval.projectId,
@@ -71,8 +117,8 @@ export class ApprovalController {
         dealCode: approval.project.dealCode,
         name: approval.project.name,
       },
-      type: approval.type,
-      status: approval.status as ApprovalStatus,
+      type: approval.type as string as ApprovalType,
+      status: approval.status as string as ApprovalStatus,
       title: approval.title,
       description: approval.description,
       comment: approval.comment,
@@ -93,17 +139,17 @@ export class ApprovalController {
           }
         : null,
       files:
-        approval.files?.map((f: any) => ({
+        approval.files?.map((f) => ({
           id: f.id,
           name: f.name,
           mimeType: f.mimeType,
           size: f.size,
         })) ?? [],
       history:
-        approval.history?.map((h: any) => ({
+        approval.history?.map((h) => ({
           id: h.id,
-          fromStatus: h.fromStatus,
-          toStatus: h.toStatus,
+          fromStatus: h.fromStatus as string as ApprovalStatus,
+          toStatus: h.toStatus as string as ApprovalStatus,
           comment: h.comment,
           changedBy: {
             id: h.changedById,
@@ -137,6 +183,8 @@ export class ApprovalController {
   }
 
   // GET /api/approvals - List approvals
+  @ApiOperation({ summary: 'List approvals with filters and pagination' })
+  @ApiResponse({ status: 200, description: 'Returns paginated approval list' })
   @Get()
   async listApprovals(
     @Query() query: ApprovalListQueryDto,
@@ -214,6 +262,8 @@ export class ApprovalController {
   }
 
   // GET /api/approvals/pending - Pending approvals for current user (approvers)
+  @ApiOperation({ summary: 'Get pending approvals for approvers' })
+  @ApiResponse({ status: 200, description: 'Returns pending approvals' })
   @Get('pending')
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async getPendingApprovals(): Promise<ApprovalResponseDto[]> {
@@ -242,6 +292,8 @@ export class ApprovalController {
   }
 
   // GET /api/approvals/stats - Stats for dashboard
+  @ApiOperation({ summary: 'Get approval statistics for dashboard' })
+  @ApiResponse({ status: 200, description: 'Returns approval stats' })
   @Get('stats')
   async getApprovalStats(
     @Req() req: { user: AuthUser },
@@ -281,6 +333,9 @@ export class ApprovalController {
   }
 
   // GET /api/approvals/:id - Get single approval with history
+  @ApiOperation({ summary: 'Get approval by ID with full history' })
+  @ApiResponse({ status: 200, description: 'Returns approval details' })
+  @ApiResponse({ status: 404, description: 'Approval not found' })
   @Get(':id')
   async getApproval(
     @Param('id') id: string,
@@ -335,6 +390,8 @@ export class ApprovalController {
   }
 
   // POST /api/approvals - Submit for approval
+  @ApiOperation({ summary: 'Submit item for approval' })
+  @ApiResponse({ status: 201, description: 'Approval created' })
   @Post()
   async createApproval(
     @Body() dto: CreateApprovalDto,
@@ -404,6 +461,12 @@ export class ApprovalController {
   }
 
   // PATCH /api/approvals/:id - Update approval (resubmit)
+  @ApiOperation({ summary: 'Resubmit approval after changes requested' })
+  @ApiResponse({ status: 200, description: 'Approval resubmitted' })
+  @ApiResponse({
+    status: 400,
+    description: 'Can only update CHANGES_REQUESTED approvals',
+  })
   @Patch(':id')
   async updateApproval(
     @Param('id') id: string,
@@ -469,6 +532,12 @@ export class ApprovalController {
   }
 
   // PATCH /api/approvals/:id/approve - Approve
+  @ApiOperation({ summary: 'Approve an approval request' })
+  @ApiResponse({ status: 200, description: 'Approval approved' })
+  @ApiResponse({
+    status: 400,
+    description: 'Only PENDING approvals can be approved',
+  })
   @Patch(':id/approve')
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async approveApproval(
@@ -537,6 +606,12 @@ export class ApprovalController {
   }
 
   // PATCH /api/approvals/:id/reject - Reject
+  @ApiOperation({ summary: 'Reject an approval request' })
+  @ApiResponse({ status: 200, description: 'Approval rejected' })
+  @ApiResponse({
+    status: 400,
+    description: 'Only PENDING approvals can be rejected',
+  })
   @Patch(':id/reject')
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async rejectApproval(
@@ -600,6 +675,12 @@ export class ApprovalController {
   }
 
   // PATCH /api/approvals/:id/request-changes - Request changes
+  @ApiOperation({ summary: 'Request changes on an approval' })
+  @ApiResponse({ status: 200, description: 'Changes requested' })
+  @ApiResponse({
+    status: 400,
+    description: 'Only PENDING approvals can have changes requested',
+  })
   @Patch(':id/request-changes')
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async requestChanges(

@@ -37,6 +37,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.1.0",
+    "@nestjs/swagger": "^11.2.5",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
@@ -106,9 +107,114 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.service.ts",
+      "**/*.guard.ts",
+      "**/*.interceptor.ts",
+      "**/*.middleware.ts",
+      "!**/*.module.ts",
+      "!**/*.spec.ts",
+      "!**/test-utils/**",
+      "!**/node_modules/**"
     ],
     "coverageDirectory": "../coverage",
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov",
+      "html"
+    ],
+    "coverageThreshold": {
+      "./src/modules/auth/auth.service.ts": {
+        "branches": 75,
+        "functions": 90,
+        "lines": 80,
+        "statements": 80
+      },
+      "./src/modules/auth/token-blacklist.service.ts": {
+        "branches": 60,
+        "functions": 60,
+        "lines": 55,
+        "statements": 55
+      },
+      "./src/modules/calendar/rrule.service.ts": {
+        "branches": 85,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/modules/report/report.service.ts": {
+        "branches": 60,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      },
+      "./src/modules/project-phase/project-phase.service.ts": {
+        "branches": 80,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/modules/approval/approval-escalation.service.ts": {
+        "branches": 80,
+        "functions": 70,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/modules/ads-report/ads-report.service.ts": {
+        "branches": 90,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/modules/metrics/metrics.service.ts": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/modules/project/budget-event.service.ts": {
+        "branches": 90,
+        "functions": 100,
+        "lines": 100,
+        "statements": 95
+      },
+      "./src/modules/strategic-brief/strategic-brief.service.ts": {
+        "branches": 85,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/modules/media-plan/application/services/media-plan.service.ts": {
+        "branches": 75,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/modules/auth/guards/client-auth.guard.ts": {
+        "branches": 80,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/modules/auth/guards/roles.guard.ts": {
+        "branches": 85,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/common/interceptors/metrics.interceptor.ts": {
+        "branches": 70,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      },
+      "./src/shared/middleware/csrf.middleware.ts": {
+        "branches": 90,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    },
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@domain/(.*)$": "<rootDir>/domain/$1",
@@ -116,7 +222,8 @@
       "^@infrastructure/(.*)$": "<rootDir>/infrastructure/$1",
       "^@presentation/(.*)$": "<rootDir>/presentation/$1",
       "^@modules/(.*)$": "<rootDir>/modules/$1",
-      "^@shared/(.*)$": "<rootDir>/shared/$1"
+      "^@shared/(.*)$": "<rootDir>/shared/$1",
+      "^(.+)\\.js$": "$1"
     }
   }
 }

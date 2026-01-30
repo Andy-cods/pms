@@ -1,4 +1,10 @@
 import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
 
@@ -51,11 +57,15 @@ interface MyTasksResponseDto {
   tasks: MyTaskDto[];
 }
 
+@ApiTags('Dashboard')
+@ApiBearerAuth('JWT-auth')
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Get dashboard statistics overview' })
+  @ApiResponse({ status: 200, description: 'Returns dashboard stats' })
   @Get('stats')
   async getStats(): Promise<DashboardStatsDto> {
     const [
@@ -102,6 +112,8 @@ export class DashboardController {
     };
   }
 
+  @ApiOperation({ summary: 'Get recent activity feed' })
+  @ApiResponse({ status: 200, description: 'Returns recent activity items' })
   @Get('activity')
   async getRecentActivity(
     @Query('limit') limit?: string,
@@ -125,6 +137,11 @@ export class DashboardController {
     }));
   }
 
+  @ApiOperation({ summary: 'Get current user tasks for dashboard' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns user tasks with overdue/due today counts',
+  })
   @Get('my-tasks')
   async getMyTasks(@Req() req: RequestWithUser): Promise<MyTasksResponseDto> {
     const userId = req.user.sub;

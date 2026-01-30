@@ -11,10 +11,16 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
-import { UserRole } from '@prisma/client';
+import { UserRole, ProjectKPI } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { Prisma } from '@prisma/client';
 import {
@@ -23,11 +29,15 @@ import {
   type KpiResponseDto,
 } from '../../application/dto/kpi/kpi.dto.js';
 
+@ApiTags('KPIs')
+@ApiBearerAuth('JWT-auth')
 @Controller('projects/:projectId/kpis')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class KpiController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List KPIs for a project' })
+  @ApiResponse({ status: 200, description: 'Returns project KPIs' })
   @Get()
   async listKpis(
     @Param('projectId') projectId: string,
@@ -43,6 +53,8 @@ export class KpiController {
     return kpis.map((k) => this.mapToResponse(k));
   }
 
+  @ApiOperation({ summary: 'Create a new KPI for a project' })
+  @ApiResponse({ status: 201, description: 'KPI created' })
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async createKpi(
@@ -68,6 +80,9 @@ export class KpiController {
     return this.mapToResponse(kpi);
   }
 
+  @ApiOperation({ summary: 'Update a KPI' })
+  @ApiResponse({ status: 200, description: 'KPI updated' })
+  @ApiResponse({ status: 404, description: 'KPI not found' })
   @Patch(':kpiId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async updateKpi(
@@ -101,6 +116,9 @@ export class KpiController {
     return this.mapToResponse(kpi);
   }
 
+  @ApiOperation({ summary: 'Delete a KPI' })
+  @ApiResponse({ status: 200, description: 'KPI deleted' })
+  @ApiResponse({ status: 404, description: 'KPI not found' })
   @Delete(':kpiId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async deleteKpi(
@@ -153,7 +171,7 @@ export class KpiController {
     }
   }
 
-  private mapToResponse(kpi: any): KpiResponseDto {
+  private mapToResponse(kpi: ProjectKPI): KpiResponseDto {
     return {
       id: kpi.id,
       projectId: kpi.projectId,
@@ -161,7 +179,7 @@ export class KpiController {
       targetValue: kpi.targetValue,
       actualValue: kpi.actualValue,
       unit: kpi.unit,
-      metadata: kpi.metadata,
+      metadata: kpi.metadata as Record<string, unknown> | null,
       createdAt: kpi.createdAt.toISOString(),
       updatedAt: kpi.updatedAt.toISOString(),
     };

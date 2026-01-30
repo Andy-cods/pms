@@ -5,6 +5,8 @@ import {
   Body,
   BadRequestException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AdsReportPeriod, AdsPlatform } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { BudgetEventType } from '../../application/dto/budget-event.dto.js';
 
@@ -33,10 +35,14 @@ interface ZapierAdsPayload {
   campaignName?: string;
 }
 
+@ApiTags('Integrations')
 @Controller('integrations')
 export class IntegrationController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Handle Pancake webhook for budget spend events' })
+  @ApiResponse({ status: 200, description: 'Webhook processed' })
+  @ApiResponse({ status: 400, description: 'Invalid secret or payload' })
   @Post('pancake/webhook')
   async handlePancake(
     @Headers('x-pancake-secret') secret: string,
@@ -96,6 +102,9 @@ export class IntegrationController {
     return { success: true };
   }
 
+  @ApiOperation({ summary: 'Handle Zapier webhook for ads report data' })
+  @ApiResponse({ status: 200, description: 'Ads report ingested' })
+  @ApiResponse({ status: 400, description: 'Invalid API key or payload' })
   @Post('webhook/ads-report')
   async handleZapierAdsReport(
     @Headers('x-zapier-api-key') apiKey: string,
@@ -134,7 +143,7 @@ export class IntegrationController {
     await this.prisma.adsReport.create({
       data: {
         projectId: project.id,
-        period: (body.period as any) || 'DAILY',
+        period: (body.period || 'DAILY') as AdsReportPeriod,
         reportDate: new Date(body.reportDate),
         impressions: body.impressions || 0,
         clicks: body.clicks || 0,
@@ -145,7 +154,7 @@ export class IntegrationController {
         conversions: body.conversions || 0,
         roas: body.roas || 0,
         adSpend: body.adSpend || 0,
-        platform: body.platform as any,
+        platform: body.platform as AdsPlatform,
         campaignName: body.campaignName,
         source: 'ZAPIER',
         createdById: systemUserId,

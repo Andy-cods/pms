@@ -8,6 +8,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
+import {
   ClientAuthGuard,
   ClientUser,
 } from '../../modules/auth/guards/client-auth.guard';
@@ -24,11 +30,15 @@ interface RequestWithClient extends Request {
   clientUser: ClientUser;
 }
 
+@ApiTags('Client Portal')
+@ApiBearerAuth('JWT-auth')
 @Controller('client/projects')
 @UseGuards(ClientAuthGuard)
 export class ClientProjectController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List client projects' })
+  @ApiResponse({ status: 200, description: 'Returns client project list' })
   @Get()
   async listProjects(
     @Req() req: RequestWithClient,
@@ -68,6 +78,9 @@ export class ClientProjectController {
     };
   }
 
+  @ApiOperation({ summary: 'Get client project details with tasks and files' })
+  @ApiResponse({ status: 200, description: 'Returns project detail' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
   @Get(':id')
   async getProject(
     @Req() req: RequestWithClient,
@@ -104,6 +117,8 @@ export class ClientProjectController {
     return this.mapToDetailResponse(project);
   }
 
+  @ApiOperation({ summary: 'Get files for a client project' })
+  @ApiResponse({ status: 200, description: 'Returns project files' })
   @Get(':id/files')
   async getProjectFiles(
     @Req() req: RequestWithClient,
@@ -141,6 +156,8 @@ export class ClientProjectController {
     }));
   }
 
+  @ApiOperation({ summary: 'Get project progress summary' })
+  @ApiResponse({ status: 200, description: 'Returns progress data' })
   @Get(':id/progress')
   async getProjectProgress(
     @Req() req: RequestWithClient,
@@ -200,7 +217,7 @@ export class ClientProjectController {
       id: project.id,
       name: project.name,
       description: project.description,
-      status: project.healthStatus as string,
+      status: project.healthStatus,
       priority: 'MEDIUM',
       progress,
       startDate: project.startDate?.toISOString() || null,

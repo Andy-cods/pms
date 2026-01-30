@@ -1,14 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ApprovalStatus } from '@prisma/client';
+import { ApprovalStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
+import { ESCALATION_HOURS } from '../../shared/constants/business-rules.js';
 
-// Escalation thresholds in hours
-const ESCALATION_THRESHOLDS = {
-  LEVEL_1: 24, // 24 hours - send reminder to approvers
-  LEVEL_2: 48, // 48 hours - escalate to PM
-  LEVEL_3: 72, // 72 hours - escalate to Admin
-};
+/** Type for pending approval with project team and submitter relations */
+type PendingApprovalWithRelations = Prisma.ApprovalGetPayload<{
+  include: {
+    project: {
+      select: {
+        id: true;
+        name: true;
+        dealCode: true;
+        team: {
+          include: { user: { select: { id: true; name: true; email: true } } };
+        };
+      };
+    };
+    submittedBy: { select: { id: true; name: true; email: true } };
+  };
+}>;
 
 @Injectable()
 export class ApprovalEscalationService {
@@ -55,15 +66,15 @@ export class ApprovalEscalationService {
 
         // Determine new escalation level
         let newLevel = currentLevel;
-        if (hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_3 && currentLevel < 3) {
+        if (hoursElapsed >= ESCALATION_HOURS.LEVEL_3 && currentLevel < 3) {
           newLevel = 3;
         } else if (
-          hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_2 &&
+          hoursElapsed >= ESCALATION_HOURS.LEVEL_2 &&
           currentLevel < 2
         ) {
           newLevel = 2;
         } else if (
-          hoursElapsed >= ESCALATION_THRESHOLDS.LEVEL_1 &&
+          hoursElapsed >= ESCALATION_HOURS.LEVEL_1 &&
           currentLevel < 1
         ) {
           newLevel = 1;
@@ -87,7 +98,7 @@ export class ApprovalEscalationService {
    * Escalate an approval to the next level.
    */
   private async escalateApproval(
-    approval: any,
+    approval: PendingApprovalWithRelations,
     newLevel: number,
   ): Promise<void> {
     const levelNames = [
@@ -122,17 +133,17 @@ export class ApprovalEscalationService {
     });
 
     // Send notifications based on level
-    await this.sendEscalationNotifications(approval, newLevel);
+    this.sendEscalationNotifications(approval, newLevel);
   }
 
   /**
    * Send notifications based on escalation level.
    * TODO: Integrate with NotificationService and TelegramService when available.
    */
-  private async sendEscalationNotifications(
-    approval: any,
+  private sendEscalationNotifications(
+    approval: PendingApprovalWithRelations,
     level: number,
-  ): Promise<void> {
+  ): void {
     // For now, just log. Will integrate with notification service in Week 9.
     const projectName = approval.project?.name ?? 'Unknown Project';
     const submitterName = approval.submittedBy?.name ?? 'Unknown';
@@ -146,15 +157,16 @@ export class ApprovalEscalationService {
         );
         break;
 
-      case 2:
+      case 2: {
         // Level 2: Notify PM
         const pmMembers =
-          approval.project?.team?.filter((t: any) => t.role === 'PM') ?? [];
+          approval.project?.team?.filter((t) => t.role === 'PM') ?? [];
         this.logger.warn(
           `[NOTIFICATION] Level 2 escalation to PM(s): "${approval.title}" in ${projectName} ` +
-            `has been pending for 48+ hours. PMs: ${pmMembers.map((m: any) => m.user.name).join(', ') || 'None'}`,
+            `has been pending for 48+ hours. PMs: ${pmMembers.map((m) => m.user.name).join(', ') || 'None'}`,
         );
         break;
+      }
 
       case 3:
         // Level 3: Notify Admin

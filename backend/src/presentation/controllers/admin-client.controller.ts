@@ -11,6 +11,12 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { Roles } from '../../modules/auth/decorators/roles.decorator';
@@ -32,12 +38,16 @@ function generateAccessCode(): string {
   return code;
 }
 
+@ApiTags('Admin - Clients')
+@ApiBearerAuth('JWT-auth')
 @Controller('admin/clients')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 export class AdminClientController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List clients with search and filter' })
+  @ApiResponse({ status: 200, description: 'Returns client list' })
   @Get()
   async listClients(
     @Query('search') search?: string,
@@ -74,6 +84,9 @@ export class AdminClientController {
     };
   }
 
+  @ApiOperation({ summary: 'Get client by ID' })
+  @ApiResponse({ status: 200, description: 'Returns client details' })
+  @ApiResponse({ status: 404, description: 'Client not found' })
   @Get(':id')
   async getClient(@Param('id') id: string): Promise<ClientResponseDto> {
     const client = await this.prisma.client.findUnique({
@@ -88,6 +101,10 @@ export class AdminClientController {
     return this.mapToResponse(client);
   }
 
+  @ApiOperation({
+    summary: 'Create a new client with auto-generated access code',
+  })
+  @ApiResponse({ status: 201, description: 'Client created' })
   @Post()
   async createClient(@Body() dto: CreateClientDto): Promise<ClientResponseDto> {
     let accessCode = generateAccessCode();
@@ -116,6 +133,9 @@ export class AdminClientController {
     return this.mapToResponse(client);
   }
 
+  @ApiOperation({ summary: 'Update client details' })
+  @ApiResponse({ status: 200, description: 'Client updated' })
+  @ApiResponse({ status: 404, description: 'Client not found' })
   @Patch(':id')
   async updateClient(
     @Param('id') id: string,
@@ -142,6 +162,12 @@ export class AdminClientController {
     return this.mapToResponse(client);
   }
 
+  @ApiOperation({ summary: 'Delete a client (only if no projects attached)' })
+  @ApiResponse({ status: 200, description: 'Client deleted' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot delete client with projects',
+  })
   @Delete(':id')
   async deleteClient(@Param('id') id: string): Promise<void> {
     const client = await this.prisma.client.findUnique({
@@ -162,6 +188,8 @@ export class AdminClientController {
     await this.prisma.client.delete({ where: { id } });
   }
 
+  @ApiOperation({ summary: 'Regenerate client access code' })
+  @ApiResponse({ status: 200, description: 'Access code regenerated' })
   @Post(':id/regenerate-code')
   async regenerateAccessCode(
     @Param('id') id: string,

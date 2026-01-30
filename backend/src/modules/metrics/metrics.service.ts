@@ -53,6 +53,7 @@ export class MetricsService implements OnModuleInit {
     collectDefaultMetrics({ register: this.registry });
   }
 
+  /** Serialize all collected Prometheus metrics as a text exposition string. */
   async getMetrics(): Promise<string> {
     return this.registry.metrics();
   }

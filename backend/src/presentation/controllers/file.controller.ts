@@ -17,6 +17,13 @@ import {
   Res,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
@@ -34,6 +41,8 @@ import {
   type PresignedUrlResponseDto,
 } from '../../application/dto/file/file.dto.js';
 
+@ApiTags('Files')
+@ApiBearerAuth('JWT-auth')
 @Controller('files')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FileController {
@@ -48,6 +57,10 @@ export class FileController {
    * Upload a file
    * POST /files/upload
    */
+  @ApiOperation({ summary: 'Upload a file to a project' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: 'File uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'No file provided or invalid data' })
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -118,6 +131,8 @@ export class FileController {
    * List files
    * GET /files
    */
+  @ApiOperation({ summary: 'List files with filters' })
+  @ApiResponse({ status: 200, description: 'Returns file list' })
   @Get()
   async listFiles(
     @Query() query: FileListQueryDto,
@@ -189,6 +204,9 @@ export class FileController {
    * Get file by ID
    * GET /files/:id
    */
+  @ApiOperation({ summary: 'Get file metadata by ID' })
+  @ApiResponse({ status: 200, description: 'Returns file metadata' })
+  @ApiResponse({ status: 404, description: 'File not found' })
   @Get(':id')
   async getFile(
     @Param('id') id: string,
@@ -218,6 +236,9 @@ export class FileController {
    * Get download URL (presigned)
    * GET /files/:id/download
    */
+  @ApiOperation({ summary: 'Get presigned download URL for a file' })
+  @ApiResponse({ status: 200, description: 'Returns presigned URL' })
+  @ApiResponse({ status: 404, description: 'File not found' })
   @Get(':id/download')
   async getDownloadUrl(
     @Param('id') id: string,
@@ -246,6 +267,9 @@ export class FileController {
    * Stream download (for inline preview)
    * GET /files/:id/stream
    */
+  @ApiOperation({ summary: 'Stream file content for inline preview' })
+  @ApiResponse({ status: 200, description: 'Streams file content' })
+  @ApiResponse({ status: 404, description: 'File not found' })
   @Get(':id/stream')
   async streamFile(
     @Param('id') id: string,
@@ -286,6 +310,9 @@ export class FileController {
    * Update file metadata
    * PATCH /files/:id
    */
+  @ApiOperation({ summary: 'Update file metadata (name, category, tags)' })
+  @ApiResponse({ status: 200, description: 'File metadata updated' })
+  @ApiResponse({ status: 404, description: 'File not found' })
   @Patch(':id')
   async updateFile(
     @Param('id') id: string,
@@ -330,6 +357,9 @@ export class FileController {
    * Delete file
    * DELETE /files/:id
    */
+  @ApiOperation({ summary: 'Delete a file from storage and database' })
+  @ApiResponse({ status: 200, description: 'File deleted' })
+  @ApiResponse({ status: 404, description: 'File not found' })
   @Delete(':id')
   async deleteFile(
     @Param('id') id: string,
@@ -370,6 +400,8 @@ export class FileController {
    * Get files by project
    * GET /files/project/:projectId
    */
+  @ApiOperation({ summary: 'Get all files for a project' })
+  @ApiResponse({ status: 200, description: 'Returns project files' })
   @Get('project/:projectId')
   async getProjectFiles(
     @Param('projectId') projectId: string,
@@ -385,6 +417,8 @@ export class FileController {
    * Get files by task
    * GET /files/task/:taskId
    */
+  @ApiOperation({ summary: 'Get all files for a task' })
+  @ApiResponse({ status: 200, description: 'Returns task files' })
   @Get('task/:taskId')
   async getTaskFiles(
     @Param('taskId') taskId: string,

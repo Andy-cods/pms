@@ -13,6 +13,12 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import {
@@ -25,11 +31,18 @@ import {
 } from '../../application/dto/comment/comment.dto.js';
 import { UserRole } from '@prisma/client';
 
+@ApiTags('Comments')
+@ApiBearerAuth('JWT-auth')
 @Controller('comments')
 @UseGuards(JwtAuthGuard)
 export class CommentController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List comments for a project or task' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated comments with replies',
+  })
   @Get()
   async listComments(
     @Query() query: CommentListQueryDto,
@@ -92,6 +105,8 @@ export class CommentController {
     };
   }
 
+  @ApiOperation({ summary: 'Create a comment or reply' })
+  @ApiResponse({ status: 201, description: 'Comment created' })
   @Post()
   async createComment(
     @Body() dto: CreateCommentDto,
@@ -157,6 +172,9 @@ export class CommentController {
     return this.mapToResponse(comment);
   }
 
+  @ApiOperation({ summary: 'Update own comment content' })
+  @ApiResponse({ status: 200, description: 'Comment updated' })
+  @ApiResponse({ status: 403, description: 'Can only edit own comments' })
   @Patch(':id')
   async updateComment(
     @Param('id') id: string,
@@ -187,6 +205,9 @@ export class CommentController {
     return this.mapToResponse(updated);
   }
 
+  @ApiOperation({ summary: 'Delete a comment (own or admin)' })
+  @ApiResponse({ status: 200, description: 'Comment deleted' })
+  @ApiResponse({ status: 403, description: 'Can only delete own comments' })
   @Delete(':id')
   async deleteComment(
     @Param('id') id: string,

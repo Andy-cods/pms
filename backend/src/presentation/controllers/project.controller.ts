@@ -13,6 +13,12 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
@@ -21,6 +27,7 @@ import {
   TaskStatus,
   ProjectLifecycle,
   PipelineDecision,
+  Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
 import { ProjectPhaseService } from '../../modules/project-phase/project-phase.service.js';
@@ -59,6 +66,11 @@ function canTransition(from: string, to: string): boolean {
   return LIFECYCLE_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
+/** Convert Prisma Decimal to number or null */
+function toNum(val: unknown): number | null {
+  return val != null ? Number(val) : null;
+}
+
 /** Calculate COGS, Gross Profit, Profit Margin */
 function calculateFinancials(data: Record<string, any>) {
   const cogs =
@@ -69,8 +81,7 @@ function calculateFinancials(data: Record<string, any>) {
     Number(data.costOther || 0);
   const totalBudget = Number(data.totalBudget || 0);
   const grossProfit = totalBudget - cogs;
-  const profitMargin =
-    totalBudget > 0 ? (grossProfit / totalBudget) * 100 : 0;
+  const profitMargin = totalBudget > 0 ? (grossProfit / totalBudget) * 100 : 0;
   return { cogs, grossProfit, profitMargin };
 }
 
@@ -117,6 +128,18 @@ const PROJECT_INCLUDE = {
   _count: { select: { tasks: true } },
 };
 
+type ProjectWithIncludes = Prisma.ProjectGetPayload<{
+  include: typeof PROJECT_INCLUDE;
+}>;
+interface TaskStatsResult {
+  total: number;
+  todo: number;
+  inProgress: number;
+  done: number;
+}
+
+@ApiTags('Projects')
+@ApiBearerAuth('JWT-auth')
 @Controller('projects')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProjectController {
@@ -129,6 +152,8 @@ export class ProjectController {
   // CRUD
   // ═══════════════════════════════════════════════════
 
+  @ApiOperation({ summary: 'List projects with filters and pagination' })
+  @ApiResponse({ status: 200, description: 'Returns paginated project list' })
   @Get()
   async listProjects(
     @Query() query: ProjectListQueryDto,
@@ -197,7 +222,10 @@ export class ProjectController {
 
     const projectsWithStats = await Promise.all(
       projects.map(async (project) => {
-        const taskStats = await this.getTaskStats(project.id, project._count.tasks);
+        const taskStats = await this.getTaskStats(
+          project.id,
+          project._count.tasks,
+        );
         return this.mapToResponse(project, taskStats);
       }),
     );
@@ -211,6 +239,9 @@ export class ProjectController {
     };
   }
 
+  @ApiOperation({ summary: 'Get project by ID' })
+  @ApiResponse({ status: 200, description: 'Returns project details' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
   @Get(':id')
   async getProject(
     @Param('id') id: string,
@@ -228,6 +259,9 @@ export class ProjectController {
     return this.mapToResponse(project, taskStats);
   }
 
+  @ApiOperation({ summary: 'Create a new project (deal)' })
+  @ApiResponse({ status: 201, description: 'Project created successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient role' })
   @Post()
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async createProject(
@@ -262,9 +296,17 @@ export class ProjectController {
       include: PROJECT_INCLUDE,
     });
 
-    return this.mapToResponse(project, { total: 0, todo: 0, inProgress: 0, done: 0 });
+    return this.mapToResponse(project, {
+      total: 0,
+      todo: 0,
+      inProgress: 0,
+      done: 0,
+    });
   }
 
+  @ApiOperation({ summary: 'Update project details' })
+  @ApiResponse({ status: 200, description: 'Project updated successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
   @Patch(':id')
   async updateProject(
     @Param('id') id: string,
@@ -305,6 +347,9 @@ export class ProjectController {
     return this.mapToResponse(project, taskStats);
   }
 
+  @ApiOperation({ summary: 'Archive (soft delete) a project' })
+  @ApiResponse({ status: 200, description: 'Project archived successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
   @Delete(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async archiveProject(
@@ -323,6 +368,12 @@ export class ProjectController {
   // ═══════════════════════════════════════════════════
 
   /** PATCH /projects/:id/sale - NVKD updates sale fields */
+  @ApiOperation({ summary: 'Update sale fields (NVKD)' })
+  @ApiResponse({ status: 200, description: 'Sale fields updated' })
+  @ApiResponse({
+    status: 400,
+    description: 'Project is read-only after decision',
+  })
   @Patch(':id/sale')
   @Roles(UserRole.NVKD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async updateSaleFields(
@@ -346,6 +397,11 @@ export class ProjectController {
   }
 
   /** PATCH /projects/:id/evaluate - PM/Planner evaluation with auto-calc */
+  @ApiOperation({ summary: 'Evaluate project with cost auto-calculation' })
+  @ApiResponse({
+    status: 200,
+    description: 'Evaluation updated with calculated financials',
+  })
   @Patch(':id/evaluate')
   @Roles(UserRole.PM, UserRole.PLANNER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async evaluate(
@@ -377,13 +433,18 @@ export class ProjectController {
   }
 
   /** PATCH /projects/:id/lifecycle - Transition lifecycle stage */
+  @ApiOperation({ summary: 'Transition project lifecycle stage' })
+  @ApiResponse({ status: 200, description: 'Lifecycle updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid lifecycle transition' })
   @Patch(':id/lifecycle')
   async updateLifecycle(
     @Param('id') id: string,
     @Body() dto: UpdateLifecycleDto,
     @Req() req: { user: { sub: string; role: string } },
   ): Promise<ProjectResponseDto> {
-    const existing = await this.prisma.project.findUniqueOrThrow({ where: { id } });
+    const existing = await this.prisma.project.findUniqueOrThrow({
+      where: { id },
+    });
 
     if (!canTransition(existing.lifecycle, dto.lifecycle)) {
       throw new BadRequestException(
@@ -394,7 +455,7 @@ export class ProjectController {
     const project = await this.prisma.project.update({
       where: { id },
       data: {
-        lifecycle: dto.lifecycle as ProjectLifecycle,
+        lifecycle: dto.lifecycle,
         stageProgress: 0,
       },
       include: PROJECT_INCLUDE,
@@ -417,15 +478,20 @@ export class ProjectController {
   }
 
   /** POST /projects/:id/weekly-note - Append weekly note */
+  @ApiOperation({ summary: 'Add weekly note to project' })
+  @ApiResponse({ status: 201, description: 'Weekly note added' })
   @Post(':id/weekly-note')
   async addWeeklyNote(
     @Param('id') id: string,
     @Body() dto: AddWeeklyNoteDto,
     @Req() req: { user: { sub: string } },
   ): Promise<ProjectResponseDto> {
-    const existing = await this.prisma.project.findUniqueOrThrow({ where: { id } });
-    const existingNotes = (existing.weeklyNotes as any[]) || [];
-    const newNote = {
+    const existing = await this.prisma.project.findUniqueOrThrow({
+      where: { id },
+    });
+    const existingNotes =
+      (existing.weeklyNotes as Prisma.InputJsonValue[]) || [];
+    const newNote: Prisma.InputJsonValue = {
       week: existingNotes.length + 1,
       date: new Date().toISOString(),
       note: dto.note,
@@ -443,6 +509,9 @@ export class ProjectController {
   }
 
   /** POST /projects/:id/decide - Accept (WON) or Decline (LOST) */
+  @ApiOperation({ summary: 'Accept or decline project (pipeline decision)' })
+  @ApiResponse({ status: 200, description: 'Decision recorded' })
+  @ApiResponse({ status: 400, description: 'Project already decided' })
   @Post(':id/decide')
   @Roles(UserRole.PM, UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async decide(
@@ -461,6 +530,8 @@ export class ProjectController {
   // Stage History
   // ═══════════════════════════════════════════════════
 
+  @ApiOperation({ summary: 'Get project stage transition history' })
+  @ApiResponse({ status: 200, description: 'Returns stage history list' })
   @Get(':id/stage-history')
   async getStageHistory(
     @Param('id') id: string,
@@ -500,6 +571,8 @@ export class ProjectController {
   // Team Management
   // ═══════════════════════════════════════════════════
 
+  @ApiOperation({ summary: 'Get project team members with workload stats' })
+  @ApiResponse({ status: 200, description: 'Returns team members' })
   @Get(':id/team')
   async getProjectTeam(
     @Param('id') id: string,
@@ -562,6 +635,9 @@ export class ProjectController {
     return memberStats;
   }
 
+  @ApiOperation({ summary: 'Add a team member to project' })
+  @ApiResponse({ status: 201, description: 'Team member added' })
+  @ApiResponse({ status: 400, description: 'User already a team member' })
   @Post(':id/team')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async addTeamMember(
@@ -571,7 +647,9 @@ export class ProjectController {
   ): Promise<ProjectTeamMemberDto> {
     await this.checkProjectAccess(id, req.user, true);
 
-    const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const existing = await this.prisma.projectTeam.findUnique({
@@ -584,7 +662,9 @@ export class ProjectController {
       },
     });
     if (existing) {
-      throw new BadRequestException('User is already a team member with this role');
+      throw new BadRequestException(
+        'User is already a team member with this role',
+      );
     }
 
     const member = await this.prisma.projectTeam.create({
@@ -608,6 +688,8 @@ export class ProjectController {
     };
   }
 
+  @ApiOperation({ summary: 'Update team member role or primary status' })
+  @ApiResponse({ status: 200, description: 'Team member updated' })
   @Patch(':id/team/:memberId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async updateTeamMember(
@@ -638,6 +720,9 @@ export class ProjectController {
     };
   }
 
+  @ApiOperation({ summary: 'Remove a team member from project' })
+  @ApiResponse({ status: 200, description: 'Team member removed' })
+  @ApiResponse({ status: 400, description: 'Cannot remove the last PM' })
   @Delete(':id/team/:memberId')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async removeTeamMember(
@@ -679,7 +764,9 @@ export class ProjectController {
       });
 
       if (project.decision !== PipelineDecision.PENDING) {
-        throw new BadRequestException(`Project already decided: ${project.decision}`);
+        throw new BadRequestException(
+          `Project already decided: ${project.decision}`,
+        );
       }
 
       // Generate project code
@@ -733,7 +820,7 @@ export class ProjectController {
         data: Array.from(teamMap.entries()).map(([uid, m]) => ({
           projectId,
           userId: uid,
-          role: m.role as any,
+          role: m.role as UserRole,
           isPrimary: m.isPrimary,
         })),
       });
@@ -768,7 +855,9 @@ export class ProjectController {
     });
 
     if (existing.decision !== PipelineDecision.PENDING) {
-      throw new BadRequestException(`Project already decided: ${existing.decision}`);
+      throw new BadRequestException(
+        `Project already decided: ${existing.decision}`,
+      );
     }
 
     const project = await this.prisma.project.update({
@@ -838,7 +927,12 @@ export class ProjectController {
   private async getTaskStats(
     projectId: string,
     totalTasks: number,
-  ): Promise<{ total: number; todo: number; inProgress: number; done: number }> {
+  ): Promise<{
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+  }> {
     const taskStats = await this.prisma.task.groupBy({
       by: ['status'],
       where: { projectId },
@@ -848,13 +942,17 @@ export class ProjectController {
     const stats = { total: totalTasks, todo: 0, inProgress: 0, done: 0 };
     taskStats.forEach((stat) => {
       if (stat.status === TaskStatus.TODO) stats.todo = stat._count;
-      if (stat.status === TaskStatus.IN_PROGRESS) stats.inProgress = stat._count;
+      if (stat.status === TaskStatus.IN_PROGRESS)
+        stats.inProgress = stat._count;
       if (stat.status === TaskStatus.DONE) stats.done = stat._count;
     });
     return stats;
   }
 
-  private mapToResponse(project: any, taskStats: any): ProjectResponseDto {
+  private mapToResponse(
+    project: ProjectWithIncludes,
+    taskStats: TaskStatsResult,
+  ): ProjectResponseDto {
     return {
       id: project.id,
       dealCode: project.dealCode,
@@ -875,7 +973,9 @@ export class ProjectController {
       client: project.client,
       // Team refs
       nvkdId: project.nvkdId,
-      nvkd: project.nvkd ? { id: project.nvkd.id, name: project.nvkd.name } : null,
+      nvkd: project.nvkd
+        ? { id: project.nvkd.id, name: project.nvkd.name }
+        : null,
       pmId: project.pmId,
       pm: project.pm ? { id: project.pm.id, name: project.pm.name } : null,
       plannerId: project.plannerId,
@@ -889,27 +989,27 @@ export class ProjectController {
       upsellOpportunity: project.upsellOpportunity,
       licenseLink: project.licenseLink,
       // Budget/Fees
-      totalBudget: project.totalBudget ? Number(project.totalBudget) : null,
-      monthlyBudget: project.monthlyBudget ? Number(project.monthlyBudget) : null,
-      spentAmount: project.spentAmount ? Number(project.spentAmount) : null,
-      fixedAdFee: project.fixedAdFee ? Number(project.fixedAdFee) : null,
-      adServiceFee: project.adServiceFee ? Number(project.adServiceFee) : null,
-      contentFee: project.contentFee ? Number(project.contentFee) : null,
-      designFee: project.designFee ? Number(project.designFee) : null,
-      mediaFee: project.mediaFee ? Number(project.mediaFee) : null,
-      otherFee: project.otherFee ? Number(project.otherFee) : null,
+      totalBudget: toNum(project.totalBudget),
+      monthlyBudget: toNum(project.monthlyBudget),
+      spentAmount: toNum(project.spentAmount),
+      fixedAdFee: toNum(project.fixedAdFee),
+      adServiceFee: toNum(project.adServiceFee),
+      contentFee: toNum(project.contentFee),
+      designFee: toNum(project.designFee),
+      mediaFee: toNum(project.mediaFee),
+      otherFee: toNum(project.otherFee),
       // PM Evaluation
-      costNSQC: project.costNSQC ? Number(project.costNSQC) : null,
-      costDesign: project.costDesign ? Number(project.costDesign) : null,
-      costMedia: project.costMedia ? Number(project.costMedia) : null,
-      costKOL: project.costKOL ? Number(project.costKOL) : null,
-      costOther: project.costOther ? Number(project.costOther) : null,
-      cogs: project.cogs ? Number(project.cogs) : null,
-      grossProfit: project.grossProfit ? Number(project.grossProfit) : null,
-      profitMargin: project.profitMargin ? Number(project.profitMargin) : null,
+      costNSQC: toNum(project.costNSQC),
+      costDesign: toNum(project.costDesign),
+      costMedia: toNum(project.costMedia),
+      costKOL: toNum(project.costKOL),
+      costOther: toNum(project.costOther),
+      cogs: toNum(project.cogs),
+      grossProfit: toNum(project.grossProfit),
+      profitMargin: toNum(project.profitMargin),
       // Client eval
       clientTier: project.clientTier,
-      averageScore: project.averageScore ? Number(project.averageScore) : null,
+      averageScore: toNum(project.averageScore),
       // Decision
       decision: project.decision,
       decisionDate: project.decisionDate?.toISOString() ?? null,
@@ -917,7 +1017,7 @@ export class ProjectController {
       // Notes
       weeklyNotes: project.weeklyNotes as unknown[] | null,
       // Team
-      team: (project.team || []).map((m: any) => ({
+      team: (project.team || []).map((m) => ({
         id: m.id,
         userId: m.userId,
         role: m.role,

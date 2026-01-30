@@ -7,11 +7,14 @@ import {
   BudgetEventResponse,
   BudgetThresholdResponse,
 } from '../../application/dto/budget-event.dto.js';
+import { BudgetEventWithCreator } from '../../shared/types/prisma-relations.types.js';
+import { BUDGET_THRESHOLDS } from '../../shared/constants/business-rules.js';
 
 @Injectable()
 export class BudgetEventService {
   constructor(private prisma: PrismaService) {}
 
+  /** Retrieve budget events for a project, optionally filtered by stage/category/status. */
   async list(
     projectId: string,
     query: BudgetEventQueryDto,
@@ -32,6 +35,7 @@ export class BudgetEventService {
     return events.map((e) => this.map(e));
   }
 
+  /** Create a budget event and auto-recalculate spent amount if the event type is SPEND. */
   async create(
     projectId: string,
     userId: string,
@@ -77,6 +81,7 @@ export class BudgetEventService {
     return this.map(created);
   }
 
+  /** Update the approval status of a budget event and recalculate spent if it is a SPEND event. */
   async updateStatus(
     eventId: string,
     projectId: string,
@@ -101,6 +106,7 @@ export class BudgetEventService {
     return this.map(updated);
   }
 
+  /** Recalculate and persist the total spent amount from all approved SPEND events. */
   async recalcSpent(projectId: string): Promise<void> {
     const result = await this.prisma.budgetEvent.aggregate({
       where: { projectId, type: 'SPEND', status: 'APPROVED' },
@@ -114,6 +120,7 @@ export class BudgetEventService {
     });
   }
 
+  /** Return the budget threshold level (ok/warning/critical) and spend percentage for a project. */
   async getThreshold(projectId: string): Promise<BudgetThresholdResponse> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -127,11 +134,15 @@ export class BudgetEventService {
       (Number(project.spentAmount) / Number(project.totalBudget)) * 100,
     );
     const level =
-      percent >= 100 ? 'critical' : percent >= 80 ? 'warning' : 'ok';
+      percent >= BUDGET_THRESHOLDS.CRITICAL_PERCENT
+        ? 'critical'
+        : percent >= BUDGET_THRESHOLDS.WARNING_PERCENT
+          ? 'warning'
+          : 'ok';
     return { level, percent };
   }
 
-  private map(event: any): BudgetEventResponse {
+  private map(event: BudgetEventWithCreator): BudgetEventResponse {
     return {
       id: event.id,
       projectId: event.projectId,

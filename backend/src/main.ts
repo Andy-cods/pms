@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
@@ -16,6 +17,7 @@ async function bootstrap() {
     'FRONTEND_URL',
     'http://localhost:3000',
   );
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
   // Security headers with helmet
   app.use(
@@ -25,7 +27,7 @@ async function bootstrap() {
           defaultSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https:'],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
         },
       },
       crossOriginEmbedderPolicy: false, // Disabled for API compatibility
@@ -64,8 +66,56 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger API Documentation (non-production only)
+  if (nodeEnv !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('BC Agency PMS API')
+      .setDescription(
+        'API documentation for BC Agency Project Management System. ' +
+          'Internal advertising project management platform.',
+      )
+      .setVersion('1.0.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter JWT access token',
+        },
+        'JWT-auth',
+      )
+      .addTag('Auth', 'Authentication & session management')
+      .addTag('Projects', 'Project management')
+      .addTag('Tasks', 'Task management')
+      .addTag('Approvals', 'Approval workflows')
+      .addTag('Calendar', 'Events & scheduling')
+      .addTag('Files', 'File upload & management')
+      .addTag('Admin', 'System administration')
+      .addTag('Reports', 'Report generation')
+      .addTag('Dashboard', 'Dashboard & statistics')
+      .addTag('Client Portal', 'Client-facing portal')
+      .addTag('Media Plans', 'Media planning')
+      .addTag('Strategic Brief', 'Strategic briefs')
+      .addTag('Ads Reports', 'Advertising performance reports')
+      .addTag('Notifications', 'Notification management')
+      .addTag('Metrics', 'Monitoring metrics')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+      customSiteTitle: 'BC Agency PMS - API Docs',
+    });
+
+    logger.log(`Swagger docs available at http://localhost:${port}/api/docs`);
+  }
+
   await app.listen(port);
   logger.log(`${APP_NAME} Backend running on port ${port}`);
   logger.log(`API available at http://localhost:${port}/${API_PREFIX}`);
 }
-bootstrap();
+void bootstrap();

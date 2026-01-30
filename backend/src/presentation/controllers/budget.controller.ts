@@ -9,6 +9,12 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
 import { Roles } from '../../modules/auth/decorators/roles.decorator.js';
@@ -18,11 +24,15 @@ import { UpdateBudgetDto } from '../../application/dto/project/project.dto.js';
 
 /** Budget fields are now on the Project model directly.
  *  This controller provides convenience endpoints for reading/updating budget data. */
+@ApiTags('Budget')
+@ApiBearerAuth('JWT-auth')
 @Controller('projects/:projectId/budget')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class BudgetController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Get project budget data' })
+  @ApiResponse({ status: 200, description: 'Returns budget details' })
   @Get()
   async getBudget(
     @Param('projectId') projectId: string,
@@ -55,7 +65,9 @@ export class BudgetController {
       id: project.id,
       projectId,
       totalBudget: project.totalBudget ? Number(project.totalBudget) : null,
-      monthlyBudget: project.monthlyBudget ? Number(project.monthlyBudget) : null,
+      monthlyBudget: project.monthlyBudget
+        ? Number(project.monthlyBudget)
+        : null,
       spentAmount: project.spentAmount ? Number(project.spentAmount) : null,
       fixedAdFee: project.fixedAdFee ? Number(project.fixedAdFee) : null,
       adServiceFee: project.adServiceFee ? Number(project.adServiceFee) : null,
@@ -69,6 +81,8 @@ export class BudgetController {
     };
   }
 
+  @ApiOperation({ summary: 'Update project budget' })
+  @ApiResponse({ status: 200, description: 'Budget updated' })
   @Patch()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PM)
   async updateBudget(
@@ -113,7 +127,9 @@ export class BudgetController {
       id: project.id,
       projectId,
       totalBudget: project.totalBudget ? Number(project.totalBudget) : null,
-      monthlyBudget: project.monthlyBudget ? Number(project.monthlyBudget) : null,
+      monthlyBudget: project.monthlyBudget
+        ? Number(project.monthlyBudget)
+        : null,
       spentAmount: project.spentAmount ? Number(project.spentAmount) : null,
       fixedAdFee: project.fixedAdFee ? Number(project.fixedAdFee) : null,
       adServiceFee: project.adServiceFee ? Number(project.adServiceFee) : null,
@@ -152,7 +168,9 @@ export class BudgetController {
         (m) => m.userId === user.sub && m.role === UserRole.PM,
       );
       if (!isPM) {
-        throw new ForbiddenException('Only Project Managers can edit the budget');
+        throw new ForbiddenException(
+          'Only Project Managers can edit the budget',
+        );
       }
     }
   }

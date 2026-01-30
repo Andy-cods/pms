@@ -8,6 +8,12 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard.js';
@@ -20,6 +26,8 @@ import {
   ReportType,
 } from '../../application/dto/report/report.dto.js';
 
+@ApiTags('Reports')
+@ApiBearerAuth('JWT-auth')
 @Controller('reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReportController {
@@ -36,6 +44,9 @@ export class ReportController {
    * - startDate?: string (required for CUSTOM type)
    * - endDate?: string (required for CUSTOM type)
    */
+  @ApiOperation({ summary: 'Generate and download a report (PDF or Excel)' })
+  @ApiResponse({ status: 200, description: 'Returns generated report file' })
+  @ApiResponse({ status: 400, description: 'Invalid report parameters' })
   @Post('generate')
   @Roles(
     UserRole.SUPER_ADMIN,

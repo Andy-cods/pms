@@ -2,18 +2,41 @@
   "name": "pms-quan-li-du-an",
   "version": "1.0.0",
   "description": "Project Management System - Hệ thống quản lý dự án",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "dev": "echo 'Development server'",
-    "build": "echo 'Build project'",
-    "test": "echo 'Run tests'",
-    "lint": "echo 'Lint code'"
+    "prepare": "husky",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "format": "npm run format --prefix backend",
+    "test": "npm run test --prefix backend",
+    "test:cov": "npm run test:cov --prefix backend",
+    "test:e2e": "npm run test:e2e --prefix backend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend"
+  },
+  "lint-staged": {
+    "backend/src/**/*.ts": [
+      "npx prettier --write --config backend/.prettierrc"
+    ],
+    "backend/src/**/!(*.spec|*.mock).ts": [
+      "npx eslint --fix --config backend/eslint.config.mjs"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "npx prettier --write",
+      "npx eslint --fix"
+    ]
   },
   "keywords": [
     "project-management",
     "pms",
     "task-management"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "BC Agency",
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  }
 }

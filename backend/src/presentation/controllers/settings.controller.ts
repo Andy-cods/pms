@@ -8,6 +8,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { Roles } from '../../modules/auth/decorators/roles.decorator';
@@ -33,12 +39,16 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationDefaultsDto = {
   commentMention: true,
 };
 
+@ApiTags('Admin - Settings')
+@ApiBearerAuth('JWT-auth')
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 export class SettingsController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'Get all system settings' })
+  @ApiResponse({ status: 200, description: 'Returns all settings' })
   @Get()
   async getAllSettings(): Promise<SettingsResponseDto> {
     const settings = await this.prisma.systemSetting.findMany({
@@ -55,6 +65,8 @@ export class SettingsController {
     };
   }
 
+  @ApiOperation({ summary: 'Get consolidated system settings' })
+  @ApiResponse({ status: 200, description: 'Returns system settings' })
   @Get('system')
   async getSystemSettings(): Promise<SystemSettingsDto> {
     const [companyInfo, emailSettings, telegramSettings, notificationDefaults] =
@@ -96,6 +108,10 @@ export class SettingsController {
     };
   }
 
+  @ApiOperation({
+    summary: 'Update system settings (company, email, telegram, notifications)',
+  })
+  @ApiResponse({ status: 200, description: 'System settings updated' })
   @Patch('system')
   async updateSystemSettings(
     @Body() dto: UpdateSystemSettingsDto,
@@ -231,6 +247,8 @@ export class SettingsController {
     return this.getSystemSettings();
   }
 
+  @ApiOperation({ summary: 'Get a specific setting by key' })
+  @ApiResponse({ status: 200, description: 'Returns setting value' })
   @Get(':key')
   async getSetting(
     @Param('key') key: string,
@@ -251,6 +269,8 @@ export class SettingsController {
     };
   }
 
+  @ApiOperation({ summary: 'Upsert a setting by key' })
+  @ApiResponse({ status: 200, description: 'Setting updated' })
   @Put(':key')
   async updateSetting(
     @Param('key') key: string,

@@ -1,16 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service.js';
+import { AdsReportSource } from '@prisma/client';
 import {
   CreateAdsReportDto,
   AdsReportQueryDto,
   AdsReportResponse,
   AdsReportSummary,
 } from '../../application/dto/ads-report.dto.js';
+import { AdsReportWithCreator } from '../../shared/types/prisma-relations.types.js';
 
 @Injectable()
 export class AdsReportService {
   constructor(private prisma: PrismaService) {}
 
+  /** Retrieve ads reports for a project, filtered by platform/period/date range. */
   async list(
     projectId: string,
     query: AdsReportQueryDto,
@@ -34,6 +37,7 @@ export class AdsReportService {
     return reports.map((r) => this.map(r));
   }
 
+  /** Compute aggregated KPI summary (impressions, clicks, CTR, CPC, ROAS, etc.) for matching reports. */
   async summary(
     projectId: string,
     query: AdsReportQueryDto,
@@ -58,8 +62,7 @@ export class AdsReportService {
     const avgCtr =
       totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgCpc = totalClicks > 0 ? totalAdSpend / totalClicks : 0;
-    const avgRoas =
-      reports.reduce((s, r) => s + r.roas, 0) / reports.length;
+    const avgRoas = reports.reduce((s, r) => s + r.roas, 0) / reports.length;
 
     return {
       totalImpressions,
@@ -72,6 +75,7 @@ export class AdsReportService {
     };
   }
 
+  /** Create a new ads report entry for a project. */
   async create(
     projectId: string,
     userId: string,
@@ -100,7 +104,7 @@ export class AdsReportService {
         adSpend: dto.adSpend,
         platform: dto.platform,
         campaignName: dto.campaignName,
-        source: source as any,
+        source: source as AdsReportSource,
         createdById: userId,
       },
       include: { createdBy: { select: { id: true, name: true } } },
@@ -109,7 +113,7 @@ export class AdsReportService {
     return this.map(created);
   }
 
-  private map(report: any): AdsReportResponse {
+  private map(report: AdsReportWithCreator): AdsReportResponse {
     return {
       id: report.id,
       projectId: report.projectId,

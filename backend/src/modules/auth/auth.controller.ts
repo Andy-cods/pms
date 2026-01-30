@@ -9,6 +9,12 @@ import {
   Request,
   Res,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -22,6 +28,7 @@ const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes in milliseconds
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // Strict rate limiting for auth endpoints: 3 attempts per 15 minutes
+@ApiTags('Auth')
 @Throttle({ default: { limit: 3, ttl: 900000 } })
 @Controller('auth')
 export class AuthController {
@@ -69,6 +76,12 @@ export class AuthController {
     res.clearCookie('refresh_token', { path: '/api/auth/refresh' });
   }
 
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful, returns user and tokens',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -92,6 +105,9 @@ export class AuthController {
     };
   }
 
+  @ApiOperation({ summary: 'Login as client with access code' })
+  @ApiResponse({ status: 200, description: 'Client login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid client credentials' })
   @Post('client-login')
   @HttpCode(HttpStatus.OK)
   async clientLogin(
@@ -115,6 +131,9 @@ export class AuthController {
     };
   }
 
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(
@@ -136,6 +155,9 @@ export class AuthController {
     return tokens;
   }
 
+  @ApiOperation({ summary: 'Logout and invalidate tokens' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -154,9 +176,12 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiResponse({ status: 200, description: 'Returns current user profile' })
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@Request() req: RequestWithUser) {
+  getProfile(@Request() req: RequestWithUser) {
     return { user: req.user };
   }
 }

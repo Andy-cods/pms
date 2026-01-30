@@ -1,4 +1,10 @@
 import { Controller, Get, Query, UseGuards, Param } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { Roles } from '../../modules/auth/decorators/roles.decorator';
@@ -12,12 +18,16 @@ import {
   AuditLogEntityTypes,
 } from '../../application/dto/audit-log/audit-log.dto';
 
+@ApiTags('Admin - Audit Logs')
+@ApiBearerAuth('JWT-auth')
 @Controller('admin/audit-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 export class AuditLogController {
   constructor(private prisma: PrismaService) {}
 
+  @ApiOperation({ summary: 'List audit logs with filters and pagination' })
+  @ApiResponse({ status: 200, description: 'Returns paginated audit logs' })
   @Get()
   async getAuditLogs(
     @Query() query: AuditLogQueryDto,
@@ -85,20 +95,26 @@ export class AuditLogController {
     };
   }
 
+  @ApiOperation({ summary: 'Get available audit log action types' })
+  @ApiResponse({ status: 200, description: 'Returns list of action types' })
   @Get('actions')
-  async getAvailableActions(): Promise<{ actions: string[] }> {
+  getAvailableActions(): { actions: string[] } {
     return {
       actions: Object.values(AuditLogActions),
     };
   }
 
+  @ApiOperation({ summary: 'Get available entity types' })
+  @ApiResponse({ status: 200, description: 'Returns list of entity types' })
   @Get('entity-types')
-  async getEntityTypes(): Promise<{ entityTypes: string[] }> {
+  getEntityTypes(): { entityTypes: string[] } {
     return {
       entityTypes: Object.values(AuditLogEntityTypes),
     };
   }
 
+  @ApiOperation({ summary: 'Get audit log entry by ID' })
+  @ApiResponse({ status: 200, description: 'Returns audit log details' })
   @Get(':id')
   async getAuditLog(
     @Param('id') id: string,
