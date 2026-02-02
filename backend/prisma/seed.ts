@@ -401,7 +401,7 @@ async function main() {
   const mpContent2 = await prisma.mediaPlan.create({
     data: {
       projectId: p2.id, name: 'Content Plan Pre-Launch - XYZ Tech', type: MediaPlanType.CONTENT, month: 2, year: 2026, version: 1,
-      status: MediaPlanStatus.DRAFT, totalBudget: 15000000,
+      status: MediaPlanStatus.ACTIVE, totalBudget: 15000000,
       startDate: d('2026-02-01'), endDate: d('2026-02-28'), notes: 'Content teaser truoc launch: blog + social posts.',
       createdById: content.id,
     },
@@ -1541,8 +1541,75 @@ async function main() {
       },
     });
 
-    console.log('Created content posts (20 posts across FB/Blog/TikTok + 2 revisions)');
+    // P1 - Instagram posts
+    const igItem = contentItems.find((i) => i.channel === 'instagram');
+    if (igItem) {
+      await Promise.all([
+        prisma.contentPost.create({ data: { mediaPlanItemId: igItem.id, title: 'Flat lay san pham xuan 2026', content: 'Bo anh flat lay san pham moi ket hop hoa dao...', postType: 'image_post', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-06'), publishedDate: d('2026-01-06'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+        prisma.contentPost.create({ data: { mediaPlanItemId: igItem.id, title: 'Reels - 60s huong dan su dung san pham', content: 'Script: Hook 3s - Demo nhanh - Before/After - CTA', postType: 'reel', status: ContentPostStatus.SCHEDULED, scheduledDate: d('2026-01-14'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+        prisma.contentPost.create({ data: { mediaPlanItemId: igItem.id, title: 'Story poll - Ban thich mau nao?', content: 'Story interactive: 2 mau san pham moi, poll de chon', postType: 'story', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-01-20'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+      ]);
+    }
+
+    // P1 - Email posts
+    const emailItem = contentItems.find((i) => i.channel === 'email');
+    if (emailItem) {
+      await Promise.all([
+        prisma.contentPost.create({ data: { mediaPlanItemId: emailItem.id, title: 'Newsletter thang 1 - Tong hop tin tuc', content: 'Subject: [ABC Corp] Khoi dau nam moi cung uu dai doc quyen\n\nNoi dung: Tong hop 5 bai blog hay nhat, san pham moi, ma giam gia...', postType: 'newsletter', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-15'), publishedDate: d('2026-01-15'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+        prisma.contentPost.create({ data: { mediaPlanItemId: emailItem.id, title: 'Email uu dai Tet - Flash sale 48h', content: 'Subject: Flash Sale 48h - Giam den 50% tat ca san pham\n\nEmail marketing cho chuong trinh khuyen mai cuoi thang', postType: 'promotion', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-01-25'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+        prisma.contentPost.create({ data: { mediaPlanItemId: emailItem.id, title: 'Welcome series - Email 1: Chao mung', content: 'Subject: Chao mung ban den voi ABC Corp!\n\nEmail tu dong cho khach hang moi dang ky', postType: 'welcome_series', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-01-28'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+      ]);
+    }
+
+    console.log('Created P1 content posts (20 FB/Blog/TikTok + 3 IG + 3 Email + 2 revisions)');
   }
+
+  // ═══════════════════════════════════════════════════════
+  // P2 (XYZ Tech) CONTENT POSTS
+  // ═══════════════════════════════════════════════════════
+  const p2ContentItems = await prisma.mediaPlanItem.findMany({
+    where: { mediaPlanId: mpContent2.id },
+    orderBy: { orderIndex: 'asc' },
+  });
+
+  const p2Blog = p2ContentItems.find((i) => i.channel === 'blog');
+  const p2Fb = p2ContentItems.find((i) => i.channel === 'facebook');
+  const p2Email = p2ContentItems.find((i) => i.channel === 'email');
+  const p2AdsCopy = p2ContentItems.find((i) => i.channel === 'ads_copy');
+
+  if (p2Blog) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Blog.id, title: 'XYZ SaaS - Giai phap quan ly du an the he moi', content: 'Gioi thieu tong quan ve XYZ SaaS Platform: tinh nang chinh, loi ich cho doanh nghiep, so sanh voi doi thu...', postType: 'long_form', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-03'), publishedDate: d('2026-02-03'), postUrl: 'https://blog.xyz-tech.vn/gioi-thieu-xyz-saas', assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Blog.id, title: '5 ly do doanh nghiep nen chuyen doi so ngay', content: 'Bai viet giao duc ve chuyen doi so, dan dat den giai phap XYZ...', postType: 'listicle', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-10'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Blog.id, title: 'Tutorial: Bat dau voi XYZ SaaS trong 10 phut', content: 'Huong dan tu A-Z cho nguoi moi: dang ky, tao project, moi team, thiet lap workflow...', postType: 'tutorial', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-17'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p2Fb) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Fb.id, title: 'Teaser: Something big is coming...', content: 'Hinh anh teaser voi countdown 7 ngay truoc launch. Design bi an, tao su to mo...', postType: 'image_post', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-01'), publishedDate: d('2026-02-01'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Fb.id, title: 'Ra mat chinh thuc XYZ SaaS Platform', content: 'Bai post chinh thuc ra mat san pham. Bao gom video demo 60s, danh sach tinh nang, link dang ky...', postType: 'video', status: ContentPostStatus.SCHEDULED, scheduledDate: d('2026-02-08'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Fb.id, title: 'Testimonial: Anh Minh - CEO startup ABC', content: 'Video phong van ngan CEO su dung ban beta, chia se trai nghiem thuc te...', postType: 'video', status: ContentPostStatus.REVIEW, scheduledDate: d('2026-02-15'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p2Email) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Email.id, title: 'Email teaser - Sap ra mat san pham moi', content: 'Subject: Ban da san sang cho dieu gi do lon?\n\nTeaser email cho danh sach waiting list...', postType: 'newsletter', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-15'), publishedDate: d('2026-02-15'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Email.id, title: 'Email launch - XYZ SaaS da co mat!', content: 'Subject: XYZ SaaS chinh thuc ra mat - Dang ky ngay!\n\nEmail thong bao launch voi CTA dang ky...', postType: 'promotion', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-20'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2Email.id, title: 'Follow-up - Uu dai Early Bird 30%', content: 'Subject: Con 48h - Uu dai Early Bird giam 30%\n\nEmail nhac nho cho nhung nguoi chua dang ky...', postType: 'promotion', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-25'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p2AdsCopy) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2AdsCopy.id, title: 'Google Ads - Search: "quan ly du an"', content: 'Headline: Quan ly du an hieu qua voi XYZ SaaS | Dung thu mien phi\nDescription: Giai phap All-in-one cho team tu 5-500 nguoi. Tich hop Gantt, Kanban, Time tracking. Dang ky ngay!', postType: 'search_ad', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-05'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2AdsCopy.id, title: 'Facebook Ads Copy - Retargeting', content: 'Primary text: Ban da xem qua XYZ SaaS nhung chua dang ky? Dung lo - uu dai Early Bird van con!\nHeadline: Dang ky ngay - Giam 30% nam dau\nCTA: Sign Up', postType: 'social_ad', status: ContentPostStatus.REVIEW, scheduledDate: d('2026-02-12'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p2AdsCopy.id, title: 'Landing page copy - Hero section', content: 'H1: Quan ly du an khong con phuc tap\nSub: XYZ SaaS giup team ban lam viec hieu qua hon 3x. Tich hop Gantt, Kanban, Chat, File trong 1 nen tang.\nCTA: Bat dau mien phi', postType: 'landing_page', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-18'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  console.log('Created P2 content posts (12 posts across Blog/FB/Email/AdsCopy)');
 
   // ═══════════════════════════════════════════════════════
   // SUMMARY
