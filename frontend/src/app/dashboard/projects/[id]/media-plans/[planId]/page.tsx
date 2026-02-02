@@ -1,20 +1,19 @@
-'use client';
+"use client";
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Pencil,
   Trash2,
   MoreHorizontal,
   Calendar,
   DollarSign,
   Layers,
   User,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 
-import { cn } from '@/lib/utils';
-import { useProject } from '@/hooks/use-projects';
+import { cn } from "@/lib/utils";
+import { useProject } from "@/hooks/use-projects";
 import {
   useMediaPlan,
   useUpdateMediaPlan,
@@ -22,7 +21,7 @@ import {
   useAddMediaPlanItem,
   useUpdateMediaPlanItem,
   useDeleteMediaPlanItem,
-} from '@/hooks/use-media-plans';
+} from "@/hooks/use-media-plans";
 import {
   type MediaPlanStatus,
   type MediaPlanType,
@@ -30,21 +29,20 @@ import {
   MediaPlanStatusColors,
   MediaPlanTypeLabels,
   MediaPlanTypeColors,
-  formatVND,
   formatVNDCompact,
   MONTHS,
-} from '@/lib/api/media-plans';
+} from "@/lib/api/media-plans";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,19 +53,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { MediaPlanItemsTable } from '@/components/media-plan/media-plan-items-table';
-import { DesignPlanItemsGrid } from '@/components/media-plan/design-plan-items-grid';
-import { ContentPlanItemsList } from '@/components/media-plan/content-plan-items-list';
+} from "@/components/ui/alert-dialog";
+import { MediaPlanItemsTable } from "@/components/media-plan/media-plan-items-table";
+import { DesignPlanItemsGrid } from "@/components/media-plan/design-plan-items-grid";
+import { ContentPlanItemsList } from "@/components/media-plan/content-plan-items-list";
 
 // Status transition options
 const STATUS_TRANSITIONS: Record<MediaPlanStatus, MediaPlanStatus[]> = {
-  DRAFT: ['PENDING_APPROVAL', 'CANCELLED'],
-  PENDING_APPROVAL: ['APPROVED', 'DRAFT'],
-  APPROVED: ['ACTIVE', 'DRAFT'],
-  ACTIVE: ['COMPLETED', 'CANCELLED'],
+  DRAFT: ["PENDING_APPROVAL", "CANCELLED"],
+  PENDING_APPROVAL: ["APPROVED", "DRAFT"],
+  APPROVED: ["ACTIVE", "DRAFT"],
+  ACTIVE: ["COMPLETED", "CANCELLED"],
   COMPLETED: [],
-  CANCELLED: ['DRAFT'],
+  CANCELLED: ["DRAFT"],
 };
 
 export default function MediaPlanDetailPage() {
@@ -93,17 +91,17 @@ export default function MediaPlanDetailPage() {
       });
       toast.success(`Đã chuyển sang ${MediaPlanStatusLabels[newStatus]}`);
     } catch {
-      toast.error('Không thể cập nhật trạng thái');
+      toast.error("Không thể cập nhật trạng thái");
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync({ projectId, planId });
-      toast.success('Đã xóa kế hoạch media');
+      toast.success("Đã xóa kế hoạch media");
       router.push(`/dashboard/projects/${projectId}/media-plans`);
     } catch {
-      toast.error('Không thể xóa kế hoạch media');
+      toast.error("Không thể xóa kế hoạch media");
     }
   };
 
@@ -122,7 +120,9 @@ export default function MediaPlanDetailPage() {
         </p>
         <Button
           variant="outline"
-          onClick={() => router.push(`/dashboard/projects/${projectId}/media-plans`)}
+          onClick={() =>
+            router.push(`/dashboard/projects/${projectId}/media-plans`)
+          }
           className="rounded-full px-5"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -132,15 +132,24 @@ export default function MediaPlanDetailPage() {
     );
   }
 
-  const monthLabel = MONTHS.find((m) => m.value === plan.month)?.label ?? `T${plan.month}`;
+  const monthLabel =
+    MONTHS.find((m) => m.value === plan.month)?.label ?? `T${plan.month}`;
   const budgetPercent =
     plan.totalBudget > 0
-      ? Math.min(100, Math.round((plan.allocatedBudget / plan.totalBudget) * 100))
+      ? Math.min(
+          100,
+          Math.round((plan.allocatedBudget / plan.totalBudget) * 100),
+        )
       : 0;
   const availableTransitions = STATUS_TRANSITIONS[plan.status] ?? [];
-  const isEditable = plan.status === 'DRAFT' || plan.status === 'ACTIVE';
-  const planType = (plan.type as MediaPlanType) ?? 'ADS';
-  const itemCountLabel = planType === 'DESIGN' ? 'Sản phẩm' : planType === 'CONTENT' ? 'Nội dung' : 'Số kênh';
+  const isEditable = plan.status === "DRAFT" || plan.status === "ACTIVE";
+  const planType = (plan.type as MediaPlanType) ?? "ADS";
+  const itemCountLabel =
+    planType === "DESIGN"
+      ? "Sản phẩm"
+      : planType === "CONTENT"
+        ? "Nội dung"
+        : "Số kênh";
 
   return (
     <div className="space-y-6">
@@ -150,7 +159,9 @@ export default function MediaPlanDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push(`/dashboard/projects/${projectId}/media-plans`)}
+            onClick={() =>
+              router.push(`/dashboard/projects/${projectId}/media-plans`)
+            }
             className="h-10 w-10 rounded-xl hover:bg-secondary"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -162,15 +173,16 @@ export default function MediaPlanDetailPage() {
               </h1>
               <span
                 className={cn(
-                  'px-2 py-0.5 rounded-full text-[10px] font-medium',
-                  MediaPlanTypeColors[plan.type as MediaPlanType] ?? MediaPlanTypeColors.ADS,
+                  "px-2 py-0.5 rounded-full text-[10px] font-medium",
+                  MediaPlanTypeColors[plan.type as MediaPlanType] ??
+                    MediaPlanTypeColors.ADS,
                 )}
               >
                 {MediaPlanTypeLabels[plan.type as MediaPlanType] ?? plan.type}
               </span>
               <span
                 className={cn(
-                  'px-2.5 py-0.5 rounded-full text-caption font-medium',
+                  "px-2.5 py-0.5 rounded-full text-caption font-medium",
                   MediaPlanStatusColors[plan.status],
                 )}
               >
@@ -204,7 +216,11 @@ export default function MediaPlanDetailPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg"
+              >
                 <MoreHorizontal className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -233,12 +249,14 @@ export default function MediaPlanDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Xóa kế hoạch media?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Kế hoạch &quot;{plan.name}&quot; và tất cả dữ liệu kênh sẽ bị xóa
-                      vĩnh viễn. Hành động này không thể hoàn tác.
+                      Kế hoạch &quot;{plan.name}&quot; và tất cả dữ liệu kênh sẽ
+                      bị xóa vĩnh viễn. Hành động này không thể hoàn tác.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-full">Hủy</AlertDialogCancel>
+                    <AlertDialogCancel className="rounded-full">
+                      Hủy
+                    </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
                       className="rounded-full bg-[#ff3b30] hover:bg-[#ff3b30]/90"
@@ -261,7 +279,9 @@ export default function MediaPlanDetailPage() {
               <DollarSign className="h-5 w-5 text-[#007aff]" />
             </div>
             <div>
-              <p className="text-caption text-muted-foreground">Tổng ngân sách</p>
+              <p className="text-caption text-muted-foreground">
+                Tổng ngân sách
+              </p>
               <p className="text-callout font-semibold tabular-nums">
                 {formatVNDCompact(plan.totalBudget)}
               </p>
@@ -292,7 +312,9 @@ export default function MediaPlanDetailPage() {
               <Layers className="h-5 w-5 text-[#ff9f0a]" />
             </div>
             <div>
-              <p className="text-caption text-muted-foreground">{itemCountLabel}</p>
+              <p className="text-caption text-muted-foreground">
+                {itemCountLabel}
+              </p>
               <p className="text-callout font-semibold tabular-nums">
                 {plan.itemCount}
               </p>
@@ -308,15 +330,15 @@ export default function MediaPlanDetailPage() {
             <div>
               <p className="text-caption text-muted-foreground">Thời gian</p>
               <p className="text-footnote font-medium">
-                {new Date(plan.startDate).toLocaleDateString('vi-VN', {
-                  day: '2-digit',
-                  month: '2-digit',
+                {new Date(plan.startDate).toLocaleDateString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
                 })}
-                {' - '}
-                {new Date(plan.endDate).toLocaleDateString('vi-VN', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
+                {" - "}
+                {new Date(plan.endDate).toLocaleDateString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
                 })}
               </p>
             </div>
@@ -339,17 +361,17 @@ export default function MediaPlanDetailPage() {
       <div className="flex items-center gap-2 text-footnote text-muted-foreground">
         <User className="h-3.5 w-3.5" />
         <span>
-          Tạo bởi {plan.createdBy.name} ·{' '}
-          {new Date(plan.createdAt).toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
+          Tạo bởi {plan.createdBy.name} ·{" "}
+          {new Date(plan.createdAt).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
           })}
         </span>
       </div>
 
       {/* Items - type-specific views */}
-      {planType === 'DESIGN' ? (
+      {planType === "DESIGN" ? (
         <DesignPlanItemsGrid
           items={plan.items}
           totalBudget={plan.totalBudget}
@@ -358,22 +380,34 @@ export default function MediaPlanDetailPage() {
             await addItemMutation.mutateAsync({ projectId, planId, input });
           }}
           onUpdateItem={async (itemId, input) => {
-            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+            await updateItemMutation.mutateAsync({
+              projectId,
+              planId,
+              itemId,
+              input,
+            });
           }}
           onDeleteItem={async (itemId) => {
             await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
           }}
         />
-      ) : planType === 'CONTENT' ? (
+      ) : planType === "CONTENT" ? (
         <ContentPlanItemsList
           items={plan.items}
           totalBudget={plan.totalBudget}
+          projectId={projectId}
+          planId={planId}
           isEditable={isEditable}
           onAddItem={async (input) => {
             await addItemMutation.mutateAsync({ projectId, planId, input });
           }}
           onUpdateItem={async (itemId, input) => {
-            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+            await updateItemMutation.mutateAsync({
+              projectId,
+              planId,
+              itemId,
+              input,
+            });
           }}
           onDeleteItem={async (itemId) => {
             await deleteItemMutation.mutateAsync({ projectId, planId, itemId });
@@ -389,7 +423,12 @@ export default function MediaPlanDetailPage() {
             await addItemMutation.mutateAsync({ projectId, planId, input });
           }}
           onUpdateItem={async (itemId, input) => {
-            await updateItemMutation.mutateAsync({ projectId, planId, itemId, input });
+            await updateItemMutation.mutateAsync({
+              projectId,
+              planId,
+              itemId,
+              input,
+            });
           }}
           onDeleteItem={async (itemId) => {
             await deleteItemMutation.mutateAsync({ projectId, planId, itemId });

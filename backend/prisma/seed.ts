@@ -21,6 +21,7 @@ import {
   BriefStatus,
   ClientTier,
   ProjectPhaseType,
+  ContentPostStatus,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -61,6 +62,8 @@ async function main() {
   await prisma.projectKPI.deleteMany();
   await prisma.stageHistory.deleteMany();
   await prisma.adsReport.deleteMany();
+  await prisma.contentPostRevision.deleteMany();
+  await prisma.contentPost.deleteMany();
   await prisma.budgetEvent.deleteMany();
   await prisma.mediaPlanItem.deleteMany();
   await prisma.mediaPlan.deleteMany();
@@ -1474,6 +1477,74 @@ async function main() {
   console.log('Created project phases for 3 projects (4 phases x 3 = 12 phases, 27 items)');
 
   // ═══════════════════════════════════════════════════════
+  // CONTENT POSTS - sample posts for CONTENT plan items
+  // ═══════════════════════════════════════════════════════
+  // Fetch content plan items (mpContent1 - active plan for P1)
+  const contentItems = await prisma.mediaPlanItem.findMany({
+    where: { mediaPlanId: mpContent1.id },
+    orderBy: { orderIndex: 'asc' },
+  });
+
+  const fbItem = contentItems.find((i) => i.channel === 'facebook');
+  const blogItem = contentItems.find((i) => i.channel === 'blog');
+  const tiktokItem = contentItems.find((i) => i.channel === 'tiktok');
+
+  if (fbItem && blogItem && tiktokItem) {
+    // Facebook posts - mix of statuses
+    const fbPosts = await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Khuyen mai dau nam - Giam 20% tat ca san pham', content: 'Nhan dip dau xuan, ABC Corp tri an khach hang voi chuong trinh giam gia soc...', postType: 'image_post', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-05'), publishedDate: d('2026-01-05'), postUrl: 'https://facebook.com/abc-corp/posts/1001', assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Gioi thieu san pham moi 2026', content: 'Chao don nam moi voi bo suu tap san pham hoan toan moi...', postType: 'carousel', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-08'), publishedDate: d('2026-01-08'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Behind the scenes - Doi ngu ABC Corp', content: 'Cung kham pha mot ngay lam viec tai ABC Corp...', postType: 'video', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-01-12'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Testimonial khach hang - Chi Lan', content: 'Cam nhan cua chi Lan sau khi su dung dich vu...', postType: 'image_post', status: ContentPostStatus.SCHEDULED, scheduledDate: d('2026-01-15'), assigneeId: content.id, orderIndex: 3, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Tips cham soc suc khoe dau nam', content: 'Top 5 bi quyet giu gin suc khoe cho nguoi ban ron...', postType: 'image_post', status: ContentPostStatus.REVIEW, scheduledDate: d('2026-01-18'), assigneeId: content.id, orderIndex: 4, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Live Q&A - Hoi dap ve san pham', content: 'Buoi live stream hoi dap truc tiep voi chuyen gia...', postType: 'live_stream', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-01-20'), assigneeId: content.id, orderIndex: 5, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Infographic - So sanh san pham', postType: 'image_post', status: ContentPostStatus.IDEA, orderIndex: 6, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: fbItem.id, title: 'Contest - Chia se de nhan qua', postType: 'image_post', status: ContentPostStatus.IDEA, orderIndex: 7, createdById: content.id } }),
+    ]);
+
+    // Create revision history for post that went through review
+    await prisma.contentPostRevision.create({
+      data: {
+        contentPostId: fbPosts[4].id,
+        title: 'Meo cham soc suc khoe dau nam (v1)',
+        content: 'Ban dau viet ve 3 bi quyet, sau do bo sung them 2...',
+        revisionNote: 'Can bo sung them noi dung ve dinh duong va giac ngu',
+        revisedById: planner.id,
+      },
+    });
+
+    // Blog posts
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: blogItem.id, title: 'Xu huong marketing 2026 - Nhung dieu doanh nghiep can biet', content: 'Nam 2026 chung kien nhieu thay doi lon trong nganh marketing...', postType: 'long_form', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-03'), publishedDate: d('2026-01-03'), postUrl: 'https://blog.abc-corp.vn/xu-huong-marketing-2026', assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: blogItem.id, title: 'Case study: Tang truong 150% doanh thu voi Digital Marketing', content: 'Cau chuyen thanh cong cua khach hang XYZ khi ap dung chien luoc...', postType: 'case_study', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-10'), publishedDate: d('2026-01-10'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: blogItem.id, title: 'Huong dan SEO on-page cho nguoi moi bat dau', content: 'SEO la mot trong nhung kenh marketing hieu qua nhat...', postType: 'tutorial', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-01-17'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: blogItem.id, title: 'So sanh Facebook Ads vs Google Ads 2026', postType: 'long_form', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-01-24'), assigneeId: content.id, orderIndex: 3, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: blogItem.id, title: 'Top 10 cong cu marketing mien phi', postType: 'listicle', status: ContentPostStatus.IDEA, orderIndex: 4, createdById: content.id } }),
+    ]);
+
+    // TikTok posts
+    const tiktokPosts = await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: tiktokItem.id, title: 'Day la san pham hot nhat 2026 #trending', content: 'Script: Mo dau bat mat - gioi thieu nhanh - CTA...', postType: 'short_video', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-12'), publishedDate: d('2026-01-12'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: tiktokItem.id, title: 'POV: Khi ban lam viec tai agency #agencylife', content: 'Script: Montage cac canh lam viec vui nhon...', postType: 'short_video', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-01-15'), publishedDate: d('2026-01-15'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: tiktokItem.id, title: 'Review san pham ABC - Co tot nhu loi don?', content: 'Script: Unboxing + review chi tiet + so sanh...', postType: 'short_video', status: ContentPostStatus.REVISION_REQUESTED, scheduledDate: d('2026-01-20'), assigneeId: content.id, orderIndex: 2, createdById: content.id, notes: 'Can quay lai, chat luong am thanh chua dat' } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: tiktokItem.id, title: 'Meo hay cho dan van phong #officehacks', postType: 'short_video', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-01-25'), assigneeId: content.id, orderIndex: 3, createdById: content.id } }),
+    ]);
+
+    // Revision for TikTok post that was revision-requested
+    await prisma.contentPostRevision.create({
+      data: {
+        contentPostId: tiktokPosts[2].id,
+        title: 'Review san pham ABC (v1)',
+        content: 'Script ban dau: Unboxing nhanh + nhan xet chung',
+        revisionNote: 'Can quay lai voi micro tot hon, bo sung phan so sanh gia',
+        revisedById: planner.id,
+      },
+    });
+
+    console.log('Created content posts (20 posts across FB/Blog/TikTok + 2 revisions)');
+  }
+
+  // ═══════════════════════════════════════════════════════
   // SUMMARY
   // ═══════════════════════════════════════════════════════
   console.log('\n========================================');
@@ -1493,6 +1564,7 @@ async function main() {
   console.log('  Notifications: 10');
   console.log('  Strategic Briefs: 3 (APPROVED, DRAFT, empty DRAFT)');
   console.log('  Project Phases: 12 (4 phases x 3 projects, 27 items)');
+  console.log('  Content Posts: ~20 (FB/Blog/TikTok + 2 revisions)');
   console.log('');
   console.log('Test Accounts (password: Admin@123):');
   console.log('  Super Admin   : admin@bcagency.com');
