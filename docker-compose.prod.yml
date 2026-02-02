@@ -1,10 +1,12 @@
 # BC Agency PMS - Docker Compose Production Configuration
+# Coexists with existing TMS system - uses server's existing Nginx as reverse proxy
 # Usage: docker-compose -f docker-compose.prod.yml up -d
 
 services:
   # ============================================
   # DATABASE - PostgreSQL 16
   # ============================================
+  # Internal only - no port exposed to host (avoids conflict with TMS PostgreSQL)
   postgres:
     image: postgres:16-alpine
     container_name: bc-postgres-prod
@@ -24,7 +26,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - bc-agency-internal
+      - bc-agency-net
     deploy:
       resources:
         limits:
@@ -37,6 +39,7 @@ services:
   # ============================================
   # CACHE - Redis 7
   # ============================================
+  # Internal only - no port exposed to host (avoids conflict with TMS Redis)
   redis:
     image: redis:7-alpine
     container_name: bc-redis-prod
@@ -56,7 +59,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - bc-agency-internal
+      - bc-agency-net
     deploy:
       resources:
         limits:
@@ -69,6 +72,7 @@ services:
   # ============================================
   # FILE STORAGE - MinIO (S3-compatible)
   # ============================================
+  # Exposed on 127.0.0.1 only - accessible via server Nginx
   minio:
     image: minio/minio:latest
     container_name: bc-minio-prod
@@ -80,6 +84,9 @@ services:
       MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN}/minio-console
     volumes:
       - minio_data:/data
+    ports:
+      - "127.0.0.1:9010:9000"   # MinIO API - only localhost
+      - "127.0.0.1:9011:9001"   # MinIO Console - only localhost
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 30s
@@ -87,7 +94,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - bc-agency-internal
+      - bc-agency-net
     deploy:
       resources:
         limits:
@@ -100,6 +107,7 @@ services:
   # ============================================
   # BACKEND - NestJS API
   # ============================================
+  # Exposed on 127.0.0.1:3001 - accessible via server Nginx
   backend:
     build:
       context: ./backend
@@ -133,6 +141,8 @@ services:
       ENCRYPTION_SALT: ${ENCRYPTION_SALT}
       RATE_LIMIT_TTL: ${RATE_LIMIT_TTL:-60}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+    ports:
+      - "127.0.0.1:3001:3001"   # Backend API - only localhost
     depends_on:
       postgres:
         condition: service_healthy
@@ -147,7 +157,7 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - bc-agency-internal
+      - bc-agency-net
     deploy:
       resources:
         limits:
@@ -160,6 +170,7 @@ services:
   # ============================================
   # FRONTEND - Next.js
   # ============================================
+  # Exposed on 127.0.0.1:3000 - accessible via server Nginx
   frontend:
     build:
       context: ./frontend
@@ -174,6 +185,8 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${DOMAIN}/api
       NEXT_PUBLIC_APP_URL: https://${DOMAIN}
+    ports:
+      - "127.0.0.1:3000:3000"   # Frontend - only localhost
     depends_on:
       backend:
         condition: service_healthy
@@ -184,7 +197,7 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - bc-agency-internal
+      - bc-agency-net
     deploy:
       resources:
         limits:
@@ -193,63 +206,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-
-  # ============================================
-  # REVERSE PROXY - Nginx
-  # ============================================
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: bc-nginx-prod
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN}
-    volumes:
-      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot:ro
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - bc-agency-internal
-      - bc-agency-external
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-
-  # ============================================
-  # SSL Certificate - Certbot
-  # ============================================
-  certbot:
-    image: certbot/certbot:latest
-    container_name: bc-certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    depends_on:
-      - nginx
-    networks:
-      - bc-agency-external
 
 # ============================================
 # VOLUMES - Persistent Data
@@ -261,19 +217,11 @@ volumes:
     name: bc-pms-redis-data-prod
   minio_data:
     name: bc-pms-minio-data-prod
-  nginx_logs:
-    name: bc-pms-nginx-logs-prod
 
 # ============================================
 # NETWORKS
 # ============================================
 networks:
-  # Internal network - no external access
-  bc-agency-internal:
-    name: bc-agency-internal-prod
-    driver: bridge
-    internal: true
-  # External network - nginx only
-  bc-agency-external:
-    name: bc-agency-external-prod
+  bc-agency-net:
+    name: bc-agency-pms-prod
     driver: bridge

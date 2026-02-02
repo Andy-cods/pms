@@ -92,6 +92,10 @@ temp/
 .claude/.env
 .claude/skills/*/.env
 .claude/settings.local.json
+CLAUDE_SESSION.md
+SECURITY_AUDIT_REPORT.md
+plans/
+nul
 
 # ============================================
 # Prisma

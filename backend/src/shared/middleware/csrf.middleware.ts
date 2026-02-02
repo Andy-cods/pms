@@ -31,6 +31,11 @@ export class CsrfMiddleware implements NestMiddleware {
     '/api/auth/refresh',
     '/api/metrics',
     '/api/health',
+    '/auth/login',
+    '/auth/client-login',
+    '/auth/refresh',
+    '/metrics',
+    '/health',
   ]);
 
   constructor(configService: ConfigService) {
@@ -47,17 +52,19 @@ export class CsrfMiddleware implements NestMiddleware {
       return next();
     }
 
-    // Also skip auth paths regardless of prefix
+    // Also skip auth and webhook paths regardless of prefix
     if (
       req.path.includes('/auth/login') ||
       req.path.includes('/auth/client-login') ||
-      req.path.includes('/auth/refresh')
+      req.path.includes('/auth/refresh') ||
+      req.path.includes('/webhook') ||
+      req.path.includes('/integrations/')
     ) {
       return next();
     }
 
     // Generate or retrieve CSRF token
-    let csrfToken = req.cookies?.[this.csrfCookieName];
+    let csrfToken = req.cookies?.[this.csrfCookieName] as string | undefined;
 
     if (!csrfToken) {
       // Generate a new token if one doesn't exist

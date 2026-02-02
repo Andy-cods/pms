@@ -38,5 +38,8 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7"
+  },
+  "dependencies": {
+    "tailwindcss": "^4.1.18"
   }
 }

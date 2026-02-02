@@ -79,11 +79,9 @@ export class AppModule implements NestModule {
   constructor(private configService: ConfigService) {}
 
   configure(consumer: MiddlewareConsumer) {
-    // CSRF protection enabled for all state-changing routes
-    if (this.configService.get('NODE_ENV') !== 'test') {
-      consumer
-        .apply(CsrfMiddleware)
-        .forRoutes('*');
+    // CSRF protection enabled only in production
+    if (this.configService.get('NODE_ENV') === 'production') {
+      consumer.apply(CsrfMiddleware).forRoutes('*');
     }
   }
 }
