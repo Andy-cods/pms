@@ -25,7 +25,7 @@
     ],
     "frontend/src/**/*.{ts,tsx}": [
       "npx prettier --write",
-      "npx eslint --fix"
+      "npx eslint --fix --config frontend/eslint.config.mjs"
     ]
   },
   "keywords": [
