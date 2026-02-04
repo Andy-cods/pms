@@ -1,5 +1,4 @@
 import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Request, Response, NextFunction } from 'express';
 import * as crypto from 'crypto';
 
@@ -17,7 +16,6 @@ import * as crypto from 'crypto';
  */
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
-  private readonly isProduction: boolean;
   private readonly csrfCookieName = 'XSRF-TOKEN';
   private readonly csrfHeaderName = 'x-xsrf-token';
 
@@ -38,15 +36,13 @@ export class CsrfMiddleware implements NestMiddleware {
     '/health',
   ]);
 
-  constructor(configService: ConfigService) {
-    this.isProduction = configService.get('NODE_ENV') === 'production';
-  }
-
   use(req: Request, res: Response, next: NextFunction): void {
+    // Use originalUrl for path matching (NestJS middleware sees relative req.path)
+    const requestPath = req.originalUrl?.split('?')[0] || req.path;
+
     // Skip CSRF for excluded paths (auth endpoints don't need CSRF protection)
-    // Use startsWith to handle paths with or without trailing query params
     const isExcluded = Array.from(this.excludedPaths).some(
-      (path) => req.path === path || req.path.startsWith(path + '/'),
+      (path) => requestPath === path || requestPath.startsWith(path + '/'),
     );
     if (isExcluded) {
       return next();
@@ -54,11 +50,11 @@ export class CsrfMiddleware implements NestMiddleware {
 
     // Also skip auth and webhook paths regardless of prefix
     if (
-      req.path.includes('/auth/login') ||
-      req.path.includes('/auth/client-login') ||
-      req.path.includes('/auth/refresh') ||
-      req.path.includes('/webhook') ||
-      req.path.includes('/integrations/')
+      requestPath.includes('/auth/login') ||
+      requestPath.includes('/auth/client-login') ||
+      requestPath.includes('/auth/refresh') ||
+      requestPath.includes('/webhook') ||
+      requestPath.includes('/integrations/')
     ) {
       return next();
     }
@@ -72,9 +68,10 @@ export class CsrfMiddleware implements NestMiddleware {
     }
 
     // Always set/refresh the CSRF token cookie
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
     res.cookie(this.csrfCookieName, csrfToken, {
       httpOnly: false, // Must be readable by JavaScript
-      secure: this.isProduction,
+      secure: isHttps,
       sameSite: 'lax',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
