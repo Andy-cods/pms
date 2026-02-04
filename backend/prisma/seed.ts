@@ -445,7 +445,7 @@ async function main() {
   const mpContent1b = await prisma.mediaPlan.create({
     data: {
       projectId: p1.id, name: 'Content Plan Thang 2/2026 - ABC Corp', type: MediaPlanType.CONTENT, month: 2, year: 2026, version: 1,
-      status: MediaPlanStatus.DRAFT, totalBudget: 28000000,
+      status: MediaPlanStatus.ACTIVE, totalBudget: 28000000,
       startDate: d('2026-02-01'), endDate: d('2026-02-28'), notes: 'Content Tet + Valentine: 30 bai FB, 8 blog, 12 TikTok, 4 email, 3 PR.',
       createdById: content.id,
     },
@@ -1610,6 +1610,63 @@ async function main() {
   }
 
   console.log('Created P2 content posts (12 posts across Blog/FB/Email/AdsCopy)');
+
+  // ═══════════════════════════════════════════════════════
+  // P1b (ABC Corp Tháng 2/2026) CONTENT POSTS - Tet + Valentine
+  // ═══════════════════════════════════════════════════════
+  const p1bContentItems = await prisma.mediaPlanItem.findMany({
+    where: { mediaPlanId: mpContent1b.id },
+    orderBy: { orderIndex: 'asc' },
+  });
+
+  const p1bFb = p1bContentItems.find((i) => i.channel === 'facebook');
+  const p1bTiktok = p1bContentItems.find((i) => i.channel === 'tiktok');
+  const p1bBlog = p1bContentItems.find((i) => i.channel === 'blog');
+  const p1bEmail = p1bContentItems.find((i) => i.channel === 'email');
+  const p1bPr = p1bContentItems.find((i) => i.channel === 'pr');
+
+  if (p1bFb) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bFb.id, title: 'Chuc mung nam moi 2026 - Loi chuc tu ABC Corp', content: 'Kinh gui quy khach hang, nhan dip xuan moi ABC Corp gui loi chuc tot dep nhat...', postType: 'image_post', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-01'), publishedDate: d('2026-02-01'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bFb.id, title: 'Valentine - Uu dai doc quyen cho cap doi', content: 'Nhan ngay le tinh nhan 14/2, ABC Corp danh tang uu dai mua 1 tang 1...', postType: 'carousel', status: ContentPostStatus.SCHEDULED, scheduledDate: d('2026-02-14'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bFb.id, title: 'Tet Countdown - 7 ngay truoc Tet', content: 'Chuoi bai dang dem nguoc 7 ngay truoc Tet voi cac tips huu ich...', postType: 'image_post', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-07'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bFb.id, title: 'Live - Giai dap thac mac san pham Tet', content: 'Buoi live stream hoi dap truc tiep ve cac san pham Tet...', postType: 'live_stream', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-20'), assigneeId: content.id, orderIndex: 3, createdById: content.id } }),
+    ]);
+  }
+
+  if (p1bTiktok) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bTiktok.id, title: 'Tet nay lam gi? #tetholiday', content: 'Script: Montage canh Tet truyen thong + san pham...', postType: 'short_video', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-03'), publishedDate: d('2026-02-03'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bTiktok.id, title: 'Trend Valentine - Qua tang y nghia #valentine2026', content: 'Script: POV chon qua Valentine voi san pham ABC Corp...', postType: 'short_video', status: ContentPostStatus.REVIEW, scheduledDate: d('2026-02-12'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bTiktok.id, title: 'Unboxing hamper Tet ABC Corp #unboxing', content: 'Script: Unboxing bo qua Tet doc quyen tu ABC Corp...', postType: 'short_video', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-18'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p1bBlog) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bBlog.id, title: 'Xu huong marketing mua Tet 2026', content: 'Tong hop cac xu huong marketing noi bat trong mua Tet Binh Ngo 2026...', postType: 'long_form', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-02'), publishedDate: d('2026-02-02'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bBlog.id, title: 'Valentine Marketing - 10 y tuong cho doanh nghiep', content: 'Tong hop 10 y tuong marketing Valentine giup tang doanh thu...', postType: 'listicle', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-10'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bBlog.id, title: 'Case study: Chien dich Tet tang 200% engagement', content: 'Phan tich chi tiet chien dich Tet thanh cong cua ABC Corp...', postType: 'case_study', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-22'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p1bEmail) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bEmail.id, title: 'Newsletter Tet - Uu dai xuan 2026', content: 'Subject: [ABC Corp] Uu dai Tet - Giam den 40%\n\nEmail khuyen mai nhan dip Tet Nguyen Dan...', postType: 'newsletter', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-10'), publishedDate: d('2026-02-10'), assigneeId: content.id, orderIndex: 0, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bEmail.id, title: 'Email Valentine - Combo qua tang', content: 'Subject: Qua tang Valentine tu ABC Corp - Giam 25%\n\nEmail gioi thieu combo qua tang Valentine...', postType: 'promotion', status: ContentPostStatus.SCHEDULED, scheduledDate: d('2026-02-13'), assigneeId: content.id, orderIndex: 1, createdById: content.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bEmail.id, title: 'Thank you email - Cam on khach hang', content: 'Subject: Cam on quy khach - ABC Corp\n\nEmail cam on sau chuong trinh Tet...', postType: 'newsletter', status: ContentPostStatus.DRAFT, scheduledDate: d('2026-02-25'), assigneeId: content.id, orderIndex: 2, createdById: content.id } }),
+    ]);
+  }
+
+  if (p1bPr) {
+    await Promise.all([
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bPr.id, title: 'Thong cao - ABC Corp khoi dong chuong trinh Tet 2026', content: 'ABC Corp chinh thuc khoi dong chuong trinh "Tet An Khang" voi nhieu uu dai hap dan...', postType: 'press_release', status: ContentPostStatus.PUBLISHED, scheduledDate: d('2026-02-01'), publishedDate: d('2026-02-01'), assigneeId: pm.id, orderIndex: 0, createdById: pm.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bPr.id, title: 'Bai PR - ABC Corp va hanh trinh 5 nam phat trien', content: 'Nhan dip Tet, nhin lai hanh trinh 5 nam phat trien cua ABC Corp...', postType: 'pr_article', status: ContentPostStatus.APPROVED, scheduledDate: d('2026-02-08'), assigneeId: pm.id, orderIndex: 1, createdById: pm.id } }),
+      prisma.contentPost.create({ data: { mediaPlanItemId: p1bPr.id, title: 'PR - Ket qua kinh doanh Q4/2025', content: 'ABC Corp cong bo ket qua kinh doanh quy 4/2025 voi tang truong 35%...', postType: 'pr_article', status: ContentPostStatus.REVIEW, scheduledDate: d('2026-02-12'), assigneeId: pm.id, orderIndex: 2, createdById: pm.id } }),
+    ]);
+  }
+
+  console.log('Created P1b content posts (16 posts across FB/TikTok/Blog/Email/PR for Thang 2)');
 
   // ═══════════════════════════════════════════════════════
   // SUMMARY
