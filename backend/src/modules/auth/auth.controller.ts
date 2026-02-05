@@ -15,7 +15,6 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
@@ -32,27 +31,23 @@ const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 @Throttle({ default: { limit: 3, ttl: 900000 } })
 @Controller('auth')
 export class AuthController {
-  private readonly isProduction: boolean;
-
-  constructor(
-    private authService: AuthService,
-    configService: ConfigService,
-  ) {
-    this.isProduction = configService.get('NODE_ENV') === 'production';
-  }
+  constructor(private authService: AuthService) {}
 
   /**
    * Set httpOnly cookies for JWT tokens
    */
   private setTokenCookies(
+    isSecure: boolean,
     res: Response,
     accessToken: string,
     refreshToken: string,
   ): void {
+    const secure = isSecure;
+
     // Set access token cookie
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: this.isProduction,
+      secure,
       sameSite: 'lax',
       path: '/',
       maxAge: ACCESS_TOKEN_MAX_AGE,
@@ -61,7 +56,7 @@ export class AuthController {
     // Set refresh token cookie - only sent to refresh endpoint
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: this.isProduction,
+      secure,
       sameSite: 'lax',
       path: '/api/auth/refresh',
       maxAge: REFRESH_TOKEN_MAX_AGE,
@@ -86,12 +81,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() dto: LoginDto,
+    @Request()
+    req: { secure?: boolean; get: (name: string) => string | undefined },
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
+    const isSecure = !!req.secure || req.get('x-forwarded-proto') === 'https';
 
     // Set httpOnly cookies for tokens
     this.setTokenCookies(
+      isSecure,
       res,
       result.tokens.accessToken,
       result.tokens.refreshToken,
@@ -112,12 +111,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async clientLogin(
     @Body() dto: ClientLoginDto,
+    @Request()
+    req: { secure?: boolean; get: (name: string) => string | undefined },
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.clientLogin(dto);
+    const isSecure = !!req.secure || req.get('x-forwarded-proto') === 'https';
 
     // Set httpOnly cookies for tokens
     this.setTokenCookies(
+      isSecure,
       res,
       result.tokens.accessToken,
       result.tokens.refreshToken,
@@ -138,7 +141,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refreshToken(
     @Body() dto: RefreshTokenDto,
-    @Request() req: RequestWithUser & { cookies?: Record<string, string> },
+    @Request()
+    req: {
+      secure?: boolean;
+      get: (name: string) => string | undefined;
+      cookies?: Record<string, string>;
+    },
     @Res({ passthrough: true }) res: Response,
   ) {
     // Try to get refresh token from cookie first, fallback to body
@@ -149,7 +157,13 @@ export class AuthController {
     });
 
     // Set new httpOnly cookies
-    this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+    const isSecure = !!req.secure || req.get('x-forwarded-proto') === 'https';
+    this.setTokenCookies(
+      isSecure,
+      res,
+      tokens.accessToken,
+      tokens.refreshToken,
+    );
 
     // Return tokens for backward compatibility with API clients
     return tokens;
