@@ -32,8 +32,11 @@ model User {
   eventAttendees    EventAttendee[]
   mediaPlansCreated MediaPlan[]     @relation("MediaPlanCreator")
   budgetEvents      BudgetEvent[]   @relation("BudgetEventCreator")
-  adsReportsCreated AdsReport[]     @relation("AdsReportCreator")
-  projectsAsNVKD    Project[]       @relation("ProjectNVKD")
+  adsReportsCreated           AdsReport[]           @relation("AdsReportCreator")
+  adsReportsMessageCreated    AdsReportMessage[]    @relation("AdsReportMessageCreator")
+  adsReportsLeadCreated       AdsReportLead[]       @relation("AdsReportLeadCreator")
+  adsReportsConversionCreated AdsReportConversion[] @relation("AdsReportConversionCreator")
+  projectsAsNVKD              Project[]             @relation("ProjectNVKD")
   projectsAsPM      Project[]       @relation("ProjectPM")
   projectsAsPlanner Project[]       @relation("ProjectPlanner")
   contentPostsAssigned  ContentPost[]          @relation("ContentPostAssignee")
@@ -176,9 +179,12 @@ model Project {
   kpis           ProjectKPI[]
   logs           ProjectLog[]
   stageHistory   StageHistory[]
-  mediaPlans     MediaPlan[]
-  adsReports     AdsReport[]
-  strategicBrief StrategicBrief?
+  mediaPlans           MediaPlan[]
+  adsReports           AdsReport[]
+  adsReportsMessage    AdsReportMessage[]    @relation("ProjectAdsReportMessage")
+  adsReportsLead       AdsReportLead[]       @relation("ProjectAdsReportLead")
+  adsReportsConversion AdsReportConversion[] @relation("ProjectAdsReportConversion")
+  strategicBrief       StrategicBrief?
   approvals      Approval[]
   comments       Comment[]
   events         Event[]
@@ -766,6 +772,135 @@ model AdsReport {
   @@index([projectId, reportDate])
   @@index([projectId, platform])
   @@map("ads_reports")
+}
+
+// ============================================
+// ADS REPORT TEMPLATES (3 separate tables)
+// ============================================
+
+model AdsReportMessage {
+  id           String          @id @default(cuid())
+  projectId    String
+  period       AdsReportPeriod
+  reportDate   DateTime
+  platform     AdsPlatform
+  campaignName String?
+  source       AdsReportSource @default(MANUAL)
+  createdById  String
+  createdAt    DateTime        @default(now())
+
+  // === COMMON BASE METRICS ===
+  impressions  Int     @default(0)
+  reach        Int     @default(0)
+  clicks       Int     @default(0)
+  videoViews   Int     @default(0)
+  postComments Int     @default(0)
+  engagement   Int     @default(0)
+  ctr          Float   @default(0)
+  cpm          Decimal @default(0) @db.Decimal(10, 2)
+  cpc          Decimal @default(0) @db.Decimal(10, 2)
+  adSpend      Decimal @default(0) @db.Decimal(15, 2)
+
+  // === MESSAGE-SPECIFIC METRICS ===
+  welcomeMessageViews           Int     @default(0)
+  messagingConversationsStarted Int     @default(0)
+  costPerMessagingConversation  Decimal @default(0) @db.Decimal(10, 2)
+  messagingConversationsReplied Int     @default(0)
+  inboxConversions              Int     @default(0)
+  qualifiedRate                 Float   @default(0)
+
+  project   Project @relation("ProjectAdsReportMessage", fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("AdsReportMessageCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([reportDate])
+  @@index([platform])
+  @@index([createdById])
+  @@index([projectId, reportDate])
+  @@map("ads_reports_message")
+}
+
+model AdsReportLead {
+  id           String          @id @default(cuid())
+  projectId    String
+  period       AdsReportPeriod
+  reportDate   DateTime
+  platform     AdsPlatform
+  campaignName String?
+  source       AdsReportSource @default(MANUAL)
+  createdById  String
+  createdAt    DateTime        @default(now())
+
+  // === COMMON BASE METRICS ===
+  impressions  Int     @default(0)
+  reach        Int     @default(0)
+  clicks       Int     @default(0)
+  videoViews   Int     @default(0)
+  postComments Int     @default(0)
+  engagement   Int     @default(0)
+  ctr          Float   @default(0)
+  cpm          Decimal @default(0) @db.Decimal(10, 2)
+  cpc          Decimal @default(0) @db.Decimal(10, 2)
+  adSpend      Decimal @default(0) @db.Decimal(15, 2)
+
+  // === LEAD-SPECIFIC METRICS ===
+  leads             Int     @default(0)
+  costPerLead       Decimal @default(0) @db.Decimal(10, 2)
+  validLeads        Int     @default(0)
+  invalidLeads      Int     @default(0)
+  qualifiedLeadRate Float   @default(0)
+
+  project   Project @relation("ProjectAdsReportLead", fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("AdsReportLeadCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([reportDate])
+  @@index([platform])
+  @@index([createdById])
+  @@index([projectId, reportDate])
+  @@map("ads_reports_lead")
+}
+
+model AdsReportConversion {
+  id           String          @id @default(cuid())
+  projectId    String
+  period       AdsReportPeriod
+  reportDate   DateTime
+  platform     AdsPlatform
+  campaignName String?
+  source       AdsReportSource @default(MANUAL)
+  createdById  String
+  createdAt    DateTime        @default(now())
+
+  // === COMMON BASE METRICS ===
+  impressions  Int     @default(0)
+  reach        Int     @default(0)
+  clicks       Int     @default(0)
+  videoViews   Int     @default(0)
+  postComments Int     @default(0)
+  engagement   Int     @default(0)
+  ctr          Float   @default(0)
+  cpm          Decimal @default(0) @db.Decimal(10, 2)
+  cpc          Decimal @default(0) @db.Decimal(10, 2)
+  adSpend      Decimal @default(0) @db.Decimal(15, 2)
+
+  // === CONVERSION-SPECIFIC METRICS ===
+  conversions    Int     @default(0)
+  cpa            Decimal @default(0) @db.Decimal(10, 2)
+  conversionRate Float   @default(0)
+  revenue        Decimal @default(0) @db.Decimal(15, 2)
+  roas           Float   @default(0)
+  aov            Decimal @default(0) @db.Decimal(15, 2)
+
+  project   Project @relation("ProjectAdsReportConversion", fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("AdsReportConversionCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([reportDate])
+  @@index([platform])
+  @@index([createdById])
+  @@index([projectId, reportDate])
+  @@map("ads_reports_conversion")
 }
 
 // ============================================

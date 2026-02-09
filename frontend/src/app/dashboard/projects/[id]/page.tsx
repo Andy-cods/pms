@@ -68,6 +68,7 @@ import { AdsKpiCards } from '@/components/project/ads-kpi-cards';
 import { AdsTrendChart } from '@/components/project/ads-trend-chart';
 import { AdsReportTable } from '@/components/project/ads-report-table';
 import { AdsReportModal } from '@/components/project/ads-report-modal';
+import { AdsReportSection } from '@/components/project/ads-report-section';
 import { useProjectPhases } from '@/hooks/use-project-phases';
 import { useTasks } from '@/hooks/use-tasks';
 import { PhaseProgressBar } from '@/components/project-phase/phase-progress-bar';
@@ -482,7 +483,6 @@ export default function ProjectDetailPage() {
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [showAdsModal, setShowAdsModal] = useState(false);
   const [filterCategory, setFilterCategory] = useState<BudgetEventCategory | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<BudgetEventStatus | 'ALL'>('ALL');
 
@@ -1328,25 +1328,8 @@ export default function ProjectDetailPage() {
 
       {activeTab === 'ads-report' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-subheadline font-semibold">Báo cáo Quảng cáo</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => setShowAdsModal(true)}
-            >
-              + Thêm báo cáo
-            </Button>
-          </div>
-          <AdsKpiCards projectId={projectId} />
-          <AdsTrendChart projectId={projectId} />
-          <AdsReportTable projectId={projectId} />
-          <AdsReportModal
-            projectId={projectId}
-            open={showAdsModal}
-            onOpenChange={setShowAdsModal}
-          />
+          <h3 className="text-subheadline font-semibold">Báo cáo Quảng cáo</h3>
+          <AdsReportSection projectId={projectId} />
         </div>
       )}
 
