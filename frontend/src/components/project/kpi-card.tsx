@@ -218,41 +218,41 @@ export function KpiCard({ projectId }: KpiCardProps) {
           <CardTitle className="text-subheadline font-semibold">
             KPIs dự án
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full h-9 px-4"
-            onClick={() => openCreate(activeTab)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Thêm KPI
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-9 px-4 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPeriodForm(true)}
+            >
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Thêm tuần
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full h-9 px-4"
+              onClick={() => openCreate(activeTab)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Thêm KPI
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {periods.length > 1 || (kpis && kpis.some(k => k.periodLabel)) ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <div className="flex items-center gap-2 mb-4">
-                <TabsList className="flex-1 justify-start h-auto flex-wrap gap-1 bg-transparent p-0">
-                  {periods.map((period) => (
-                    <TabsTrigger
-                      key={period}
-                      value={period}
-                      className="rounded-full h-8 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4"
-                    >
-                      {period}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full h-8 text-xs px-3 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPeriodForm(true)}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Thêm tuần
-                </Button>
-              </div>
+              <TabsList className="justify-start h-auto flex-wrap gap-1 bg-transparent p-0 mb-4">
+                {periods.map((period) => (
+                  <TabsTrigger
+                    key={period}
+                    value={period}
+                    className="rounded-full h-8 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4"
+                  >
+                    {period}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
               {periods.map((period) => (
                 <TabsContent key={period} value={period} className="mt-0">
