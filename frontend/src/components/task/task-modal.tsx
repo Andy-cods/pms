@@ -260,7 +260,7 @@ export function TaskModal({
                       )}
                     >
                       {form.watch('deadline') ? (
-                        format(form.watch('deadline')!, 'dd/MM/yyyy', { locale: vi })
+                        format(form.watch('deadline')!, (() => { const d = form.watch('deadline')!; return d.getHours() || d.getMinutes() ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy'; })(), { locale: vi })
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -270,11 +270,33 @@ export function TaskModal({
                     <Calendar
                       mode="single"
                       selected={form.watch('deadline') ?? undefined}
-                      onSelect={(date) => form.setValue('deadline', date ?? null)}
+                      onSelect={(date) => {
+                        const current = form.watch('deadline');
+                        if (date && current) {
+                          date.setHours(current.getHours(), current.getMinutes());
+                        }
+                        form.setValue('deadline', date ?? null);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
+                {form.watch('deadline') && (
+                  <Input
+                    type="time"
+                    className="h-9 rounded-xl border-border/50 text-[13px]"
+                    value={form.watch('deadline') ? format(form.watch('deadline')!, 'HH:mm') : ''}
+                    onChange={(e) => {
+                      const current = form.watch('deadline');
+                      if (current && e.target.value) {
+                        const [h, m] = e.target.value.split(':').map(Number);
+                        const updated = new Date(current);
+                        updated.setHours(h, m);
+                        form.setValue('deadline', updated);
+                      }
+                    }}
+                  />
+                )}
               </div>
 
               {/* Estimated Hours */}

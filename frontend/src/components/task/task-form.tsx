@@ -255,7 +255,7 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
                         )}
                       >
                         {field.value ? (
-                          format(field.value, 'dd/MM/yyyy', { locale: vi })
+                          format(field.value, field.value.getHours() || field.value.getMinutes() ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy', { locale: vi })
                         ) : (
                           <span>Pick a date</span>
                         )}
@@ -267,11 +267,31 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
                     <Calendar
                       mode="single"
                       selected={field.value ?? undefined}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        if (date && field.value) {
+                          date.setHours(field.value.getHours(), field.value.getMinutes());
+                        }
+                        field.onChange(date);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
+                {field.value && (
+                  <Input
+                    type="time"
+                    className="h-9 rounded-xl border-border/50 text-[13px]"
+                    value={field.value ? format(field.value, 'HH:mm') : ''}
+                    onChange={(e) => {
+                      if (field.value && e.target.value) {
+                        const [h, m] = e.target.value.split(':').map(Number);
+                        const updated = new Date(field.value);
+                        updated.setHours(h, m);
+                        field.onChange(updated);
+                      }
+                    }}
+                  />
+                )}
                 <FormMessage className="text-[12px] text-[#ff3b30]" />
               </FormItem>
             )}

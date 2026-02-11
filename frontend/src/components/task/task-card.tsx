@@ -11,6 +11,7 @@ import {
   getPriorityStyles,
   getStatusStyles,
   ApplePriorityLabels,
+  AppleStatusLabels,
 } from '@/lib/task-design-tokens';
 import { AppleCheckbox } from './apple-checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +22,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+
+/** Check if deadline ISO string has a non-midnight time component */
+function hasTime(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  return d.getHours() !== 0 || d.getMinutes() !== 0;
+}
 
 interface TaskCardProps {
   task: Task;
@@ -113,27 +120,39 @@ export function TaskCard({
             {task.title}
           </h4>
 
-          {/* Tags/Labels as small pills */}
+          {/* Project name */}
           {task.project && (
-            <div className="flex flex-wrap gap-1.5">
-              <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full bg-secondary text-secondary-foreground">
-                {task.project.dealCode}
-              </span>
-              <span
-                className={cn(
-                  'inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full',
-                  priorityStyles.bg,
-                  priorityStyles.text
-                )}
-              >
-                {ApplePriorityLabels[task.priority]}
-              </span>
-            </div>
+            <p className="text-[12px] text-muted-foreground truncate">
+              {task.project.dealCode} · {task.project.name}
+            </p>
           )}
+
+          {/* Tags/Labels as small pills */}
+          <div className="flex flex-wrap gap-1.5">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full',
+                statusStyles.bg,
+                statusStyles.text
+              )}
+            >
+              <span className={cn('h-1.5 w-1.5 rounded-full', statusStyles.dot)} />
+              {AppleStatusLabels[task.status]}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full',
+                priorityStyles.bg,
+                priorityStyles.text
+              )}
+            >
+              {ApplePriorityLabels[task.priority]}
+            </span>
+          </div>
 
           {/* Footer: Due date & Assignees */}
           <div className="flex items-center justify-between pt-1">
-            {/* Due date subtle */}
+            {/* Due date with time */}
             {task.deadline ? (
               <div
                 className={cn(
@@ -146,7 +165,10 @@ export function TaskCard({
                 )}
               >
                 <Calendar className="h-3 w-3" />
-                <span>{format(new Date(task.deadline), 'dd MMM', { locale: vi })}</span>
+                <span>
+                  {format(new Date(task.deadline), 'dd MMM', { locale: vi })}
+                  {hasTime(task.deadline) && ` ${format(new Date(task.deadline), 'HH:mm')}`}
+                </span>
               </div>
             ) : (
               <div />
@@ -229,15 +251,27 @@ export function TaskCard({
             </div>
 
             {/* Meta row */}
-            <div className="flex items-center gap-3 mt-1.5">
-              {/* Project code */}
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              {/* Project info */}
               {task.project && (
-                <span className="text-[13px] text-muted-foreground">
-                  {task.project.dealCode}
+                <span className="text-[12px] text-muted-foreground">
+                  {task.project.dealCode} · {task.project.name}
                 </span>
               )}
 
-              {/* Priority badge as subtle pill */}
+              {/* Status badge */}
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full',
+                  statusStyles.bg,
+                  statusStyles.text
+                )}
+              >
+                <span className={cn('h-1.5 w-1.5 rounded-full', statusStyles.dot)} />
+                {AppleStatusLabels[task.status]}
+              </span>
+
+              {/* Priority badge */}
               <span
                 className={cn(
                   'inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full',
@@ -248,11 +282,11 @@ export function TaskCard({
                 {ApplePriorityLabels[task.priority]}
               </span>
 
-              {/* Due date with calendar icon */}
+              {/* Due date with time */}
               {task.deadline && (
                 <div
                   className={cn(
-                    'flex items-center gap-1 text-[13px]',
+                    'flex items-center gap-1 text-[12px]',
                     isOverdue
                       ? 'text-[#ff3b30]'
                       : isDueToday
@@ -263,6 +297,7 @@ export function TaskCard({
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {format(new Date(task.deadline), 'dd/MM/yyyy', { locale: vi })}
+                    {hasTime(task.deadline) && ` ${format(new Date(task.deadline), 'HH:mm')}`}
                     {isOverdue && ' (Overdue)'}
                   </span>
                 </div>
