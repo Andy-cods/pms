@@ -166,8 +166,7 @@ export function TaskCard({
               >
                 <Calendar className="h-3 w-3" />
                 <span>
-                  {format(new Date(task.deadline), 'dd MMM', { locale: vi })}
-                  {hasTime(task.deadline) && ` ${format(new Date(task.deadline), 'HH:mm')}`}
+                  {format(new Date(task.deadline), 'dd MMM · HH:mm', { locale: vi })}
                 </span>
               </div>
             ) : (
@@ -296,8 +295,7 @@ export function TaskCard({
                 >
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
-                    {format(new Date(task.deadline), 'dd/MM/yyyy', { locale: vi })}
-                    {hasTime(task.deadline) && ` ${format(new Date(task.deadline), 'HH:mm')}`}
+                    {format(new Date(task.deadline), 'dd/MM/yyyy · HH:mm', { locale: vi })}
                     {isOverdue && ' (Overdue)'}
                   </span>
                 </div>
