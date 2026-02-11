@@ -54,6 +54,12 @@ export const AppleStatusColors = {
     dot: 'bg-[#007aff]',
     hex: '#007aff',
   },
+  PENDING: {
+    bg: 'bg-[#ff9500]/10',
+    text: 'text-[#ff9500]',
+    dot: 'bg-[#ff9500]',
+    hex: '#ff9500',
+  },
   REVIEW: {
     bg: 'bg-[#ff9f0a]/10',
     text: 'text-[#ff9f0a]',
@@ -84,6 +90,7 @@ export const AppleStatusColors = {
 export const AppleStatusLabels: Record<TaskStatus, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
+  PENDING: 'Pending',
   REVIEW: 'Review',
   DONE: 'Done',
   BLOCKED: 'Blocked',
@@ -102,6 +109,7 @@ export const ApplePriorityLabels: Record<TaskPriority, string> = {
 export const KanbanColumnConfig: Record<TaskStatus, { label: string; color: string }> = {
   TODO: { label: 'To Do', color: '#86868b' },
   IN_PROGRESS: { label: 'In Progress', color: '#007aff' },
+  PENDING: { label: 'Pending', color: '#ff9500' },
   REVIEW: { label: 'Review', color: '#ff9f0a' },
   DONE: { label: 'Done', color: '#34c759' },
   BLOCKED: { label: 'Blocked', color: '#ff3b30' },

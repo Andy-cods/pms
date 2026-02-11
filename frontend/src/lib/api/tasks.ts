@@ -4,6 +4,7 @@ import { api } from './index';
 export type TaskStatus =
   | 'TODO'
   | 'IN_PROGRESS'
+  | 'PENDING'
   | 'REVIEW'
   | 'DONE'
   | 'BLOCKED'
@@ -210,6 +211,7 @@ export const tasksApi = {
 export const TaskStatusColors: Record<TaskStatus, string> = {
   TODO: 'bg-gray-100 text-gray-800',
   IN_PROGRESS: 'bg-blue-100 text-blue-800',
+  PENDING: 'bg-orange-100 text-orange-800',
   REVIEW: 'bg-purple-100 text-purple-800',
   DONE: 'bg-green-100 text-green-800',
   BLOCKED: 'bg-red-100 text-red-800',
@@ -219,6 +221,7 @@ export const TaskStatusColors: Record<TaskStatus, string> = {
 export const TaskStatusLabels: Record<TaskStatus, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
+  PENDING: 'Pending',
   REVIEW: 'Review',
   DONE: 'Done',
   BLOCKED: 'Blocked',

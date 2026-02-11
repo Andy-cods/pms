@@ -60,7 +60,7 @@ import { Separator } from '@/components/ui/separator';
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED']),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'PENDING', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED']),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   estimatedHours: z.number().min(0).optional().nullable(),
   actualHours: z.number().min(0).optional().nullable(),

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateKpiDto {
@@ -21,6 +21,22 @@ export class CreateKpiDto {
 
   @IsOptional()
   metadata?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsDateString()
+  periodStart?: string;
+
+  @IsOptional()
+  @IsDateString()
+  periodEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  periodLabel?: string;
+
+  @IsOptional()
+  @IsDateString()
+  targetDate?: string;
 }
 
 export class UpdateKpiDto {
@@ -44,6 +60,22 @@ export class UpdateKpiDto {
 
   @IsOptional()
   metadata?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsDateString()
+  periodStart?: string;
+
+  @IsOptional()
+  @IsDateString()
+  periodEnd?: string;
+
+  @IsOptional()
+  @IsString()
+  periodLabel?: string;
+
+  @IsOptional()
+  @IsDateString()
+  targetDate?: string;
 }
 
 export interface KpiResponseDto {
@@ -54,6 +86,10 @@ export interface KpiResponseDto {
   actualValue: number | null;
   unit: string | null;
   metadata: Record<string, unknown> | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  periodLabel: string | null;
+  targetDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

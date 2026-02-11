@@ -9,6 +9,10 @@ export interface ProjectKPI {
   actualValue: number | null;
   unit: string | null;
   metadata: Record<string, unknown> | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  periodLabel: string | null;
+  targetDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +23,10 @@ export interface CreateKpiInput {
   actualValue?: number;
   unit?: string;
   metadata?: Record<string, unknown>;
+  periodStart?: string;
+  periodEnd?: string;
+  periodLabel?: string;
+  targetDate?: string;
 }
 
 export interface UpdateKpiInput {
@@ -27,6 +35,10 @@ export interface UpdateKpiInput {
   actualValue?: number;
   unit?: string;
   metadata?: Record<string, unknown>;
+  periodStart?: string;
+  periodEnd?: string;
+  periodLabel?: string;
+  targetDate?: string;
 }
 
 // API Functions

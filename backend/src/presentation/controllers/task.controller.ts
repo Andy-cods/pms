@@ -39,6 +39,7 @@ import {
 const TaskStatusLabels: Record<TaskStatus, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
+  PENDING: 'Pending',
   REVIEW: 'Review',
   DONE: 'Done',
   BLOCKED: 'Blocked',
@@ -197,6 +198,7 @@ export class TaskController {
     const columns: KanbanColumnDto[] = [
       TaskStatus.TODO,
       TaskStatus.IN_PROGRESS,
+      TaskStatus.PENDING,
       TaskStatus.REVIEW,
       TaskStatus.DONE,
       TaskStatus.BLOCKED,

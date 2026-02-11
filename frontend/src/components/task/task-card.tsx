@@ -319,6 +319,10 @@ export function TaskCard({
                   <span className="h-2 w-2 rounded-full bg-[#007aff] mr-2" />
                   Mark as In Progress
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onStatusChange?.('PENDING')}>
+                  <span className="h-2 w-2 rounded-full bg-[#ff9500] mr-2" />
+                  Mark as Pending
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onStatusChange?.('REVIEW')}>
                   <span className="h-2 w-2 rounded-full bg-[#ff9f0a] mr-2" />
                   Mark as Review

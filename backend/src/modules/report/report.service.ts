@@ -164,6 +164,7 @@ export class ReportService {
         total: project._count.tasks,
         todo: 0,
         inProgress: 0,
+        pending: 0,
         review: 0,
         done: 0,
         blocked: 0,
@@ -177,6 +178,9 @@ export class ReportService {
             break;
           case TaskStatus.IN_PROGRESS:
             taskStats.inProgress++;
+            break;
+          case TaskStatus.PENDING:
+            taskStats.pending++;
             break;
           case TaskStatus.REVIEW:
             taskStats.review++;
@@ -242,6 +246,7 @@ export class ReportService {
       todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
       inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS)
         .length,
+      pending: tasks.filter((t) => t.status === TaskStatus.PENDING).length,
       review: tasks.filter((t) => t.status === TaskStatus.REVIEW).length,
       done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
       blocked: tasks.filter((t) => t.status === TaskStatus.BLOCKED).length,

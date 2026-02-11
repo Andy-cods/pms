@@ -49,7 +49,7 @@ import {
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'PENDING', 'REVIEW', 'DONE', 'BLOCKED', 'CANCELLED']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   estimatedHours: z.number().min(0).optional().nullable(),
   actualHours: z.number().min(0).optional().nullable(),

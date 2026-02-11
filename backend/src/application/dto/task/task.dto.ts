@@ -15,6 +15,7 @@ import { sanitizeInput, sanitizeRichText } from '@shared/utils/sanitize.util';
 export enum TaskStatus {
   TODO = 'TODO',
   IN_PROGRESS = 'IN_PROGRESS',
+  PENDING = 'PENDING',
   REVIEW = 'REVIEW',
   DONE = 'DONE',
   BLOCKED = 'BLOCKED',

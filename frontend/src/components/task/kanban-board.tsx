@@ -122,7 +122,7 @@ export function KanbanBoard({
   if (isLoading) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'].map((status) => (
+        {['TODO', 'IN_PROGRESS', 'PENDING', 'REVIEW', 'DONE'].map((status) => (
           <KanbanColumnSkeleton key={status} />
         ))}
       </div>

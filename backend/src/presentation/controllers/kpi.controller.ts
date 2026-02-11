@@ -74,6 +74,10 @@ export class KpiController {
         metadata: dto.metadata
           ? (dto.metadata as Prisma.InputJsonValue)
           : Prisma.JsonNull,
+        periodStart: dto.periodStart ? new Date(dto.periodStart) : null,
+        periodEnd: dto.periodEnd ? new Date(dto.periodEnd) : null,
+        periodLabel: dto.periodLabel ?? null,
+        targetDate: dto.targetDate ? new Date(dto.targetDate) : null,
       },
     });
 
@@ -110,6 +114,10 @@ export class KpiController {
         metadata: dto.metadata
           ? (dto.metadata as Prisma.InputJsonValue)
           : undefined,
+        periodStart: dto.periodStart !== undefined ? (dto.periodStart ? new Date(dto.periodStart) : null) : undefined,
+        periodEnd: dto.periodEnd !== undefined ? (dto.periodEnd ? new Date(dto.periodEnd) : null) : undefined,
+        periodLabel: dto.periodLabel !== undefined ? (dto.periodLabel || null) : undefined,
+        targetDate: dto.targetDate !== undefined ? (dto.targetDate ? new Date(dto.targetDate) : null) : undefined,
       },
     });
 
@@ -180,6 +188,10 @@ export class KpiController {
       actualValue: kpi.actualValue,
       unit: kpi.unit,
       metadata: kpi.metadata as Record<string, unknown> | null,
+      periodStart: kpi.periodStart?.toISOString() ?? null,
+      periodEnd: kpi.periodEnd?.toISOString() ?? null,
+      periodLabel: kpi.periodLabel,
+      targetDate: kpi.targetDate?.toISOString() ?? null,
       createdAt: kpi.createdAt.toISOString(),
       updatedAt: kpi.updatedAt.toISOString(),
     };

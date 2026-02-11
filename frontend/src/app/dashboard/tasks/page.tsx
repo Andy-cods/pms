@@ -8,6 +8,7 @@ import {
   Circle,
   AlertCircle,
   Clock,
+  PauseCircle,
 } from 'lucide-react';
 
 import { useMyTasks, useUpdateTaskStatus } from '@/hooks/use-tasks';
@@ -62,9 +63,10 @@ export default function MyTasksPage() {
   // Group tasks by status
   const todoTasks = data?.tasks.filter((t) => t.status === 'TODO') ?? [];
   const inProgressTasks = data?.tasks.filter((t) => t.status === 'IN_PROGRESS') ?? [];
+  const pendingTasks = data?.tasks.filter((t) => t.status === 'PENDING') ?? [];
   const reviewTasks = data?.tasks.filter((t) => t.status === 'REVIEW') ?? [];
   const doneTasks = data?.tasks.filter((t) => t.status === 'DONE') ?? [];
-  const activeTasks = [...todoTasks, ...inProgressTasks, ...reviewTasks];
+  const activeTasks = [...todoTasks, ...inProgressTasks, ...pendingTasks, ...reviewTasks];
 
   // Handle task status change
   const handleStatusChange = (taskId: string, status: TaskStatus) => {
@@ -91,7 +93,7 @@ export default function MyTasksPage() {
       </div>
 
       {/* Stats Cards - Apple Style */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           icon={<Circle className="h-5 w-5" />}
           label="To Do"
@@ -103,6 +105,12 @@ export default function MyTasksPage() {
           label="In Progress"
           count={inProgressTasks.length}
           color="#007aff"
+        />
+        <StatCard
+          icon={<PauseCircle className="h-5 w-5" />}
+          label="Pending"
+          count={pendingTasks.length}
+          color="#ff9500"
         />
         <StatCard
           icon={<Clock className="h-5 w-5" />}

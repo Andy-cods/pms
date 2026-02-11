@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Eye, Users, MousePointerClick, DollarSign, MessageCircle, Inbox, Target, Wallet, UserPlus, CheckCircle, XCircle, TrendingUp, ShoppingCart, BarChart3 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Eye, Users, MousePointerClick, DollarSign, MessageCircle, Inbox, Target, Wallet, UserPlus, CheckCircle, XCircle, TrendingUp, ShoppingCart, BarChart3, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ import {
   type AdsPlatform,
   type AdsReportPeriod,
   type AdsReportTemplate,
+  type AdsReportQuery,
 } from '@/lib/api/ads-reports';
 
 // ============================================
@@ -60,31 +61,69 @@ interface AdsReportSectionProps {
   projectId: string;
 }
 
+type DateRangePreset = 7 | 28 | 90 | null;
+
 export function AdsReportSection({ projectId }: AdsReportSectionProps) {
   const [template, setTemplate] = useState<AdsReportTemplate>('message');
+  const [dateRange, setDateRange] = useState<DateRangePreset>(28);
+
+  const query: AdsReportQuery = useMemo(() => {
+    if (!dateRange) return {};
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - dateRange);
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
+  }, [dateRange]);
+
+  const presets: { label: string; value: DateRangePreset }[] = [
+    { label: '7 ngày', value: 7 },
+    { label: '28 ngày', value: 28 },
+    { label: '90 ngày', value: 90 },
+    { label: 'Tất cả', value: null },
+  ];
 
   return (
     <div className="space-y-4">
       <Tabs value={template} onValueChange={(v) => setTemplate(v as AdsReportTemplate)}>
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
-          <TabsTrigger value="message" className="text-xs">Tin nhắn</TabsTrigger>
-          <TabsTrigger value="lead" className="text-xs">Lead</TabsTrigger>
-          <TabsTrigger value="conversion" className="text-xs">Chuyển đổi</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="message" className="text-xs">Tin nhắn</TabsTrigger>
+            <TabsTrigger value="lead" className="text-xs">Lead</TabsTrigger>
+            <TabsTrigger value="conversion" className="text-xs">Chuyển đổi</TabsTrigger>
+          </TabsList>
+
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+            {presets.map(({ label, value }) => (
+              <Button
+                key={label}
+                variant={dateRange === value ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-3 rounded-full"
+                onClick={() => setDateRange(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         <TabsContent value="message" className="space-y-4 mt-4">
-          <MessageKpiCards projectId={projectId} />
-          <MessageTable projectId={projectId} />
+          <MessageKpiCards projectId={projectId} query={query} />
+          <MessageTable projectId={projectId} query={query} />
         </TabsContent>
 
         <TabsContent value="lead" className="space-y-4 mt-4">
-          <LeadKpiCards projectId={projectId} />
-          <LeadTable projectId={projectId} />
+          <LeadKpiCards projectId={projectId} query={query} />
+          <LeadTable projectId={projectId} query={query} />
         </TabsContent>
 
         <TabsContent value="conversion" className="space-y-4 mt-4">
-          <ConversionKpiCards projectId={projectId} />
-          <ConversionTable projectId={projectId} />
+          <ConversionKpiCards projectId={projectId} query={query} />
+          <ConversionTable projectId={projectId} query={query} />
         </TabsContent>
       </Tabs>
     </div>
@@ -95,8 +134,8 @@ export function AdsReportSection({ projectId }: AdsReportSectionProps) {
 // MESSAGE TEMPLATE COMPONENTS
 // ============================================
 
-function MessageKpiCards({ projectId }: { projectId: string }) {
-  const { data: summary, isLoading } = useAdsReportMessageSummary(projectId);
+function MessageKpiCards({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: summary, isLoading } = useAdsReportMessageSummary(projectId, query);
 
   const kpis = [
     { key: 'totalImpressions', label: 'Impressions', icon: Eye, format: formatNumber, color: 'text-blue-600' },
@@ -144,8 +183,8 @@ function MessageKpiCards({ projectId }: { projectId: string }) {
   );
 }
 
-function MessageTable({ projectId }: { projectId: string }) {
-  const { data: reports, isLoading } = useAdsReportMessage(projectId);
+function MessageTable({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: reports, isLoading } = useAdsReportMessage(projectId, query);
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -324,8 +363,8 @@ function MessageModal({ projectId, open, onOpenChange }: { projectId: string; op
 // LEAD TEMPLATE COMPONENTS
 // ============================================
 
-function LeadKpiCards({ projectId }: { projectId: string }) {
-  const { data: summary, isLoading } = useAdsReportLeadSummary(projectId);
+function LeadKpiCards({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: summary, isLoading } = useAdsReportLeadSummary(projectId, query);
 
   const kpis = [
     { key: 'totalImpressions', label: 'Impressions', icon: Eye, format: formatNumber, color: 'text-blue-600' },
@@ -373,8 +412,8 @@ function LeadKpiCards({ projectId }: { projectId: string }) {
   );
 }
 
-function LeadTable({ projectId }: { projectId: string }) {
-  const { data: reports, isLoading } = useAdsReportLead(projectId);
+function LeadTable({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: reports, isLoading } = useAdsReportLead(projectId, query);
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -540,8 +579,8 @@ function LeadModal({ projectId, open, onOpenChange }: { projectId: string; open:
 // CONVERSION TEMPLATE COMPONENTS
 // ============================================
 
-function ConversionKpiCards({ projectId }: { projectId: string }) {
-  const { data: summary, isLoading } = useAdsReportConversionSummary(projectId);
+function ConversionKpiCards({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: summary, isLoading } = useAdsReportConversionSummary(projectId, query);
 
   const kpis = [
     { key: 'totalImpressions', label: 'Impressions', icon: Eye, format: formatNumber, color: 'text-blue-600' },
@@ -589,8 +628,8 @@ function ConversionKpiCards({ projectId }: { projectId: string }) {
   );
 }
 
-function ConversionTable({ projectId }: { projectId: string }) {
-  const { data: reports, isLoading } = useAdsReportConversion(projectId);
+function ConversionTable({ projectId, query }: { projectId: string; query?: AdsReportQuery }) {
+  const { data: reports, isLoading } = useAdsReportConversion(projectId, query);
   const [modalOpen, setModalOpen] = useState(false);
 
   return (

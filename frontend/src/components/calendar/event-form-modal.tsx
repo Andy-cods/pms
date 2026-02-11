@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect, useMemo, startTransition } from 'react';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X, UserCircle, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCreateEvent, useUpdateEvent } from '@/hooks/use-events';
+import { useAdminUsers } from '@/hooks/use-admin-users';
 import {
   type EventType,
   type CalendarEvent,
@@ -18,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface EventFormModalProps {
   open: boolean;
@@ -60,9 +67,42 @@ export function EventFormModal({
   const [recurrence, setRecurrence] = useState('');
   const [location, setLocation] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
+  const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [showUserPicker, setShowUserPicker] = useState(false);
 
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const { data: usersData } = useAdminUsers({ limit: 100 });
+
+  const allUsers = usersData?.users || [];
+
+  const filteredUsers = useMemo(() => {
+    const search = userSearch.toLowerCase().trim();
+    return allUsers
+      .filter((u) => !attendeeIds.includes(u.id))
+      .filter(
+        (u) =>
+          !search ||
+          u.name.toLowerCase().includes(search) ||
+          u.email.toLowerCase().includes(search),
+      );
+  }, [allUsers, attendeeIds, userSearch]);
+
+  const selectedUsers = useMemo(
+    () => allUsers.filter((u) => attendeeIds.includes(u.id)),
+    [allUsers, attendeeIds],
+  );
+
+  const toggleAttendee = (userId: string) => {
+    setAttendeeIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
+    );
+  };
+
+  const removeAttendee = (userId: string) => {
+    setAttendeeIds((prev) => prev.filter((id) => id !== userId));
+  };
 
   // Initialize form with event data or defaults
   useEffect(() => {
@@ -84,6 +124,11 @@ export function EventFormModal({
         setRecurrence(event.recurrence || '');
         setLocation(event.location || '');
         setMeetingLink(event.meetingLink || '');
+        setAttendeeIds(
+          event.attendees
+            ?.filter((a) => a.userId)
+            .map((a) => a.userId as string) || [],
+        );
       });
     } else if (initialDate) {
       startTransition(() => {
@@ -98,6 +143,7 @@ export function EventFormModal({
         setRecurrence('');
         setLocation('');
         setMeetingLink('');
+        setAttendeeIds([]);
       });
     } else {
       // Reset to defaults
@@ -114,6 +160,7 @@ export function EventFormModal({
         setRecurrence('');
         setLocation('');
         setMeetingLink('');
+        setAttendeeIds([]);
       });
     }
   }, [event, initialDate, open]);
@@ -151,6 +198,7 @@ export function EventFormModal({
         recurrence: recurrence || undefined,
         location: location.trim() || undefined,
         meetingLink: meetingLink.trim() || undefined,
+        attendeeIds: attendeeIds.length > 0 ? attendeeIds : undefined,
       };
 
       if (isEditing && event) {
@@ -171,7 +219,7 @@ export function EventFormModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Chỉnh sửa sự kiện' : 'Tạo sự kiện mới'}
@@ -309,6 +357,86 @@ export function EventFormModal({
               />
             </div>
           )}
+
+          {/* Attendees / Participants */}
+          <div className="space-y-2">
+            <Label>
+              <Users className="inline h-4 w-4 mr-1" />
+              Người tham gia
+            </Label>
+
+            {/* Selected attendees */}
+            {selectedUsers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedUsers.map((user) => (
+                  <Badge
+                    key={user.id}
+                    variant="secondary"
+                    className="flex items-center gap-1 pr-1"
+                  >
+                    <UserCircle className="h-3 w-3" />
+                    {user.name}
+                    <button
+                      type="button"
+                      onClick={() => removeAttendee(user.id)}
+                      className="ml-0.5 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* User picker */}
+            <Popover open={showUserPicker} onOpenChange={setShowUserPicker}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-muted-foreground"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {selectedUsers.length > 0
+                    ? `${selectedUsers.length} người được chọn - Thêm người`
+                    : 'Chọn người tham gia...'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-2" align="start">
+                <Input
+                  placeholder="Tìm theo tên hoặc email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="mb-2"
+                />
+                <div className="max-h-48 overflow-y-auto space-y-0.5">
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-3">
+                      Không tìm thấy người dùng
+                    </p>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => toggleAttendee(user.id)}
+                        className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent text-left"
+                      >
+                        <UserCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{user.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* Description */}
           <div className="space-y-2">
