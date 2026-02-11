@@ -154,6 +154,16 @@ export const projectsApi = {
     return response.data;
   },
 
+  updateWeeklyNote: async (id: string, weekIndex: number, note: string): Promise<Project> => {
+    const response = await api.patch(`/projects/${id}/weekly-note/${weekIndex}`, { note });
+    return response.data;
+  },
+
+  deleteWeeklyNote: async (id: string, weekIndex: number): Promise<Project> => {
+    const response = await api.delete(`/projects/${id}/weekly-note/${weekIndex}`);
+    return response.data;
+  },
+
   // --- Decision (Accept/Decline) ---
   decide: async (id: string, decision: string, decisionNote?: string): Promise<Project> => {
     const response = await api.post(`/projects/${id}/decide`, { decision, decisionNote });

@@ -170,6 +170,32 @@ export function useAddWeeklyNote() {
   });
 }
 
+// Update weekly note
+export function useUpdateWeeklyNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, weekIndex, note }: { id: string; weekIndex: number; note: string }) =>
+      projectsApi.updateWeeklyNote(id, weekIndex, note),
+    onSuccess: (data, vars) => {
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
+// Delete weekly note
+export function useDeleteWeeklyNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, weekIndex }: { id: string; weekIndex: number }) =>
+      projectsApi.deleteWeeklyNote(id, weekIndex),
+    onSuccess: (data, vars) => {
+      queryClient.setQueryData(projectKeys.detail(vars.id), data);
+    },
+  });
+}
+
 // Decide (Accept/Decline deal)
 export function useDecideProject() {
   const queryClient = useQueryClient();

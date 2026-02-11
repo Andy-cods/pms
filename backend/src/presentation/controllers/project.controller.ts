@@ -508,6 +508,71 @@ export class ProjectController {
     return this.mapToResponse(project, taskStats);
   }
 
+  /** PATCH /projects/:id/weekly-note/:weekIndex - Update weekly note */
+  @ApiOperation({ summary: 'Update a weekly note' })
+  @ApiResponse({ status: 200, description: 'Weekly note updated' })
+  @Patch(':id/weekly-note/:weekIndex')
+  async updateWeeklyNote(
+    @Param('id') id: string,
+    @Param('weekIndex') weekIndex: string,
+    @Body() dto: AddWeeklyNoteDto,
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUniqueOrThrow({
+      where: { id },
+    });
+    const notes = [
+      ...((existing.weeklyNotes as Prisma.InputJsonValue[]) || []),
+    ];
+    const idx = parseInt(weekIndex, 10);
+    if (idx < 0 || idx >= notes.length) {
+      throw new NotFoundException('Weekly note not found');
+    }
+    notes[idx] = { ...(notes[idx] as Record<string, unknown>), note: dto.note };
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: { weeklyNotes: notes },
+      include: PROJECT_INCLUDE,
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
+  /** DELETE /projects/:id/weekly-note/:weekIndex - Delete weekly note */
+  @ApiOperation({ summary: 'Delete a weekly note' })
+  @ApiResponse({ status: 200, description: 'Weekly note deleted' })
+  @Delete(':id/weekly-note/:weekIndex')
+  async deleteWeeklyNote(
+    @Param('id') id: string,
+    @Param('weekIndex') weekIndex: string,
+  ): Promise<ProjectResponseDto> {
+    const existing = await this.prisma.project.findUniqueOrThrow({
+      where: { id },
+    });
+    const notes = [
+      ...((existing.weeklyNotes as Prisma.InputJsonValue[]) || []),
+    ];
+    const idx = parseInt(weekIndex, 10);
+    if (idx < 0 || idx >= notes.length) {
+      throw new NotFoundException('Weekly note not found');
+    }
+    notes.splice(idx, 1);
+    // Re-number weeks
+    notes.forEach((n, i) => {
+      (n as Record<string, unknown>).week = i + 1;
+    });
+
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: { weeklyNotes: notes },
+      include: PROJECT_INCLUDE,
+    });
+
+    const taskStats = await this.getTaskStats(id, project._count.tasks);
+    return this.mapToResponse(project, taskStats);
+  }
+
   /** POST /projects/:id/decide - Accept (WON) or Decline (LOST) */
   @ApiOperation({ summary: 'Accept or decline project (pipeline decision)' })
   @ApiResponse({ status: 200, description: 'Decision recorded' })
