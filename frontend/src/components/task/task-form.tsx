@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CalendarIcon, Loader2, Clock, Tag, Flag } from 'lucide-react';
+import { CalendarIcon, Loader2, Clock, Tag, Flag, Users, X, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { cn } from '@/lib/utils';
 import { useCreateTask, useUpdateTask } from '@/hooks/use-tasks';
+import { useProjectTeam } from '@/hooks/use-projects';
 import {
   type Task,
   type TaskStatus,
@@ -25,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -54,6 +57,7 @@ const taskFormSchema = z.object({
   estimatedHours: z.number().min(0).optional().nullable(),
   actualHours: z.number().min(0).optional().nullable(),
   deadline: z.date().optional().nullable(),
+  assigneeIds: z.array(z.string()).optional(),
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
@@ -75,6 +79,9 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
   const isEditing = !!task;
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+
+  const { data: teamMembers } = useProjectTeam(projectId);
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskFormSchema),
@@ -86,15 +93,17 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
       estimatedHours: task?.estimatedHours ?? null,
       actualHours: task?.actualHours ?? null,
       deadline: task?.deadline ? new Date(task.deadline) : null,
+      assigneeIds: task?.assignees?.map((a) => a.userId) ?? [],
     },
   });
 
   const onSubmit = async (data: TaskFormData) => {
+    const { assigneeIds, ...rest } = data;
     const input = {
-      ...data,
-      deadline: data.deadline?.toISOString(),
-      estimatedHours: data.estimatedHours ?? undefined,
-      actualHours: data.actualHours ?? undefined,
+      ...rest,
+      deadline: rest.deadline?.toISOString(),
+      estimatedHours: rest.estimatedHours ?? undefined,
+      actualHours: rest.actualHours ?? undefined,
     };
 
     if (isEditing) {
@@ -106,6 +115,7 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
       await createMutation.mutateAsync({
         ...input,
         projectId,
+        assigneeIds: assigneeIds?.length ? assigneeIds : undefined,
       });
     }
 
@@ -357,6 +367,108 @@ export function TaskForm({ projectId, task, onSuccess }: TaskFormProps) {
             />
           )}
         </div>
+
+        {/* Assignees */}
+        <FormField
+          control={form.control}
+          name="assigneeIds"
+          render={({ field }) => {
+            const selectedIds = field.value ?? [];
+            const selectedMembers = teamMembers?.filter((m) =>
+              selectedIds.includes(m.userId)
+            ) ?? [];
+
+            const toggleUser = (userId: string) => {
+              const current = field.value ?? [];
+              if (current.includes(userId)) {
+                field.onChange(current.filter((id: string) => id !== userId));
+              } else {
+                field.onChange([...current, userId]);
+              }
+            };
+
+            return (
+              <FormItem>
+                <FormLabel className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  Assignees
+                </FormLabel>
+                <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'w-full h-auto min-h-[44px] px-3 py-2 text-left font-normal rounded-xl border-border/50 justify-between',
+                          !selectedIds.length && 'text-muted-foreground'
+                        )}
+                      >
+                        <div className="flex flex-wrap gap-1.5 flex-1">
+                          {selectedMembers.length > 0 ? (
+                            selectedMembers.map((m) => (
+                              <span
+                                key={m.userId}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#007aff]/10 text-[#007aff] text-[12px] font-medium"
+                              >
+                                {m.user?.name || m.userId}
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:text-[#ff3b30]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleUser(m.userId);
+                                  }}
+                                />
+                              </span>
+                            ))
+                          ) : (
+                            <span>Select assignees...</span>
+                          )}
+                        </div>
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-2 rounded-xl" align="start">
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      {teamMembers?.length ? (
+                        teamMembers.map((member) => (
+                          <label
+                            key={member.userId}
+                            className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          >
+                            <Checkbox
+                              checked={selectedIds.includes(member.userId)}
+                              onCheckedChange={() => toggleUser(member.userId)}
+                            />
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {member.user?.avatar ? (
+                                <img
+                                  src={member.user.avatar}
+                                  alt={member.user.name}
+                                  className="h-6 w-6 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-6 w-6 rounded-full bg-[#007aff]/10 flex items-center justify-center text-[10px] font-medium text-[#007aff]">
+                                  {(member.user?.name || '?').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="text-[13px] truncate">{member.user?.name || member.userId}</span>
+                              <span className="text-[11px] text-muted-foreground ml-auto">{member.role}</span>
+                            </div>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-[13px] text-muted-foreground text-center py-3">No team members</p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <FormMessage className="text-[12px] text-[#ff3b30]" />
+              </FormItem>
+            );
+          }}
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-4">

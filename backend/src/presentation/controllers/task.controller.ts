@@ -522,13 +522,13 @@ export class TaskController {
     await this.prisma.task.delete({ where: { id } });
   }
 
-  // My tasks - tasks assigned to current user
+  // My tasks - tasks assigned to current user (admin sees all)
   @ApiOperation({ summary: 'Get tasks assigned to current user' })
   @ApiResponse({ status: 200, description: 'Returns user assigned tasks' })
   @Get('user/my-tasks')
   async getMyTasks(
     @Query() query: TaskListQueryDto,
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskListResponseDto> {
     const {
       status,
@@ -540,9 +540,13 @@ export class TaskController {
       sortOrder = 'asc',
     } = query;
 
-    const where: Record<string, unknown> = {
-      assignees: { some: { userId: req.user.id } },
-    };
+    const isAdmin =
+      req.user.role === UserRole.SUPER_ADMIN ||
+      req.user.role === UserRole.ADMIN;
+
+    const where: Record<string, unknown> = isAdmin
+      ? {}
+      : { assignees: { some: { userId: req.user.id } } };
 
     if (status) where.status = status;
     if (priority) where.priority = priority;
