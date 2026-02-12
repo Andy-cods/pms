@@ -59,7 +59,7 @@ export class TaskController {
   @Get()
   async listTasks(
     @Query() query: TaskListQueryDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskListResponseDto> {
     const {
       projectId,
@@ -86,7 +86,7 @@ export class TaskController {
         req.user.role === UserRole.ADMIN;
       if (!isAdmin) {
         const userProjects = await this.prisma.projectTeam.findMany({
-          where: { userId: req.user.sub },
+          where: { userId: req.user.id },
           select: { projectId: true },
         });
         where.projectId = { in: userProjects.map((p) => p.projectId) };
@@ -162,7 +162,7 @@ export class TaskController {
   @Get('project/:projectId/kanban')
   async getKanbanView(
     @Param('projectId') projectId: string,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<KanbanResponseDto> {
     await this.checkProjectAccess(projectId, req.user);
 
@@ -222,7 +222,7 @@ export class TaskController {
   @Get(':id')
   async getTask(
     @Param('id') id: string,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskResponseDto> {
     const task = await this.prisma.task.findUnique({
       where: { id },
@@ -260,7 +260,7 @@ export class TaskController {
   @Post()
   async createTask(
     @Body() dto: CreateTaskDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskResponseDto> {
     await this.checkProjectAccess(dto.projectId, req.user);
 
@@ -281,7 +281,7 @@ export class TaskController {
         estimatedHours: dto.estimatedHours,
         deadline: dto.deadline ? new Date(dto.deadline) : null,
         reviewerId: dto.reviewerId,
-        createdById: req.user.sub,
+        createdById: req.user.id,
         orderIndex: (maxOrder._max.orderIndex ?? -1) + 1,
         assignees: dto.assigneeIds?.length
           ? {
@@ -315,7 +315,7 @@ export class TaskController {
   async updateTask(
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskResponseDto> {
     const existing = await this.prisma.task.findUnique({ where: { id } });
     if (!existing) {
@@ -378,7 +378,7 @@ export class TaskController {
   async updateTaskStatus(
     @Param('id') id: string,
     @Body() dto: UpdateTaskStatusDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskResponseDto> {
     const existing = await this.prisma.task.findUnique({ where: { id } });
     if (!existing) {
@@ -428,7 +428,7 @@ export class TaskController {
   async assignUsers(
     @Param('id') id: string,
     @Body() dto: AssignUsersDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<TaskResponseDto> {
     const existing = await this.prisma.task.findUnique({ where: { id } });
     if (!existing) {
@@ -477,7 +477,7 @@ export class TaskController {
   async reorderTasks(
     @Param('projectId') projectId: string,
     @Body() dto: ReorderTasksDto,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<void> {
     await this.checkProjectAccess(projectId, req.user);
 
@@ -510,7 +510,7 @@ export class TaskController {
   @Delete(':id')
   async deleteTask(
     @Param('id') id: string,
-    @Req() req: { user: { sub: string; role: string } },
+    @Req() req: { user: { id: string; role: string } },
   ): Promise<void> {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) {
@@ -528,7 +528,7 @@ export class TaskController {
   @Get('user/my-tasks')
   async getMyTasks(
     @Query() query: TaskListQueryDto,
-    @Req() req: { user: { sub: string } },
+    @Req() req: { user: { id: string } },
   ): Promise<TaskListResponseDto> {
     const {
       status,
@@ -541,7 +541,7 @@ export class TaskController {
     } = query;
 
     const where: Record<string, unknown> = {
-      assignees: { some: { userId: req.user.sub } },
+      assignees: { some: { userId: req.user.id } },
     };
 
     if (status) where.status = status;
@@ -600,7 +600,7 @@ export class TaskController {
   // Helper: Check project access
   private async checkProjectAccess(
     projectId: string,
-    user: { sub: string; role: string },
+    user: { id: string; role: string },
   ): Promise<void> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -613,7 +613,7 @@ export class TaskController {
 
     const isAdmin =
       user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN;
-    const isMember = project.team.some((m) => m.userId === user.sub);
+    const isMember = project.team.some((m) => m.userId === user.id);
 
     if (!isAdmin && !isMember) {
       throw new ForbiddenException('You do not have access to this project');
