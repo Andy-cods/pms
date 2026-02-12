@@ -24,6 +24,7 @@ import { AdsReportModule } from './modules/ads-report/ads-report.module';
 import { StrategicBriefModule } from './modules/strategic-brief/strategic-brief.module';
 import { ProjectPhaseModule } from './modules/project-phase/project-phase.module';
 import { ContentPostModule } from './modules/content-post/content-post.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { MetricsInterceptor } from './common/interceptors/metrics.interceptor';
 import { CsrfMiddleware } from './shared/middleware/csrf.middleware';
 
@@ -61,6 +62,7 @@ import { CsrfMiddleware } from './shared/middleware/csrf.middleware';
     StrategicBriefModule,
     ProjectPhaseModule,
     ContentPostModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
