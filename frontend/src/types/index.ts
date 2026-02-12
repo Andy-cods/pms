@@ -123,6 +123,7 @@ export interface WeeklyNote {
 export enum TaskStatus {
   TODO = 'TODO',
   IN_PROGRESS = 'IN_PROGRESS',
+  PENDING = 'PENDING',
   REVIEW = 'REVIEW',
   DONE = 'DONE',
   BLOCKED = 'BLOCKED',
@@ -397,6 +398,7 @@ export interface AddTeamMemberInput {
 export const TaskStatusLabels: Record<TaskStatus, string> = {
   [TaskStatus.TODO]: 'Cần làm',
   [TaskStatus.IN_PROGRESS]: 'Đang làm',
+  [TaskStatus.PENDING]: 'Chờ xử lý',
   [TaskStatus.REVIEW]: 'Chờ review',
   [TaskStatus.DONE]: 'Hoàn thành',
   [TaskStatus.BLOCKED]: 'Bị chặn',

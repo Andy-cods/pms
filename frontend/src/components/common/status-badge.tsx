@@ -16,6 +16,7 @@ const statusBadgeVariants = cva(
         // Task Status
         todo: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
         in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+        pending: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
         review: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
         done: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
         blocked: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -77,6 +78,7 @@ export function ProjectStatusBadge({ status, className }: { status: HealthStatus
 const taskStatusMap: Record<TaskStatus, { variant: VariantProps<typeof statusBadgeVariants>['variant']; label: string }> = {
   [TaskStatus.TODO]: { variant: 'todo', label: 'Chưa làm' },
   [TaskStatus.IN_PROGRESS]: { variant: 'in_progress', label: 'Đang làm' },
+  [TaskStatus.PENDING]: { variant: 'pending', label: 'Chờ xử lý' },
   [TaskStatus.REVIEW]: { variant: 'review', label: 'Đang review' },
   [TaskStatus.DONE]: { variant: 'done', label: 'Hoàn thành' },
   [TaskStatus.BLOCKED]: { variant: 'blocked', label: 'Bị chặn' },
